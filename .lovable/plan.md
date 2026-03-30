@@ -1,23 +1,34 @@
 
 
-# Fix: Redirecionar usuário logado fora da tela de cadastro
+# Menu de Perfil no Header para Usuário Logado
 
-## Problema
-A rota `/cadastro` não verifica se o usuário já está logado. Mesmo autenticado, o usuário vê o formulário de criação de conta.
+## Resumo
+Substituir o botão "Sair" por um avatar clicável com dropdown menu contendo links para: Meu Perfil, Meu Diagnóstico, Plano de Loyalty, Análise de Clientes (RFV), e Sair.
 
-## Solução
+## Alterações
 
-### 1. Cadastro.tsx
-- Adicionar `useEffect` no início que verifica `supabase.auth.getSession()`
-- Se já houver sessão ativa, redirecionar para `/resultado`
-- Manter o fluxo normal apenas para usuários não autenticados
+### 1. Header.tsx
+- Quando logado, mostrar avatar com iniciais do usuário (buscar do `profiles`)
+- Ao clicar, abrir `DropdownMenu` com as opções:
+  - **Meu Perfil** → nova página `/perfil` (dados cadastrais editáveis)
+  - **Meu Diagnóstico** → `/diagnostico` (formulário preenchido, read-only)
+  - **Plano de Loyalty** → `/resultado`
+  - **Análise de Clientes** → `/rfv`
+  - Separador + **Sair**
 
-### 2. Login.tsx
-- Mesma lógica: se já logado, redirecionar para `/resultado`
+### 2. Nova página Perfil (`src/pages/Perfil.tsx`)
+- Exibe nome, email, empresa, cargo do usuário
+- Permite editar nome, empresa, cargo (update na tabela `profiles`)
+- Card simples com formulário
 
-### Fluxo corrigido
-```text
-Usuário logado acessa /cadastro ou /login
-  → Detecta sessão ativa → Redireciona para /resultado
-```
+### 3. App.tsx
+- Adicionar rota `/perfil` dentro do `AuthenticatedLayout`
+
+### 4. AppSidebar.tsx
+- Adicionar link "Meu Perfil" na seção de perfil da sidebar
+
+## Componentes usados
+- `DropdownMenu` do shadcn (já existe no projeto)
+- `Avatar` + `AvatarFallback` (já existem)
+- Fetch do perfil via `supabase.from('profiles').select()`
 
