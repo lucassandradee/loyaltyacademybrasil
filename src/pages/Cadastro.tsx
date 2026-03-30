@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
 
+const DRAFT_KEY = 'diagnostic_draft';
+const DRAFT_STEP_KEY = 'diagnostic_step';
+
 const Cadastro = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,7 +20,18 @@ const Cadastro = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [form, setForm] = useState({ nome: '', email: '', empresa: '', cargo: '', senha: '' });
 
-  const answers = (location.state as { answers: DiagnosticAnswers })?.answers;
+  // Get answers from route state OR localStorage draft
+  const stateAnswers = (location.state as { answers: DiagnosticAnswers })?.answers;
+  const getAnswers = (): DiagnosticAnswers | null => {
+    if (stateAnswers) return stateAnswers;
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try { return JSON.parse(draft) as DiagnosticAnswers; } catch { return null; }
+    }
+    return null;
+  };
+
+  const answers = getAnswers();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,9 +69,21 @@ const Cadastro = () => {
       if (authData.user) {
         const { error: saveError } = await supabase
           .from('diagnostic_responses')
-          .insert([{ user_id: authData.user.id, answers: JSON.parse(JSON.stringify(answers)) }]);
+          .upsert(
+            { user_id: authData.user.id, answers: JSON.parse(JSON.stringify(answers)) },
+            { onConflict: 'user_id' }
+          );
 
-        if (saveError) console.error('Error saving answers:', saveError);
+        if (saveError) {
+          console.error('Error saving answers:', saveError);
+          toast({ title: 'Erro ao salvar diagnóstico', description: saveError.message, variant: 'destructive' });
+          setLoading(false);
+          return;
+        }
+
+        // Successfully saved — clear draft
+        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(DRAFT_STEP_KEY);
       }
 
       toast({ title: 'Conta criada com sucesso!', description: 'Gerando seu plano estratégico...' });
