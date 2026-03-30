@@ -82,7 +82,7 @@ export function AppSidebar() {
         )}
 
         {/* Module 1 */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Módulo 1 — Loyalty</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
