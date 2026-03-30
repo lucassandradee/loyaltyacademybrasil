@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
 
+const DRAFT_KEY = 'diagnostic_draft';
+const DRAFT_STEP_KEY = 'diagnostic_step';
+
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,7 +20,16 @@ const Login = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [form, setForm] = useState({ email: '', senha: '' });
 
-  const answers = (location.state as { answers?: DiagnosticAnswers })?.answers;
+  // Get answers from route state OR localStorage draft
+  const stateAnswers = (location.state as { answers?: DiagnosticAnswers })?.answers;
+  const getAnswers = (): DiagnosticAnswers | null => {
+    if (stateAnswers) return stateAnswers;
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try { return JSON.parse(draft) as DiagnosticAnswers; } catch { return null; }
+    }
+    return null;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -43,12 +55,23 @@ const Login = () => {
 
       if (error) throw error;
 
+      const answers = getAnswers();
       if (answers) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase
+          const { error: saveError } = await supabase
             .from('diagnostic_responses')
-            .insert([{ user_id: user.id, answers: JSON.parse(JSON.stringify(answers)) }]);
+            .upsert(
+              { user_id: user.id, answers: JSON.parse(JSON.stringify(answers)) },
+              { onConflict: 'user_id' }
+            );
+          
+          if (saveError) {
+            console.error('Error saving answers:', saveError);
+          } else {
+            localStorage.removeItem(DRAFT_KEY);
+            localStorage.removeItem(DRAFT_STEP_KEY);
+          }
         }
         navigate('/resultado', { state: { answers } });
       } else {
@@ -85,7 +108,7 @@ const Login = () => {
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Não tem conta?{' '}
-            <Link to="/cadastro" state={answers ? { answers } : undefined} className="font-medium text-primary hover:underline">
+            <Link to="/cadastro" state={getAnswers() ? { answers: getAnswers() } : undefined} className="font-medium text-primary hover:underline">
               Criar conta
             </Link>
           </p>

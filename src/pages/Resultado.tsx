@@ -9,6 +9,8 @@ import { DiagnosticAnswers, DiagnosticResult, generateDiagnostic } from '@/lib/d
 import { generatePDF } from '@/lib/generate-pdf';
 import { supabase } from '@/integrations/supabase/client';
 
+const DRAFT_KEY = 'diagnostic_draft';
+
 const Resultado = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,36 +19,54 @@ const Resultado = () => {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['sumario', 'maturidade', 'estrutura']));
 
-  const answers = (location.state as { answers: DiagnosticAnswers })?.answers;
+  const stateAnswers = (location.state as { answers: DiagnosticAnswers })?.answers;
 
   useEffect(() => {
     const load = async () => {
-      if (answers) {
-        const timer = setTimeout(() => {
-          setResult(generateDiagnostic(answers));
+      // 1. Use answers from route state if available
+      if (stateAnswers) {
+        setTimeout(() => {
+          setResult(generateDiagnostic(stateAnswers));
           setLoading(false);
         }, 2500);
-        return () => clearTimeout(timer);
+        return;
       }
-      // No answers in state — fetch from DB
+
+      // 2. Must be logged in
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/login'); return; }
+
+      // 3. Try fetching from database
       const { data } = await supabase
         .from('diagnostic_responses')
         .select('answers')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
       if (data?.answers) {
         setResult(generateDiagnostic(data.answers as unknown as DiagnosticAnswers));
         setLoading(false);
-      } else {
-        navigate('/diagnostico');
+        return;
       }
+
+      // 4. Try localStorage draft as fallback
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft) as DiagnosticAnswers;
+          setResult(generateDiagnostic(parsed));
+          setLoading(false);
+          return;
+        } catch { /* ignore */ }
+      }
+
+      // 5. Nothing found — go to diagnostic
+      navigate('/diagnostico');
     };
     load();
-  }, [answers, navigate]);
+  }, [stateAnswers, navigate]);
 
   const toggleSection = (id: string) => {
     const next = new Set(openSections);
@@ -102,12 +122,10 @@ const Resultado = () => {
       </div>
 
       <div className="space-y-4">
-        {/* 1. Sumário Executivo */}
         <SectionCard id="sumario" icon={FileText} title="1. Sumário Executivo">
           <p className="text-sm leading-relaxed text-muted-foreground">{result.sumarioExecutivo}</p>
         </SectionCard>
 
-        {/* 2. Maturidade */}
         <SectionCard id="maturidade" icon={Shield} title="2. Diagnóstico de Maturidade">
           <div className="mb-3">
             <span className="text-sm text-muted-foreground">Nível: </span>
@@ -137,7 +155,6 @@ const Resultado = () => {
           </div>
         </SectionCard>
 
-        {/* 3. Estrutura */}
         <SectionCard id="estrutura" icon={Lightbulb} title="3. Modelo de Programa Recomendado">
           <p className="mb-2 font-semibold text-foreground">{result.estrutura.tipo}</p>
           <p className="mb-3 text-sm text-muted-foreground">{result.estrutura.descricao}</p>
@@ -149,7 +166,6 @@ const Resultado = () => {
           ))}
         </SectionCard>
 
-        {/* 4. Tiers */}
         {result.tiers.length > 0 && (
           <SectionCard id="tiers" icon={Award} title="4. Estrutura de Tiers">
             <div className="space-y-4">
@@ -170,7 +186,6 @@ const Resultado = () => {
           </SectionCard>
         )}
 
-        {/* 5. Foco Estratégico */}
         <SectionCard id="foco" icon={Target} title={`5. Foco Estratégico: ${result.foco.titulo}`}>
           <p className="mb-4 text-sm text-muted-foreground">{result.foco.descricao}</p>
           <div className="space-y-2">
@@ -185,7 +200,6 @@ const Resultado = () => {
           </div>
         </SectionCard>
 
-        {/* 6. KPIs */}
         <SectionCard id="kpis" icon={BarChart3} title="6. KPIs e Métricas de Sucesso">
           <div className="space-y-3">
             {result.kpis.map((kpi, i) => (
@@ -200,7 +214,6 @@ const Resultado = () => {
           </div>
         </SectionCard>
 
-        {/* 7. Cronograma */}
         <SectionCard id="cronograma" icon={Calendar} title="7. Cronograma de Implementação">
           <div className="space-y-4">
             {result.cronograma.map((fase, i) => (
@@ -220,7 +233,6 @@ const Resultado = () => {
           </div>
         </SectionCard>
 
-        {/* 8. Checklist */}
         <SectionCard id="checklist" icon={ListChecks} title="8. Checklist de Próximos Passos">
           <div className="space-y-3">
             {result.checklist.map((item, i) => (

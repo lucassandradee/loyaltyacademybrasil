@@ -7,6 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+const DRAFT_KEY = 'diagnostic_draft';
+const DRAFT_STEP_KEY = 'diagnostic_step';
 
 interface Question {
   id: keyof DiagnosticAnswers;
@@ -56,9 +60,17 @@ const questions: Question[] = [
 
 const Diagnostico = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Partial<DiagnosticAnswers>>({});
+  const { toast } = useToast();
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem(DRAFT_STEP_KEY);
+    return saved ? parseInt(saved, 10) : 0;
+  });
+  const [answers, setAnswers] = useState<Partial<DiagnosticAnswers>>(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    return saved ? JSON.parse(saved) : {};
+  });
   const [checking, setChecking] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const checkExisting = async () => {
@@ -70,6 +82,8 @@ const Diagnostico = () => {
           .eq('user_id', user.id)
           .limit(1);
         if (data && data.length > 0) {
+          localStorage.removeItem(DRAFT_KEY);
+          localStorage.removeItem(DRAFT_STEP_KEY);
           navigate('/resultado', { replace: true });
           return;
         }
@@ -78,6 +92,12 @@ const Diagnostico = () => {
     };
     checkExisting();
   }, [navigate]);
+
+  // Persist draft on every change
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(answers));
+    localStorage.setItem(DRAFT_STEP_KEY, String(step));
+  }, [answers, step]);
 
   if (checking) return null;
 
@@ -102,12 +122,34 @@ const Diagnostico = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < questions.length - 1) {
       setStep(step + 1);
+      return;
+    }
+
+    const finalAnswers = answers as DiagnosticAnswers;
+
+    // Check if user is logged in — save directly
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setSaving(true);
+      const { error } = await supabase
+        .from('diagnostic_responses')
+        .upsert({ user_id: user.id, answers: JSON.parse(JSON.stringify(finalAnswers)) }, { onConflict: 'user_id' });
+      setSaving(false);
+
+      if (error) {
+        toast({ title: 'Erro ao salvar diagnóstico', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(DRAFT_STEP_KEY);
+      navigate('/resultado', { state: { answers: finalAnswers } });
     } else {
-      // Navigate to result with answers
-      navigate('/cadastro', { state: { answers: answers as DiagnosticAnswers } });
+      // Not logged in — go to cadastro with answers (draft stays in localStorage)
+      navigate('/cadastro', { state: { answers: finalAnswers } });
     }
   };
 
@@ -165,8 +207,8 @@ const Diagnostico = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          <Button onClick={handleNext} disabled={!canAdvance}>
-            {step < questions.length - 1 ? 'Próxima' : 'Ver Resultado'}
+          <Button onClick={handleNext} disabled={!canAdvance || saving}>
+            {saving ? 'Salvando...' : step < questions.length - 1 ? 'Próxima' : 'Ver Resultado'}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
