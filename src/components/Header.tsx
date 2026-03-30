@@ -68,9 +68,6 @@ const Header = () => {
                 <DropdownMenuItem onClick={() => navigate('/perfil')} className="gap-2 cursor-pointer">
                   <User className="h-4 w-4" /> Meu Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/diagnostico')} className="gap-2 cursor-pointer">
-                  <ClipboardList className="h-4 w-4" /> Meu Diagnóstico
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/resultado')} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" /> Plano de Loyalty
                 </DropdownMenuItem>
