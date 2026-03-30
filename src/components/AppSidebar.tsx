@@ -91,7 +91,7 @@ export function AppSidebar() {
 
         {/* Module 1 */}
         <SidebarGroup>
-          <SidebarGroupLabel>Módulo 1 — Loyalty</SidebarGroupLabel>
+          <SidebarGroupLabel>Plano Estratégico de Loyalty</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {module1Items.map((item) => (
