@@ -10,6 +10,7 @@ import Diagnostico from "./pages/Diagnostico";
 import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
 import Resultado from "./pages/Resultado";
+import Perfil from "./pages/Perfil";
 import RFVUpload from "./pages/RFVUpload";
 import RFVParametros from "./pages/RFVParametros";
 import RFVDashboard from "./pages/RFVDashboard";
