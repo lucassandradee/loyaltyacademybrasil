@@ -116,9 +116,23 @@ const Resultado = () => {
           <h1 className="text-3xl font-bold text-foreground">Seu Plano Estratégico de Loyalty</h1>
           <p className="mt-1 text-muted-foreground">Relatório personalizado baseado no seu diagnóstico</p>
         </div>
-        <Button onClick={() => generatePDF(result)} size="lg" className="gap-2">
-          <Download className="h-5 w-5" /> Baixar PDF
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={() => generatePDF(result)} size="lg" className="gap-2">
+            <Download className="h-5 w-5" /> Baixar PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="gap-2"
+            onClick={() => {
+              localStorage.removeItem('diagnostic_draft');
+              localStorage.removeItem('diagnostic_step');
+              navigate('/diagnostico?refazer=true');
+            }}
+          >
+            <FileText className="h-5 w-5" /> Refazer Diagnóstico
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">

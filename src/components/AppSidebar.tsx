@@ -21,9 +21,9 @@ const module1Items = [
 ];
 
 const module2Items = [
-  { title: 'Upload RFV', url: '/rfv', icon: Upload },
-  { title: 'Parametrização', url: '/rfv/parametros', icon: SlidersHorizontal },
-  { title: 'Dashboard', url: '/rfv/dashboard', icon: BarChart3 },
+  { title: 'Upload RFV', url: '/rfv', icon: Upload, alwaysEnabled: true },
+  { title: 'Parametrização', url: '/rfv/parametros', icon: SlidersHorizontal, alwaysEnabled: false },
+  { title: 'Dashboard', url: '/rfv/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
 interface Profile {
@@ -37,6 +37,14 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
+
+  useEffect(() => {
+    const handleStorage = () => setRfvUploaded(localStorage.getItem('rfv_data_uploaded') === 'true');
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 1000);
+    return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -83,7 +91,7 @@ export function AppSidebar() {
 
         {/* Module 1 */}
         <SidebarGroup>
-          <SidebarGroupLabel>Módulo 1 — Loyalty</SidebarGroupLabel>
+          <SidebarGroupLabel>Plano Estratégico de Loyalty</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {module1Items.map((item) => (
@@ -105,16 +113,26 @@ export function AppSidebar() {
           <SidebarGroupLabel>Módulo 2 — RFV</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {module2Items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {module2Items.map((item) => {
+                const enabled = item.alwaysEnabled || rfvUploaded;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild disabled={!enabled}>
+                      {enabled ? (
+                        <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      ) : (
+                        <span className="flex items-center opacity-40 cursor-not-allowed">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </span>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

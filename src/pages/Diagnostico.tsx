@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -72,7 +72,14 @@ const Diagnostico = () => {
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const isRefazer = searchParams.get('refazer') === 'true';
+
   useEffect(() => {
+    if (isRefazer) {
+      setChecking(false);
+      return;
+    }
     const checkExisting = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -91,7 +98,7 @@ const Diagnostico = () => {
       setChecking(false);
     };
     checkExisting();
-  }, [navigate]);
+  }, [navigate, isRefazer]);
 
   // Persist draft on every change
   useEffect(() => {

@@ -17,6 +17,7 @@ const RFVUpload = () => {
       setError('Nenhum dado válido encontrado no arquivo.');
       return;
     }
+    localStorage.setItem('rfv_data_uploaded', 'true');
     navigate('/rfv/parametros', { state: { clientData: data } });
   }, [navigate]);
 
