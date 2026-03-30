@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ArrowRight, CheckCircle2, Loader2, Shield, Target, Lightbulb, ListChecks, BarChart3, Calendar, Award, FileText, ChevronDown, Download } from 'lucide-react';
 import { DiagnosticAnswers, DiagnosticResult, generateDiagnostic } from '@/lib/diagnostic-logic';
 import { generatePDF } from '@/lib/generate-pdf';
+import { supabase } from '@/integrations/supabase/client';
 
 const Resultado = () => {
   const location = useLocation();
