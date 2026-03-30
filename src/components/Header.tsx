@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, User, FileText, BarChart3, ClipboardList } from 'lucide-react';
+import { LogIn, LogOut, User, FileText, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -67,9 +67,6 @@ const Header = () => {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => navigate('/perfil')} className="gap-2 cursor-pointer">
                   <User className="h-4 w-4" /> Meu Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/diagnostico')} className="gap-2 cursor-pointer">
-                  <ClipboardList className="h-4 w-4" /> Meu Diagnóstico
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/resultado')} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" /> Plano de Loyalty
