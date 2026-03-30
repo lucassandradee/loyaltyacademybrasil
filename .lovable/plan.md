@@ -1,25 +1,39 @@
 
 
-# Ajustes: Sidebar, Botão Refazer, e Bloqueio Módulo 2
+# Filtro por Cluster + Plano de Ação (5W2H / Eisenhower)
 
-## 1. Renomear Módulo 1 na Sidebar
-- Em `AppSidebar.tsx`, trocar o label "Módulo 1 — Loyalty" para **"Plano Estratégico de Loyalty"**
+## 1. Filtro interativo por cluster
 
-## 2. Botão "Refazer Diagnóstico" na página Resultado
-- Em `Resultado.tsx`, adicionar um botão **"Refazer Diagnóstico"** logo abaixo do botão "Baixar PDF"
-- Ao clicar, limpar o rascunho local (`localStorage`) e navegar para `/diagnostico` com um flag (ex: `?refazer=true`)
-- Em `Diagnostico.tsx`, quando detectar esse flag, ignorar o diagnóstico salvo no banco e permitir refazer
+Adicionar estado `selectedCluster` ao dashboard. Clicar em qualquer destes elementos filtra a tabela:
+- **Barras** do gráfico de Distribuição por Cluster
+- **Fatias** do gráfico de Composição da Base
+- **Cards** dos Segmentos de Clientes
 
-## 3. Bloquear Parametrização e Dashboard no Módulo 2 até o Upload
-- Em `AppSidebar.tsx`, verificar se já existe dados RFV carregados (checar `localStorage` por uma chave como `rfv_data_uploaded` que será setada após upload bem-sucedido)
-- Itens "Parametrização" e "Dashboard" ficam desabilitados (cinza, sem link) até que o upload tenha sido feito
-- Em `RFVUpload.tsx`, após `processData` com sucesso, setar `localStorage.setItem('rfv_data_uploaded', 'true')`
+Clicar novamente no mesmo cluster (ou num botão "Limpar filtro") remove o filtro. A tabela e a paginação refletem apenas os clientes do cluster selecionado. O card/barra/fatia ativo recebe destaque visual.
+
+## 2. Plano de Ação com abas (5W2H e Eisenhower)
+
+Abaixo da seção "Análise da Base", adicionar uma nova seção **"Plano de Ação"** que aparece quando um cluster está selecionado. Usa o componente `Tabs` já existente com duas abas:
+
+### Aba 5W2H
+Tabela pré-preenchida com colunas: What (O quê), Why (Por quê), Where (Onde), When (Quando), Who (Quem), How (Como), How Much (Quanto custa). Conteúdo gerado automaticamente com base no cluster selecionado e nos dados do `clusterActions`.
+
+### Aba Matriz de Eisenhower
+Grid 2x2 (Urgente/Não Urgente x Importante/Não Importante) com ações recomendadas para o cluster, distribuídas nos quadrantes.
+
+O conteúdo de ambas as abas será estático/determinístico, mapeado por cluster em `rfv-logic.ts`.
 
 ## Arquivos alterados
+
 | Arquivo | Mudança |
 |---|---|
-| `src/components/AppSidebar.tsx` | Renomear label do Módulo 1; bloquear itens do Módulo 2 condicionalmente |
-| `src/pages/Resultado.tsx` | Adicionar botão "Refazer Diagnóstico" abaixo do PDF |
-| `src/pages/Diagnostico.tsx` | Aceitar param `?refazer=true` para ignorar diagnóstico existente |
-| `src/pages/RFVUpload.tsx` | Setar flag `rfv_data_uploaded` no localStorage após upload |
+| `src/pages/RFVDashboard.tsx` | Estado `selectedCluster`, onClick nos gráficos/cards, filtro na tabela, seção Plano de Ação com Tabs |
+| `src/lib/rfv-logic.ts` | Novo export `clusterActionPlans` com dados 5W2H e Eisenhower por cluster |
+
+## Detalhes técnicos
+
+- Recharts: usar `onClick` handler no `<Bar>` e `<Pie>` para capturar o cluster clicado
+- Cards de segmento: `onClick` + `cursor-pointer` + borda destacada quando ativo
+- Filtro da tabela: combinar `selectedCluster` com o `search` existente
+- Tabs: importar `Tabs, TabsList, TabsTrigger, TabsContent` de `@/components/ui/tabs`
 
