@@ -1,25 +1,43 @@
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cluster5W2H, clusterEisenhower, clusterColors } from '@/lib/rfv-logic';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cluster5W2H, clusterEisenhower, clusterColors, allClusterNames } from '@/lib/rfv-logic';
 
 interface ActionPlanTabsProps {
-  selectedCluster: string;
+  selectedCluster: string | null;
 }
 
 const ActionPlanTabs = ({ selectedCluster }: ActionPlanTabsProps) => {
-  const plans = cluster5W2H[selectedCluster] || [];
-  const matrix = clusterEisenhower[selectedCluster];
+  const [localCluster, setLocalCluster] = useState(selectedCluster || allClusterNames[0]);
+  const activeCluster = selectedCluster || localCluster;
+
+  const plans = cluster5W2H[activeCluster] || [];
+  const matrix = clusterEisenhower[activeCluster];
 
   return (
     <Card className="mb-8">
       <CardHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <CardTitle className="text-base">Plano de Ação</CardTitle>
-          <Badge style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }}>
-            {selectedCluster}
-          </Badge>
+          {selectedCluster ? (
+            <Badge style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }}>
+              {selectedCluster}
+            </Badge>
+          ) : (
+            <Select value={localCluster} onValueChange={setLocalCluster}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allClusterNames.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>

@@ -276,7 +276,7 @@ const RFVDashboard = () => {
       </Card>
 
       {/* Action Plan */}
-      {selectedCluster && <ActionPlanTabs selectedCluster={selectedCluster} />}
+      <ActionPlanTabs selectedCluster={selectedCluster} />
 
       {/* Data Table */}
       <Card>
