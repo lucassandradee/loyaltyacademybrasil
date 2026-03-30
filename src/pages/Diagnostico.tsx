@@ -84,7 +84,7 @@ const Diagnostico = () => {
       setStep(step + 1);
     } else {
       // Navigate to result with answers
-      navigate('/resultado', { state: { answers: answers as DiagnosticAnswers } });
+      navigate('/cadastro', { state: { answers: answers as DiagnosticAnswers } });
     }
   };
 
