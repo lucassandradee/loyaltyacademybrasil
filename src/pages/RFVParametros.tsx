@@ -23,6 +23,11 @@ const RFVParametros = () => {
     navigate('/rfv/dashboard', { state: { clientData, params } });
   };
 
+  if (!clientData) {
+    navigate('/rfv');
+    return null;
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8 text-center">
