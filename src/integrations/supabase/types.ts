@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      diagnostic_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          cargo: string
+          created_at: string
+          empresa: string
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          cargo?: string
+          created_at?: string
+          empresa?: string
+          id?: string
+          nome?: string
+          user_id: string
+        }
+        Update: {
+          cargo?: string
+          created_at?: string
+          empresa?: string
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
