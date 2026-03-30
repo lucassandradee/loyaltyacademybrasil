@@ -184,9 +184,9 @@ export function generatePDF(result: DiagnosticResult): void {
     head: [['Prioridade', 'Ação']],
     body: result.foco.acoes.map(a => [a.prioridade, a.acao]),
     margin: { left: 14, right: 14 },
-    headStyles: { fillColor: ESPM_RED as unknown as number[], fontSize: 9 },
-    bodyStyles: { fontSize: 8, textColor: DARK_GRAY as unknown as number[] },
-    alternateRowStyles: { fillColor: LIGHT_GRAY as unknown as number[] },
+    headStyles: { fillColor: [...ESPM_RED] as [number, number, number], fontSize: 9 },
+    bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+    alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
     columnStyles: { 0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' } },
   });
   y = (doc as any).lastAutoTable.finalY + 8;
