@@ -62,6 +62,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rfv_uploads: {
+        Row: {
+          client_data: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          client_data: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          client_data?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

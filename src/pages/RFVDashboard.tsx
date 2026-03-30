@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,22 +7,48 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2, X } from 'lucide-react';
-import { ClientData, RFVParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, defaultParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
 import ActionPlanTabs from '@/components/rfv/ActionPlanTabs';
+import { supabase } from '@/integrations/supabase/client';
 
 const RFVDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { clientData: ClientData[]; params: RFVParams } | null;
+  const locState = location.state as { clientData: ClientData[]; params: RFVParams } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [dbData, setDbData] = useState<ClientData[] | null>(null);
+  const [loading, setLoading] = useState(!locState);
   const perPage = 10;
 
+  useEffect(() => {
+    if (locState) return;
+    const fetchFromDB = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) { navigate('/rfv'); return; }
+      const { data } = await supabase
+        .from('rfv_uploads')
+        .select('client_data')
+        .eq('user_id', session.session.user.id)
+        .maybeSingle();
+      if (data?.client_data) {
+        setDbData(data.client_data as unknown as ClientData[]);
+      } else {
+        navigate('/rfv');
+      }
+      setLoading(false);
+    };
+    fetchFromDB();
+  }, [locState, navigate]);
+
+  const clientData = locState?.clientData || dbData;
+  const params = locState?.params || defaultParams;
+
   const scored = useMemo(() => {
-    if (!state) return [];
-    return scoreClients(state.clientData, state.params);
-  }, [state]);
+    if (!clientData) return [];
+    return scoreClients(clientData, params);
+  }, [clientData, params]);
 
   const totalClients = scored.length;
   const avgTicket = totalClients > 0 ? scored.reduce((s, c) => s + c.valor, 0) / totalClients : 0;
@@ -95,10 +121,11 @@ const RFVDashboard = () => {
     }
   };
 
-  if (!state) {
-    navigate('/rfv');
-    return null;
+  if (loading) {
+    return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando dados...</div>;
   }
+
+  if (!clientData) return null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -108,7 +135,7 @@ const RFVDashboard = () => {
           <h1 className="text-3xl font-bold text-foreground">Dashboard RFV</h1>
           <p className="text-muted-foreground">Análise completa da segmentação de clientes</p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/rfv/parametros', { state: { clientData: state.clientData } })}>
+        <Button variant="outline" onClick={() => navigate('/rfv/parametros', { state: { clientData } })}>
           <Settings2 className="mr-2 h-4 w-4" /> Ajustar Parâmetros
         </Button>
       </div>
@@ -323,7 +350,7 @@ const RFVDashboard = () => {
       </Card>
 
       <div className="mt-6">
-        <Button variant="ghost" onClick={() => navigate('/rfv/parametros', { state: { clientData: state.clientData } })}>
+        <Button variant="ghost" onClick={() => navigate('/rfv/parametros', { state: { clientData } })}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Parametrização
         </Button>
       </div>
