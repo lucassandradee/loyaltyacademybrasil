@@ -31,6 +31,8 @@ const RFVDashboard = () => {
         .from('rfv_uploads')
         .select('client_data')
         .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (data?.client_data) {
         setDbData(data.client_data as unknown as ClientData[]);
