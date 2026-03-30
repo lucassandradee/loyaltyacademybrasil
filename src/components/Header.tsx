@@ -16,24 +16,7 @@ const Header = () => {
             <span className="ml-2 text-xs text-muted-foreground">Plataforma Educacional</span>
           </div>
         </Link>
-        <nav className="flex items-center gap-1">
-          <Link
-            to="/"
-            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              isModule1 ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Módulo 1 — Diagnóstico
-          </Link>
-          <Link
-            to="/rfv"
-            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              isModule2 ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Módulo 2 — Análise RFV
-          </Link>
-        </nav>
+        <div />
       </div>
     </header>
   );
