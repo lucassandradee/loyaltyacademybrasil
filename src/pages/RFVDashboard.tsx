@@ -17,19 +17,15 @@ const RFVDashboard = () => {
   const [page, setPage] = useState(0);
   const perPage = 10;
 
-  if (!state) {
-    navigate('/rfv');
-    return null;
-  }
+  const scored = useMemo(() => {
+    if (!state) return [];
+    return scoreClients(state.clientData, state.params);
+  }, [state]);
 
-  const scored = useMemo(() => scoreClients(state.clientData, state.params), [state]);
-
-  // KPIs
   const totalClients = scored.length;
-  const avgTicket = scored.reduce((s, c) => s + c.valor, 0) / totalClients;
-  const avgFreq = scored.reduce((s, c) => s + c.frequencia, 0) / totalClients;
+  const avgTicket = totalClients > 0 ? scored.reduce((s, c) => s + c.valor, 0) / totalClients : 0;
+  const avgFreq = totalClients > 0 ? scored.reduce((s, c) => s + c.frequencia, 0) / totalClients : 0;
 
-  // Cluster distribution
   const clusterCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     allClusterNames.forEach(n => counts[n] = 0);
@@ -37,13 +33,13 @@ const RFVDashboard = () => {
     return allClusterNames.map(name => ({
       name,
       count: counts[name],
-      pct: ((counts[name] / totalClients) * 100).toFixed(1),
+      pct: totalClients > 0 ? ((counts[name] / totalClients) * 100).toFixed(1) : '0',
       color: clusterColors[name],
     }));
   }, [scored, totalClients]);
 
-  // Analysis text
   const analysisText = useMemo(() => {
+    if (totalClients === 0) return '';
     const sorted = [...clusterCounts].sort((a, b) => b.count - a.count);
     const top = sorted[0];
     const champions = clusterCounts.find(c => c.name === 'Campeão');
@@ -62,9 +58,8 @@ const RFVDashboard = () => {
       text += `Atenção: ${hibernating.pct}% da base está Hibernando — considere campanhas agressivas de reativação.`;
     }
     return text;
-  }, [clusterCounts]);
+  }, [clusterCounts, totalClients]);
 
-  // Filtered and paginated data
   const filtered = useMemo(() => {
     if (!search) return scored;
     const q = search.toLowerCase();
