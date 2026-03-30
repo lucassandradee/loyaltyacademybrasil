@@ -14,9 +14,22 @@ const Cadastro = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [form, setForm] = useState({ nome: '', email: '', empresa: '', cargo: '', senha: '' });
 
   const answers = (location.state as { answers: DiagnosticAnswers })?.answers;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/resultado', { replace: true });
+      } else {
+        setCheckingSession(false);
+      }
+    });
+  }, [navigate]);
+
+  if (checkingSession) return null;
 
   if (!answers) {
     navigate('/diagnostico');
