@@ -35,7 +35,7 @@ const Login = () => {
         if (user) {
           await supabase
             .from('diagnostic_responses')
-            .insert([{ user_id: user.id, answers: answers as unknown as Record<string, unknown> }]);
+            .insert([{ user_id: user.id, answers: JSON.parse(JSON.stringify(answers)) }]);
         }
         navigate('/resultado', { state: { answers } });
       } else {

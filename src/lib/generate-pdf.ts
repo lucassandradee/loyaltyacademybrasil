@@ -200,9 +200,9 @@ export function generatePDF(result: DiagnosticResult): void {
     head: [['Métrica', 'Descrição', 'Meta']],
     body: result.kpis.map(k => [k.metrica, k.descricao, k.meta]),
     margin: { left: 14, right: 14 },
-    headStyles: { fillColor: ESPM_RED as unknown as number[], fontSize: 9 },
-    bodyStyles: { fontSize: 8, textColor: DARK_GRAY as unknown as number[] },
-    alternateRowStyles: { fillColor: LIGHT_GRAY as unknown as number[] },
+    headStyles: { fillColor: [...ESPM_RED] as [number, number, number], fontSize: 9 },
+    bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+    alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
     columnStyles: { 0: { cellWidth: 38, fontStyle: 'bold' }, 2: { cellWidth: 35 } },
   });
   y = (doc as any).lastAutoTable.finalY + 8;
