@@ -113,16 +113,26 @@ export function AppSidebar() {
           <SidebarGroupLabel>Módulo 2 — RFV</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {module2Items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {module2Items.map((item) => {
+                const enabled = item.alwaysEnabled || rfvUploaded;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild disabled={!enabled}>
+                      {enabled ? (
+                        <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      ) : (
+                        <span className="flex items-center opacity-40 cursor-not-allowed">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </span>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
