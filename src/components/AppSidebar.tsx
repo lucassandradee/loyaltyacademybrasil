@@ -37,6 +37,14 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
+
+  useEffect(() => {
+    const handleStorage = () => setRfvUploaded(localStorage.getItem('rfv_data_uploaded') === 'true');
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 1000);
+    return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
