@@ -35,6 +35,7 @@ const App = () => (
           {/* Authenticated routes with sidebar */}
           <Route element={<AuthenticatedLayout />}>
             <Route path="/resultado" element={<Resultado />} />
+            <Route path="/perfil" element={<Perfil />} />
             <Route path="/rfv" element={<RFVUpload />} />
             <Route path="/rfv/parametros" element={<RFVParametros />} />
             <Route path="/rfv/dashboard" element={<RFVDashboard />} />
