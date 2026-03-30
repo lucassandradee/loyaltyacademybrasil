@@ -175,6 +175,16 @@ const RFVDashboard = () => {
         ))}
       </div>
 
+      {/* Analysis */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-base">Análise da Base</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-relaxed text-muted-foreground">{analysisText}</p>
+        </CardContent>
+      </Card>
+
       {/* Charts */}
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
@@ -264,16 +274,6 @@ const RFVDashboard = () => {
           </Card>
         ))}
       </div>
-
-      {/* Analysis */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="text-base">Análise da Base</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground">{analysisText}</p>
-        </CardContent>
-      </Card>
 
       {/* Action Plan */}
       <ActionPlanTabs selectedCluster={selectedCluster} />
