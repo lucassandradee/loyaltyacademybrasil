@@ -156,3 +156,106 @@ export const allClusterNames = [
   'Campeão', 'Fidelizado', 'Potencial para ser fidelizado', 'Promissor',
   'Em risco', 'Precisa de atenção', 'Hibernando', 'Novos Clientes'
 ];
+
+export interface ActionPlan5W2H {
+  what: string;
+  why: string;
+  where: string;
+  when: string;
+  who: string;
+  how: string;
+  howMuch: string;
+}
+
+export interface EisenhowerMatrix {
+  urgentImportant: string[];
+  notUrgentImportant: string[];
+  urgentNotImportant: string[];
+  notUrgentNotImportant: string[];
+}
+
+export const cluster5W2H: Record<string, ActionPlan5W2H[]> = {
+  'Campeão': [
+    { what: 'Programa de embaixadores VIP', why: 'Reter os melhores clientes e gerar indicações', where: 'CRM e comunicação direta', when: 'Imediato — manter ativo', who: 'Equipe de relacionamento', how: 'Benefícios exclusivos, acesso antecipado a lançamentos, eventos VIP', howMuch: 'Alto investimento por cliente, alto retorno' },
+    { what: 'Pesquisa de satisfação premium', why: 'Entender o que os mantém fiéis', where: 'E-mail personalizado', when: 'Trimestral', who: 'Equipe de CX', how: 'Entrevistas 1:1 e pesquisa qualitativa', howMuch: 'Baixo custo, altíssimo valor estratégico' },
+  ],
+  'Fidelizado': [
+    { what: 'Cross-sell e up-sell personalizado', why: 'Aumentar ticket médio de clientes já engajados', where: 'E-commerce e loja física', when: 'Próximos 30 dias', who: 'Equipe comercial', how: 'Recomendações baseadas em histórico de compra', howMuch: 'Médio — campanhas segmentadas' },
+    { what: 'Programa de pontos acelerado', why: 'Recompensar frequência e aumentar retenção', where: 'App e PDV', when: 'Próximos 60 dias', who: 'Marketing e TI', how: 'Multiplicador de pontos em categorias estratégicas', howMuch: 'Médio investimento' },
+  ],
+  'Potencial para ser fidelizado': [
+    { what: 'Campanha de engajamento progressivo', why: 'Converter potencial em fidelidade real', where: 'E-mail marketing e push', when: 'Próximos 30 dias', who: 'Marketing', how: 'Sequência de benefícios crescentes por frequência', howMuch: 'Médio — automação de marketing' },
+    { what: 'Conteúdo educativo e de valor', why: 'Criar conexão emocional com a marca', where: 'Blog, redes sociais, newsletter', when: 'Contínuo', who: 'Conteúdo e branding', how: 'Série de conteúdos exclusivos para este segmento', howMuch: 'Baixo custo' },
+  ],
+  'Promissor': [
+    { what: 'Onboarding do programa de fidelidade', why: 'Capturar interesse inicial e criar hábito', where: 'E-mail e app', when: 'Imediato após 1ª compra', who: 'CRM', how: 'Boas-vindas personalizada + incentivo para 2ª compra', howMuch: 'Baixo — automação' },
+    { what: 'Oferta de segunda compra', why: 'Transformar comprador único em recorrente', where: 'E-mail e SMS', when: '7-15 dias após 1ª compra', who: 'Marketing', how: 'Desconto ou frete grátis na próxima compra', howMuch: 'Baixo a médio' },
+  ],
+  'Em risco': [
+    { what: 'Campanha urgente de win-back', why: 'Recuperar clientes antes que hibernem', where: 'E-mail, SMS, WhatsApp', when: 'Imediato — urgente', who: 'CRM e retenção', how: 'Oferta irrecusável + pesquisa de motivos', howMuch: 'Alto — justificado pelo LTV' },
+    { what: 'Pesquisa de satisfação/NPS', why: 'Identificar causas de afastamento', where: 'E-mail ou telefone', when: 'Próximos 7 dias', who: 'CX e atendimento', how: 'Pesquisa curta + contato humano se necessário', howMuch: 'Baixo custo' },
+  ],
+  'Precisa de atenção': [
+    { what: 'Campanha "Sentimos sua falta"', why: 'Reengajar antes que se tornem Em Risco', where: 'E-mail e push notification', when: 'Próximos 15 dias', who: 'Marketing', how: 'Comunicação emocional + oferta limitada', howMuch: 'Baixo a médio' },
+    { what: 'Oferta com urgência', why: 'Criar senso de urgência para ação', where: 'E-mail e SMS', when: 'Próximos 7 dias', who: 'CRM', how: 'Cupom com validade curta (48-72h)', howMuch: 'Médio — desconto controlado' },
+  ],
+  'Hibernando': [
+    { what: 'Campanha agressiva de reativação', why: 'Última tentativa antes de descarte', where: 'E-mail, SMS, mala direta', when: 'Próximos 30 dias', who: 'Marketing e comercial', how: 'Oferta de último recurso + análise de custo-benefício', howMuch: 'Avaliar ROI vs custo de aquisição' },
+    { what: 'Análise de descarte vs reativação', why: 'Otimizar investimento de marketing', where: 'Interno — análise de dados', when: 'Imediato', who: 'Inteligência de dados', how: 'Comparar custo de reativação vs aquisição de novo cliente', howMuch: 'Baixo — análise interna' },
+  ],
+  'Novos Clientes': [
+    { what: 'Onboarding excepcional', why: 'Primeira impressão define retenção futura', where: 'E-mail, app, loja', when: 'Imediato — primeiros 7 dias', who: 'CX e marketing', how: 'Sequência de boas-vindas, tutorial, benefício de 2ª compra', howMuch: 'Baixo — automação' },
+    { what: 'Apresentação do programa de fidelidade', why: 'Engajar desde o início', where: 'Pós-compra e e-mail', when: 'Após 1ª compra', who: 'CRM', how: 'Explicar benefícios e dar bônus de entrada', howMuch: 'Baixo custo' },
+  ],
+};
+
+export const clusterEisenhower: Record<string, EisenhowerMatrix> = {
+  'Campeão': {
+    urgentImportant: ['Manter contato personalizado e frequente', 'Resolver qualquer insatisfação imediatamente'],
+    notUrgentImportant: ['Criar programa de embaixadores', 'Pedir indicações e depoimentos'],
+    urgentNotImportant: ['Enviar novidades e lançamentos', 'Atualizar benefícios do programa'],
+    notUrgentNotImportant: ['Pesquisa anual de satisfação', 'Revisão de benefícios exclusivos'],
+  },
+  'Fidelizado': {
+    urgentImportant: ['Implementar cross-sell baseado em dados', 'Ativar programa de pontos acelerado'],
+    notUrgentImportant: ['Desenvolver trilha de upgrades', 'Criar conteúdo exclusivo para o segmento'],
+    urgentNotImportant: ['Atualizar comunicações segmentadas', 'Revisar ofertas ativas'],
+    notUrgentNotImportant: ['Benchmark com concorrentes', 'Análise de tendências de consumo'],
+  },
+  'Potencial para ser fidelizado': {
+    urgentImportant: ['Lançar campanha de engajamento progressivo', 'Configurar automações de nutrição'],
+    notUrgentImportant: ['Criar jornada de conteúdo educativo', 'Desenvolver benefícios por frequência'],
+    urgentNotImportant: ['Segmentar por sub-perfis de comportamento', 'Ajustar scoring de engajamento'],
+    notUrgentNotImportant: ['Testar novos canais de comunicação', 'Mapear preferências de produto'],
+  },
+  'Promissor': {
+    urgentImportant: ['Enviar incentivo para 2ª compra em 7 dias', 'Onboarding personalizado imediato'],
+    notUrgentImportant: ['Construir sequência de nutrição de 30 dias', 'Apresentar programa de fidelidade'],
+    urgentNotImportant: ['Coletar dados de preferência', 'Configurar triggers de recompra'],
+    notUrgentNotImportant: ['Análise de perfil demográfico', 'Teste A/B de comunicações'],
+  },
+  'Em risco': {
+    urgentImportant: ['Lançar campanha de win-back AGORA', 'Contato direto com top clientes do segmento'],
+    notUrgentImportant: ['Investigar causas raiz de churn', 'Desenvolver plano de retenção estruturado'],
+    urgentNotImportant: ['Enviar pesquisa de NPS rápida', 'Revisar experiência de compra recente'],
+    notUrgentNotImportant: ['Documentar aprendizados para prevenção', 'Atualizar playbook de retenção'],
+  },
+  'Precisa de atenção': {
+    urgentImportant: ['Enviar campanha "sentimos sua falta"', 'Cupom com validade de 48h'],
+    notUrgentImportant: ['Analisar histórico para entender padrão', 'Criar régua de comunicação preventiva'],
+    urgentNotImportant: ['Atualizar segmentação no CRM', 'Verificar entregabilidade de e-mails'],
+    notUrgentNotImportant: ['Revisar política de descontos', 'Benchmark de taxas de reengajamento'],
+  },
+  'Hibernando': {
+    urgentImportant: ['Decidir: reativar ou descartar?', 'Oferta de último recurso para top perfis'],
+    notUrgentImportant: ['Análise de ROI de reativação vs aquisição', 'Limpar base e reduzir custos'],
+    urgentNotImportant: ['Última tentativa de contato multicanal', 'Atualizar status no CRM'],
+    notUrgentNotImportant: ['Documentar motivos de hibernação', 'Usar insights para prevenção futura'],
+  },
+  'Novos Clientes': {
+    urgentImportant: ['Garantir experiência de 1ª compra impecável', 'Enviar e-mail de boas-vindas em 24h'],
+    notUrgentImportant: ['Construir jornada de onboarding de 30 dias', 'Apresentar programa de fidelidade'],
+    urgentNotImportant: ['Coletar feedback da 1ª experiência', 'Configurar trigger de 2ª compra'],
+    notUrgentNotImportant: ['Analisar canal de aquisição', 'Mapear perfil para futuras segmentações'],
+  },
+};
