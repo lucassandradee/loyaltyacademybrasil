@@ -1,63 +1,96 @@
 
 
-# Plataforma de Loyalty & Análise RFV — ESPM
+# Cadastro + Plano Estratégico Completo com PDF
 
-## Visão Geral
-Aplicação web educacional com dois módulos: Diagnóstico Estratégico de Loyalty e Análise de Dados RFV com parametrização dinâmica. Interface corporativa usando a identidade visual ESPM (vermelho escuro #A80030, branco, cinza escuro).
+## Resumo
 
-## Identidade Visual
-- Logo ESPM no header de todas as páginas
-- Cores primárias: vermelho ESPM (#A80030), branco, cinza escuro
-- Tipografia clean e corporativa
-- Layout estilo dashboard SaaS enterprise
+Três mudanças principais:
+1. Tela de cadastro entre o questionário e o resultado
+2. Plano estratégico muito mais completo (2-3 páginas na tela, com seções detalhadas)
+3. Botão para baixar PDF com logo da plataforma em todas as páginas
 
-## Módulo 1 — Diagnóstico de Loyalty
+## 1. Backend (Lovable Cloud / Supabase)
 
-### Tela Inicial (Welcome)
-- Header com logo ESPM
-- Título "Diagnóstico de Loyalty: Descubra o potencial da sua base de clientes"
-- Botão "Iniciar Diagnóstico"
-- Visual limpo e impactante
+### Tabelas necessárias
 
-### Questionário (6 perguntas, estilo Typeform)
-- Card centralizado com barra de progresso
-- Uma pergunta por tela, transição suave
-- 6 perguntas conforme especificado (modelo de negócio, frequência, maturidade de dados, dados disponíveis, desafio principal, interesse em tiers)
-- Navegação avançar/voltar
+**profiles** — criada automaticamente no signup via trigger:
+- `id` (uuid, FK auth.users)
+- `nome` (text)
+- `empresa` (text)
+- `cargo` (text)
+- `created_at`
 
-### Tela de Resultado
-- Loading state simulado (~2-3 segundos)
-- Relatório visual com 4 seções: Diagnóstico de Maturidade, Estrutura Recomendada, Foco Estratégico, Checklist de Próximos Passos
-- Lógica condicional baseada nas respostas para gerar recomendações personalizadas
-- Botão "Ir para Análise de Dados RFV (Módulo 2)"
+**diagnostic_responses** — salva as respostas do questionário:
+- `id` (uuid)
+- `user_id` (uuid, FK auth.users, NOT NULL)
+- `answers` (jsonb) — armazena o objeto DiagnosticAnswers completo
+- `created_at`
 
-## Módulo 2 — Upload, Parametrização e Dashboard RFV
+RLS: usuários só acessam seus próprios registros.
 
-### Tela de Upload
-- Drag-and-drop para .csv/.xlsx
-- Instruções sobre colunas obrigatórias (Nome, ID, Recência, Frequência, Valor)
-- Botão "Usar Dados de Demonstração" com dataset mockado (~50 clientes)
-- Parsing client-side com Papa Parse (CSV) e SheetJS (XLSX)
+### Auth
+- Email + senha (signup simples com nome, empresa, cargo)
 
-### Tela de Parametrização
-- 3 blocos (Recência, Frequência, Valor) com inputs editáveis para definir cortes dos scores 1/2/3
-- Valores default conforme especificado
-- Botão "Gerar Análise Completa"
-- Possibilidade de voltar e reajustar parâmetros
+## 2. Fluxo Atualizado
 
-### Dashboard RFV (Tela Principal)
-- **KPIs globais**: Total de clientes, Ticket Médio, Frequência Média
-- **Gráfico de distribuição**: Barras/pizza com % por cluster (Recharts)
-- **8 Cards de Cluster**: Nome, scores correspondentes, quantidade/% de clientes, plano de ação sugerido
-- **Análise textual dinâmica**: Leitura automática da composição da base com recomendações
-- **Tabela de dados**: Todos os clientes com R/F/V scores + cluster, paginação e busca
-- Atualização em tempo real ao alterar parâmetros
+```text
+Questionário (6 perguntas)
+        ↓
+  Tela de Cadastro (nome, email, empresa, cargo, senha)
+  - Se já logado, pula direto
+  - Ao criar conta, salva answers no banco
+        ↓
+  Plano Estratégico (Resultado)
+  - Carrega answers do banco (ou do state)
+  - Botão "Baixar PDF"
+```
 
-## Lógica de Cálculo
-- Concatenação dos scores R+F+V → mapeamento para 8 clusters conforme regras especificadas
-- Recálculo instantâneo ao mudar parâmetros
+### Nova rota: `/cadastro`
+- Recebe answers via location.state
+- Formulário: nome, empresa, cargo, email, senha
+- Ao submeter: cria conta → salva answers no `diagnostic_responses` → navega para `/resultado`
+- Link "Já tenho conta" para login simples
 
-## Navegação
-- Header fixo com logo ESPM e navegação entre módulos
-- Fluxo linear com possibilidade de ir e voltar entre telas
+## 3. Plano Estratégico Expandido
+
+O `generateDiagnostic` será ampliado para retornar um relatório muito mais completo, com as seguintes seções:
+
+1. **Sumário Executivo** — parágrafo personalizado resumindo o cenário do negócio
+2. **Diagnóstico de Maturidade** — nível, score, descrição detalhada, pontos fortes e gaps identificados
+3. **Modelo de Programa Recomendado** — tipo, descrição, mecânica de funcionamento, exemplos de mercado
+4. **Estrutura de Tiers/Níveis** — se aplicável, descrição de cada tier com benefícios sugeridos
+5. **Foco Estratégico e Plano de Ação** — objetivo, descrição, 6-8 ações detalhadas com prioridade
+6. **KPIs e Métricas de Sucesso** — métricas recomendadas com metas sugeridas
+7. **Cronograma de Implementação** — fases (curto/médio/longo prazo) com marcos
+8. **Checklist de Próximos Passos** — lista expandida e categorizada
+
+Toda a lógica condicional será baseada nas respostas (modelo de negócio, frequência, maturidade de dados, desafio, tiers).
+
+### Tela de Resultado Redesenhada
+- Layout de relatório profissional com seções colapsáveis
+- Cada seção em card próprio com ícone
+- Botão fixo "Baixar PDF" no topo
+
+## 4. Geração de PDF (client-side)
+
+Usar **jsPDF** + **jspdf-autotable** para gerar o PDF no browser:
+- Header em todas as páginas: logo ESPM + nome da plataforma
+- Footer: número da página
+- Conteúdo formatado com as 8 seções do plano
+- Cores corporativas ESPM (#A80030)
+- ~2-3 páginas de conteúdo
+
+## Arquivos Modificados/Criados
+
+| Arquivo | Ação |
+|---------|------|
+| Migration SQL | Criar tabelas `profiles`, `diagnostic_responses` + trigger + RLS |
+| `src/pages/Cadastro.tsx` | Nova tela de registro |
+| `src/pages/Login.tsx` | Tela de login simples |
+| `src/pages/Diagnostico.tsx` | Navegar para `/cadastro` ao finalizar |
+| `src/lib/diagnostic-logic.ts` | Expandir `DiagnosticResult` e `generateDiagnostic` significativamente |
+| `src/pages/Resultado.tsx` | Redesenhar com seções expandidas + botão PDF |
+| `src/lib/generate-pdf.ts` | Lógica de geração do PDF com jsPDF |
+| `src/App.tsx` | Adicionar rotas `/cadastro` e `/login` |
+| `src/lib/supabase.ts` | Cliente Supabase |
 
