@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2 } from 'lucide-react';
-import { ClientData, RFVParams, ScoredClient, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
+import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2, X } from 'lucide-react';
+import { ClientData, RFVParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
+import ActionPlanTabs from '@/components/rfv/ActionPlanTabs';
 
 const RFVDashboard = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const RFVDashboard = () => {
   const state = location.state as { clientData: ClientData[]; params: RFVParams } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const perPage = 10;
 
   const scored = useMemo(() => {
@@ -60,14 +62,38 @@ const RFVDashboard = () => {
     return text;
   }, [clusterCounts, totalClients]);
 
+  const toggleCluster = (name: string) => {
+    setSelectedCluster(prev => prev === name ? null : name);
+    setPage(0);
+  };
+
   const filtered = useMemo(() => {
-    if (!search) return scored;
-    const q = search.toLowerCase();
-    return scored.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q) || c.cluster.toLowerCase().includes(q));
-  }, [scored, search]);
+    let list = scored;
+    if (selectedCluster) {
+      list = list.filter(c => c.cluster === selectedCluster);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q) || c.cluster.toLowerCase().includes(q));
+    }
+    return list;
+  }, [scored, search, selectedCluster]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
+
+  const handleBarClick = (data: any) => {
+    if (data?.activePayload?.[0]?.payload?.name) {
+      toggleCluster(data.activePayload[0].payload.name);
+    }
+  };
+
+  const handlePieClick = (_: any, index: number) => {
+    const visibleClusters = clusterCounts.filter(c => c.count > 0);
+    if (visibleClusters[index]) {
+      toggleCluster(visibleClusters[index].name);
+    }
+  };
 
   if (!state) {
     navigate('/rfv');
@@ -86,6 +112,20 @@ const RFVDashboard = () => {
           <Settings2 className="mr-2 h-4 w-4" /> Ajustar Parâmetros
         </Button>
       </div>
+
+      {/* Active filter badge */}
+      {selectedCluster && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Filtro ativo:</span>
+          <Badge
+            className="cursor-pointer gap-1 text-sm"
+            style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }}
+            onClick={() => setSelectedCluster(null)}
+          >
+            {selectedCluster} <X className="h-3 w-3" />
+          </Badge>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -113,16 +153,23 @@ const RFVDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
+            <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }}>
+              <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }} onClick={handleBarClick} className="cursor-pointer">
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                   {clusterCounts.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
+                    <Cell
+                      key={i}
+                      fill={entry.color}
+                      opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
+                      stroke={selectedCluster === entry.name ? entry.color : 'none'}
+                      strokeWidth={selectedCluster === entry.name ? 3 : 0}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -133,6 +180,7 @@ const RFVDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Composição da Base (%)</CardTitle>
+            <p className="text-xs text-muted-foreground">Clique em uma fatia para filtrar</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -146,9 +194,17 @@ const RFVDashboard = () => {
                   outerRadius={100}
                   label={({ name, pct }) => `${name}: ${pct}%`}
                   labelLine
+                  onClick={handlePieClick}
+                  className="cursor-pointer"
                 >
                   {clusterCounts.filter(c => c.count > 0).map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
+                    <Cell
+                      key={i}
+                      fill={entry.color}
+                      opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
+                      stroke={selectedCluster === entry.name ? '#fff' : 'none'}
+                      strokeWidth={selectedCluster === entry.name ? 3 : 0}
+                    />
                   ))}
                 </Pie>
                 <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
@@ -160,9 +216,15 @@ const RFVDashboard = () => {
 
       {/* Cluster Cards */}
       <h2 className="mb-4 text-xl font-bold text-foreground">Segmentos de Clientes</h2>
+      <p className="mb-4 text-xs text-muted-foreground">Clique em um segmento para filtrar e ver o plano de ação</p>
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {clusterCounts.map((cluster) => (
-          <Card key={cluster.name} className="overflow-hidden">
+          <Card
+            key={cluster.name}
+            className={`cursor-pointer overflow-hidden transition-all hover:shadow-md ${selectedCluster === cluster.name ? 'ring-2 ring-offset-2' : ''} ${selectedCluster && selectedCluster !== cluster.name ? 'opacity-50' : ''}`}
+            style={selectedCluster === cluster.name ? { ringColor: cluster.color } as any : undefined}
+            onClick={() => toggleCluster(cluster.name)}
+          >
             <div className="h-1.5" style={{ backgroundColor: cluster.color }} />
             <CardContent className="p-4">
               <div className="mb-2 flex items-center justify-between">
@@ -186,11 +248,17 @@ const RFVDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Action Plan */}
+      {selectedCluster && <ActionPlanTabs selectedCluster={selectedCluster} />}
+
       {/* Data Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <CardTitle className="text-base">Dados dos Clientes</CardTitle>
+            <CardTitle className="text-base">
+              Dados dos Clientes
+              {selectedCluster && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}
+            </CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
