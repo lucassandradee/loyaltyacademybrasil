@@ -10,6 +10,7 @@ import Diagnostico from "./pages/Diagnostico";
 import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
 import Resultado from "./pages/Resultado";
+import Perfil from "./pages/Perfil";
 import RFVUpload from "./pages/RFVUpload";
 import RFVParametros from "./pages/RFVParametros";
 import RFVDashboard from "./pages/RFVDashboard";
@@ -34,6 +35,7 @@ const App = () => (
           {/* Authenticated routes with sidebar */}
           <Route element={<AuthenticatedLayout />}>
             <Route path="/resultado" element={<Resultado />} />
+            <Route path="/perfil" element={<Perfil />} />
             <Route path="/rfv" element={<RFVUpload />} />
             <Route path="/rfv/parametros" element={<RFVParametros />} />
             <Route path="/rfv/dashboard" element={<RFVDashboard />} />
