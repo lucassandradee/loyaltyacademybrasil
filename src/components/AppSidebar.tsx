@@ -21,9 +21,9 @@ const module1Items = [
 ];
 
 const module2Items = [
-  { title: 'Upload RFV', url: '/rfv', icon: Upload },
-  { title: 'Parametrização', url: '/rfv/parametros', icon: SlidersHorizontal },
-  { title: 'Dashboard', url: '/rfv/dashboard', icon: BarChart3 },
+  { title: 'Upload RFV', url: '/rfv', icon: Upload, alwaysEnabled: true },
+  { title: 'Parametrização', url: '/rfv/parametros', icon: SlidersHorizontal, alwaysEnabled: false },
+  { title: 'Dashboard', url: '/rfv/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
 interface Profile {
