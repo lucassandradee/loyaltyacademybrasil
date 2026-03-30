@@ -69,6 +69,11 @@ const RFVDashboard = () => {
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
+  if (!state) {
+    navigate('/rfv');
+    return null;
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       {/* Header */}
