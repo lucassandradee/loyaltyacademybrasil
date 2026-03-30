@@ -64,20 +64,26 @@ export type Database = {
       }
       rfv_uploads: {
         Row: {
+          client_count: number
           client_data: Json
           created_at: string
+          file_name: string
           id: string
           user_id: string
         }
         Insert: {
+          client_count?: number
           client_data: Json
           created_at?: string
+          file_name?: string
           id?: string
           user_id: string
         }
         Update: {
+          client_count?: number
           client_data?: Json
           created_at?: string
+          file_name?: string
           id?: string
           user_id?: string
         }
