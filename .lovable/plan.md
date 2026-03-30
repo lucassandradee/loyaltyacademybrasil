@@ -1,55 +1,33 @@
 
 
-# Botão de Login no Header + Sidebar de Navegação Pós-Login
+# Redirecionar Usuário Logado com Diagnóstico Existente
 
-## Resumo
-
-1. Adicionar botão "Entrar" no header (visível quando não logado)
-2. Após login, substituir layout com sidebar lateral contendo navegação entre módulos
-3. Na área logada, mostrar dados cadastrais do usuário na sidebar
-4. Sidebar com links: Plano de Loyalty (Resultado), Módulo 2 (Upload RFV / Parametrização / Dashboard)
+## Problema
+Usuário já preencheu o questionário e criou conta, mas ao acessar `/diagnostico` novamente, precisa refazer tudo. O sistema deveria detectar que já existe um diagnóstico salvo e redirecionar.
 
 ## Alterações
 
-### 1. Header (`src/components/Header.tsx`)
-- Verificar sessão do usuário com `supabase.auth.onAuthStateChange`
-- Se **não logado**: mostrar botão "Entrar" que navega para `/login`
-- Se **logado**: mostrar nome do usuário + botão "Sair"
+### 1. Diagnostico.tsx
+- No `useEffect`, verificar se o usuário está logado (`supabase.auth.getUser()`)
+- Se logado, checar se já existe registro em `diagnostic_responses` para esse usuário
+- Se existir, redirecionar automaticamente para `/resultado` (que já carrega do banco)
+- Se não existir, permitir preencher normalmente
 
-### 2. Layout com Sidebar (`src/components/AppSidebar.tsx` — novo)
-- Usar componentes `Sidebar` do shadcn já existente
-- Seções:
-  - **Perfil**: nome, empresa, cargo do usuário (lido da tabela `profiles`)
-  - **Módulo 1**: link para "Plano Estratégico" (`/resultado`)
-  - **Módulo 2**: links para Upload, Parametrização, Dashboard RFV
-- Highlight da rota ativa
+### 2. Página Inicial (Index.tsx)
+- Se usuário logado acessa a landing page, mostrar botão "Ver meu Plano" em vez de "Começar Diagnóstico"
+- Ou redirecionar direto para `/resultado`
 
-### 3. Layout Logado (`src/components/AuthenticatedLayout.tsx` — novo)
-- Wrapper com `SidebarProvider` + `AppSidebar` + conteúdo principal
-- Usado nas rotas que requerem login (`/resultado`, `/rfv/*`)
+### 3. Header.tsx
+- Quando logado, o botão/link deve levar para `/resultado` em vez de mostrar "Sair" sozinho
 
-### 4. App.tsx
-- Rotas `/resultado` e `/rfv/*` envolvidas pelo `AuthenticatedLayout`
-- Rotas públicas (`/`, `/diagnostico`, `/cadastro`, `/login`) mantêm layout atual sem sidebar
-
-### 5. Login.tsx
-- Após login sem `answers`, redirecionar para `/resultado` (carregar último diagnóstico do banco)
-
-### 6. Resultado.tsx
-- Se não receber `answers` via state, buscar último diagnóstico do banco (`diagnostic_responses`) para o usuário logado
-- Remover redirecionamento para `/` quando não há answers no state
-
-## Fluxo
+## Fluxo Corrigido
 
 ```text
-Página Inicial (botão "Entrar" no header)
-    → Login / Cadastro
-    → Layout com Sidebar:
-        ├── Perfil (nome, empresa, cargo)
-        ├── Plano de Loyalty (/resultado)
-        └── Módulo 2
-            ├── Upload RFV
-            ├── Parametrização
-            └── Dashboard
+Usuário logado acessa /diagnostico
+  → Tem diagnóstico salvo? → Redireciona para /resultado
+  → Não tem? → Mostra questionário normalmente
+
+Usuário logado acessa / (landing)
+  → Mostra opção de ir para /resultado diretamente
 ```
 
