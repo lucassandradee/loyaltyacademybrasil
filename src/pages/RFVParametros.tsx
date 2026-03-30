@@ -12,11 +12,6 @@ const RFVParametros = () => {
   const clientData = (location.state as { clientData: ClientData[] })?.clientData;
   const [params, setParams] = useState<RFVParams>(defaultParams);
 
-  if (!clientData) {
-    navigate('/rfv');
-    return null;
-  }
-
   const update = (section: keyof RFVParams, field: string, value: number) => {
     setParams(prev => ({
       ...prev,
