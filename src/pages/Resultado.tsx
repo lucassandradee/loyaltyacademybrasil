@@ -19,12 +19,32 @@ const Resultado = () => {
   const answers = (location.state as { answers: DiagnosticAnswers })?.answers;
 
   useEffect(() => {
-    if (!answers) { navigate('/'); return; }
-    const timer = setTimeout(() => {
-      setResult(generateDiagnostic(answers));
-      setLoading(false);
-    }, 2500);
-    return () => clearTimeout(timer);
+    const load = async () => {
+      if (answers) {
+        const timer = setTimeout(() => {
+          setResult(generateDiagnostic(answers));
+          setLoading(false);
+        }, 2500);
+        return () => clearTimeout(timer);
+      }
+      // No answers in state — fetch from DB
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate('/login'); return; }
+      const { data } = await supabase
+        .from('diagnostic_responses')
+        .select('answers')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (data?.answers) {
+        setResult(generateDiagnostic(data.answers as unknown as DiagnosticAnswers));
+        setLoading(false);
+      } else {
+        navigate('/diagnostico');
+      }
+    };
+    load();
   }, [answers, navigate]);
 
   const toggleSection = (id: string) => {

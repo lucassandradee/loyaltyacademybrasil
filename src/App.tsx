@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
+import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import Index from "./pages/Index";
 import Diagnostico from "./pages/Diagnostico";
 import Cadastro from "./pages/Cadastro";
@@ -24,14 +25,20 @@ const App = () => (
       <BrowserRouter>
         <Header />
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/diagnostico" element={<Diagnostico />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/resultado" element={<Resultado />} />
-          <Route path="/rfv" element={<RFVUpload />} />
-          <Route path="/rfv/parametros" element={<RFVParametros />} />
-          <Route path="/rfv/dashboard" element={<RFVDashboard />} />
+
+          {/* Authenticated routes with sidebar */}
+          <Route element={<AuthenticatedLayout />}>
+            <Route path="/resultado" element={<Resultado />} />
+            <Route path="/rfv" element={<RFVUpload />} />
+            <Route path="/rfv/parametros" element={<RFVParametros />} />
+            <Route path="/rfv/dashboard" element={<RFVDashboard />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
