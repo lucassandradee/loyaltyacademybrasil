@@ -1,9 +1,18 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Target, BarChart3, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setLoggedIn(true);
+    });
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
@@ -27,9 +36,9 @@ const Index = () => {
         <Button
           size="lg"
           className="h-14 px-8 text-base font-semibold"
-          onClick={() => navigate('/diagnostico')}
+          onClick={() => navigate(loggedIn ? '/resultado' : '/diagnostico')}
         >
-          Iniciar Diagnóstico
+          {loggedIn ? 'Ver meu Plano' : 'Iniciar Diagnóstico'}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Question {
   id: keyof DiagnosticAnswers;
@@ -57,6 +58,28 @@ const Diagnostico = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<DiagnosticAnswers>>({});
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const checkExisting = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('diagnostic_responses')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (data && data.length > 0) {
+          navigate('/resultado', { replace: true });
+          return;
+        }
+      }
+      setChecking(false);
+    };
+    checkExisting();
+  }, [navigate]);
+
+  if (checking) return null;
 
   const current = questions[step];
   const progress = ((step + 1) / questions.length) * 100;
