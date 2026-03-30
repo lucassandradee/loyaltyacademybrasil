@@ -101,7 +101,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Module 2 */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Módulo 2 — RFV</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
