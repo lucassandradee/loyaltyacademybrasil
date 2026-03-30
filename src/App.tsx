@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import Index from "./pages/Index";
 import Diagnostico from "./pages/Diagnostico";
+import Cadastro from "./pages/Cadastro";
+import Login from "./pages/Login";
 import Resultado from "./pages/Resultado";
 import RFVUpload from "./pages/RFVUpload";
 import RFVParametros from "./pages/RFVParametros";
@@ -24,6 +26,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/diagnostico" element={<Diagnostico />} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/resultado" element={<Resultado />} />
           <Route path="/rfv" element={<RFVUpload />} />
           <Route path="/rfv/parametros" element={<RFVParametros />} />

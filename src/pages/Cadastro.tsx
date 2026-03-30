@@ -42,7 +42,7 @@ const Cadastro = () => {
       if (authData.user) {
         const { error: saveError } = await supabase
           .from('diagnostic_responses')
-          .insert({ user_id: authData.user.id, answers: answers as unknown as Record<string, unknown> });
+          .insert([{ user_id: authData.user.id, answers: answers as unknown as Record<string, unknown> }]);
 
         if (saveError) console.error('Error saving answers:', saveError);
       }

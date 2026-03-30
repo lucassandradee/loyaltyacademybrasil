@@ -2,9 +2,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DiagnosticResult } from './diagnostic-logic';
 
-const ESPM_RED = [168, 0, 48] as const;
-const DARK_GRAY = [51, 51, 51] as const;
-const LIGHT_GRAY = [245, 245, 245] as const;
+const ESPM_RED: [number, number, number] = [168, 0, 48];
+const DARK_GRAY: [number, number, number] = [51, 51, 51];
+const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
 
 function addHeader(doc: jsPDF, pageNum: number, totalPages: number) {
   const w = doc.internal.pageSize.getWidth();
