@@ -36,9 +36,9 @@ const Index = () => {
         <Button
           size="lg"
           className="h-14 px-8 text-base font-semibold"
-          onClick={() => navigate('/diagnostico')}
+          onClick={() => navigate(loggedIn ? '/resultado' : '/diagnostico')}
         >
-          Iniciar Diagnóstico
+          {loggedIn ? 'Ver meu Plano' : 'Iniciar Diagnóstico'}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
 
