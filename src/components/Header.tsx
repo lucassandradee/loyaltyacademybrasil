@@ -1,10 +1,28 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { LogIn, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import espmLogo from '@/assets/espm-logo.jpg';
 
 const Header = () => {
-  const location = useLocation();
-  const isModule1 = location.pathname === '/' || location.pathname === '/diagnostico' || location.pathname === '/resultado';
-  const isModule2 = location.pathname.startsWith('/rfv');
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -16,7 +34,17 @@ const Header = () => {
             <span className="ml-2 text-xs text-muted-foreground">Plataforma Educacional</span>
           </div>
         </Link>
-        <div />
+        <div>
+          {user ? (
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="gap-2">
+              <LogIn className="h-4 w-4" /> Entrar
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -39,7 +39,7 @@ const Login = () => {
         }
         navigate('/resultado', { state: { answers } });
       } else {
-        navigate('/');
+        navigate('/resultado');
       }
     } catch (err: any) {
       toast({ title: 'Erro ao entrar', description: err.message, variant: 'destructive' });
