@@ -27,7 +27,6 @@ const module2Items = [
 ];
 
 const module3Items = [
-  { title: 'Upload Base de Dados', url: '/nbo', icon: Upload, alwaysEnabled: true },
   { title: 'Dashboard', url: '/nbo/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
