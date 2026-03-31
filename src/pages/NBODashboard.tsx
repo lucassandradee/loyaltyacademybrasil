@@ -103,7 +103,7 @@ const NBODashboard = () => {
       </div>
 
       {/* De-Para RFV → NBO */}
-      <Card className="mb-8 border-primary/20 bg-primary/5">
+      <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
         <CardContent className="p-5">
           <div className="mb-3 flex items-center gap-2">
             <Info className="h-5 w-5 text-primary" />
