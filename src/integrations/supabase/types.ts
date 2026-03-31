@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      cx_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          ticket_count: number
+          ticket_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          ticket_count?: number
+          ticket_data: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          ticket_count?: number
+          ticket_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       diagnostic_responses: {
         Row: {
           answers: Json
@@ -30,6 +57,33 @@ export type Database = {
         Update: {
           answers?: Json
           created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nbo_uploads: {
+        Row: {
+          client_count: number
+          client_data: Json
+          created_at: string
+          file_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          client_count?: number
+          client_data: Json
+          created_at?: string
+          file_name?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          client_count?: number
+          client_data?: Json
+          created_at?: string
+          file_name?: string
           id?: string
           user_id?: string
         }
