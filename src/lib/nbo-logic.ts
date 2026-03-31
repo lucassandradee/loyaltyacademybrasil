@@ -1,14 +1,9 @@
-export interface NBOClient {
-  nome: string;
-  id_cliente: string;
-  gasto_total: number;
-  categoria_preferida: string;
-  ultima_compra_dias: number;
-}
+import type { ClientData } from './rfv-logic';
 
-export interface ScoredNBOClient extends NBOClient {
+export interface ScoredNBOClient extends ClientData {
   faixa: string;
   oferta: string;
+  gasto_total: number;
 }
 
 export interface FaixaConfig {
@@ -33,10 +28,12 @@ export const faixaColors: Record<string, string> = {
   Diamante: 'hsl(260, 60%, 55%)',
 };
 
-export function classifyNBO(clients: NBOClient[], faixas: FaixaConfig[] = defaultFaixas): ScoredNBOClient[] {
+/** Classify RFV clients into spending tiers using `valor` as gasto_total */
+export function classifyNBO(clients: ClientData[], faixas: FaixaConfig[] = defaultFaixas): ScoredNBOClient[] {
   return clients.map(c => {
-    const faixa = faixas.find(f => c.gasto_total >= f.min && c.gasto_total <= f.max) || faixas[0];
-    return { ...c, faixa: faixa.nome, oferta: faixa.oferta };
+    const gasto = c.valor;
+    const faixa = faixas.find(f => gasto >= f.min && gasto <= f.max) || faixas[0];
+    return { ...c, gasto_total: gasto, faixa: faixa.nome, oferta: faixa.oferta };
   });
 }
 

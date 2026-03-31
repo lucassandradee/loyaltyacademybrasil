@@ -14,7 +14,6 @@ import Perfil from "./pages/Perfil";
 import RFVUpload from "./pages/RFVUpload";
 import RFVParametros from "./pages/RFVParametros";
 import RFVDashboard from "./pages/RFVDashboard";
-import NBOUpload from "./pages/NBOUpload";
 import NBODashboard from "./pages/NBODashboard";
 import CXUpload from "./pages/CXUpload";
 import CXDashboard from "./pages/CXDashboard";

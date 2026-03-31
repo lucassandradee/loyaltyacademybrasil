@@ -39,7 +39,7 @@ const PlanoFinal = () => {
 
       if (diagRes.data) setDiagnostic(diagRes.data as any);
       if (rfvRes.data?.client_data) setRfvData(rfvRes.data.client_data as unknown as ClientData[]);
-      if (nboRes.data?.client_data) setNboData(nboRes.data.client_data as unknown as NBOClient[]);
+      if (nboRes.data?.client_data) setNboData(nboRes.data.client_data as unknown as ClientData[]);
       if (cxRes.data?.ticket_data) setCxData(cxRes.data.ticket_data as unknown as CXTicket[]);
       setLoading(false);
     };

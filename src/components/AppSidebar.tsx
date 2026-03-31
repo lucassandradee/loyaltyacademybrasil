@@ -153,9 +153,9 @@ export function AppSidebar() {
 
         {/* Module 3 - NBO */}
         <SidebarGroup>
-          <SidebarGroupLabel>Passo 3 — Next Best Offer</SidebarGroupLabel>
+        <SidebarGroupLabel>Passo 3 — Next Best Offer</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderMenuItems(module3Items, nboUploaded)}</SidebarMenu>
+            <SidebarMenu>{renderMenuItems(module3Items, rfvUploaded)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,43 +9,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, Clock, ArrowLeft, Search, X, Download } from 'lucide-react';
-import { NBOClient, classifyNBO, defaultFaixas, allFaixaNames, faixaColors, faixaActions, faixa5W2H, faixaEisenhower } from '@/lib/nbo-logic';
+import { Users, DollarSign, Clock, Search, X, Download } from 'lucide-react';
+import { classifyNBO, allFaixaNames, faixaColors, faixaActions, faixa5W2H, faixaEisenhower } from '@/lib/nbo-logic';
 import { supabase } from '@/integrations/supabase/client';
+import type { ClientData } from '@/lib/rfv-logic';
 import * as XLSX from 'xlsx';
 
 const NBODashboard = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const locState = location.state as { clientData: NBOClient[] } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedFaixa, setSelectedFaixa] = useState<string | null>(null);
   const [filterFaixa, setFilterFaixa] = useState('Todos');
-  const [dbData, setDbData] = useState<NBOClient[] | null>(null);
-  const [loading, setLoading] = useState(!locState);
+  const [clientData, setClientData] = useState<ClientData[] | null>(null);
+  const [loading, setLoading] = useState(true);
   const perPage = 10;
 
   useEffect(() => {
-    if (locState) return;
     const fetch = async () => {
       const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) { navigate('/nbo'); return; }
-      const { data } = await supabase.from('nbo_uploads').select('client_data')
+      if (!session?.session?.user) { navigate('/rfv'); return; }
+      const { data } = await supabase.from('rfv_uploads').select('client_data')
         .eq('user_id', session.session.user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (data?.client_data) setDbData(data.client_data as unknown as NBOClient[]);
-      else navigate('/nbo');
+      if (data?.client_data) setClientData(data.client_data as unknown as ClientData[]);
+      else navigate('/rfv');
       setLoading(false);
     };
     fetch();
-  }, [locState, navigate]);
+  }, [navigate]);
 
-  const clientData = locState?.clientData || dbData;
   const scored = useMemo(() => clientData ? classifyNBO(clientData) : [], [clientData]);
 
   const totalClients = scored.length;
   const avgGasto = totalClients > 0 ? scored.reduce((s, c) => s + c.gasto_total, 0) / totalClients : 0;
-  const avgDias = totalClients > 0 ? scored.reduce((s, c) => s + c.ultima_compra_dias, 0) / totalClients : 0;
+  const avgRecencia = totalClients > 0 ? scored.reduce((s, c) => s + c.recencia, 0) / totalClients : 0;
 
   const faixaCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -100,11 +97,9 @@ const NBODashboard = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard Next Best Offer</h1>
-          <p className="text-muted-foreground">Segmentação por faixas de gasto e próxima melhor oferta</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard Next Best Offer</h1>
+        <p className="text-muted-foreground">Segmentação por faixas de gasto (baseada na mesma base do RFV)</p>
       </div>
 
       {selectedFaixa && (
@@ -120,8 +115,8 @@ const NBODashboard = () => {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
-          { icon: DollarSign, label: 'Gasto Médio', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-          { icon: Clock, label: 'Última Compra (média)', value: `${avgDias.toFixed(0)} dias` },
+          { icon: DollarSign, label: 'Valor Médio (Gasto)', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
         ].map((kpi, i) => (
           <Card key={i}>
             <CardContent className="flex items-center gap-4 p-6">
@@ -299,9 +294,9 @@ const NBODashboard = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead><TableHead>ID</TableHead>
-                <TableHead className="text-center">Gasto Total</TableHead>
-                <TableHead className="text-center">Categoria</TableHead>
-                <TableHead className="text-center">Últ. Compra</TableHead>
+                <TableHead className="text-center">Valor (Gasto)</TableHead>
+                <TableHead className="text-center">Frequência</TableHead>
+                <TableHead className="text-center">Recência</TableHead>
                 <TableHead>Faixa</TableHead><TableHead>Oferta</TableHead>
               </TableRow>
             </TableHeader>
@@ -311,8 +306,8 @@ const NBODashboard = () => {
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-muted-foreground">{c.id_cliente}</TableCell>
                   <TableCell className="text-center">R$ {c.gasto_total.toLocaleString('pt-BR')}</TableCell>
-                  <TableCell className="text-center">{c.categoria_preferida}</TableCell>
-                  <TableCell className="text-center">{c.ultima_compra_dias}d</TableCell>
+                  <TableCell className="text-center">{c.frequencia}</TableCell>
+                  <TableCell className="text-center">{c.recencia}d</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
                   <TableCell className="max-w-[200px] text-xs text-muted-foreground">{c.oferta}</TableCell>
                 </TableRow>
@@ -328,10 +323,6 @@ const NBODashboard = () => {
           )}
         </CardContent>
       </Card>
-
-      <div className="mt-6">
-        <Button variant="ghost" onClick={() => navigate('/nbo')}><ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Upload</Button>
-      </div>
     </div>
   );
 };
@@ -340,14 +331,14 @@ function EisenhowerQuadrant({ title, subtitle, items, borderClass, bgClass, titl
   title: string; subtitle: string; items: string[]; borderClass: string; bgClass: string; titleClass: string;
 }) {
   return (
-    <div className={`rounded-lg border-2 ${borderClass} ${bgClass} p-4`}>
-      <h4 className={`mb-3 text-sm font-bold ${titleClass}`}>{title}</h4>
-      <p className="mb-2 text-xs text-muted-foreground">{subtitle}</p>
+    <div className={`rounded-lg border ${borderClass} ${bgClass} p-4`}>
+      <p className={`mb-1 text-sm font-bold ${titleClass}`}>{title}</p>
+      <p className="mb-3 text-xs text-muted-foreground">{subtitle}</p>
       <ul className="space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-            <Checkbox id={`nbo-${title}-${i}`} className="mt-0.5" />
-            <label htmlFor={`nbo-${title}-${i}`} className="cursor-pointer leading-tight">{item}</label>
+          <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+            <Checkbox className="mt-0.5 h-3.5 w-3.5" />
+            <span>{item}</span>
           </li>
         ))}
       </ul>
