@@ -33,7 +33,7 @@ const PlanoFinal = () => {
       const [diagRes, rfvRes, nboRes, cxRes] = await Promise.all([
         supabase.from('diagnostic_responses').select('answers').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('rfv_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('nbo_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('rfv_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('cx_uploads').select('ticket_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
 
