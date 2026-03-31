@@ -102,6 +102,39 @@ const NBODashboard = () => {
         <p className="text-muted-foreground">Segmentação por faixas de gasto (baseada na mesma base do RFV)</p>
       </div>
 
+      {/* De-Para RFV → NBO */}
+      <Card className="mb-8 border-primary/20 bg-primary/5">
+        <CardContent className="p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-bold text-foreground">Como funciona: RFV → Next Best Offer</h3>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            O NBO reutiliza a base de clientes já enviada no <strong>Passo 2 (RFV)</strong>. O campo <strong>Valor</strong> (gasto acumulado) é usado para classificar cada cliente em uma faixa de gasto, gerando ofertas de upgrade personalizadas.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { faixa: 'Bronze', range: 'Valor até R$ 500', arrow: 'Cupom 15% p/ subir a Prata' },
+              { faixa: 'Prata', range: 'R$ 501 a R$ 2.000', arrow: 'Frete grátis + 10% p/ subir a Ouro' },
+              { faixa: 'Ouro', range: 'R$ 2.001 a R$ 5.000', arrow: 'Cashback 5% p/ subir a Diamante' },
+              { faixa: 'Diamante', range: 'Acima de R$ 5.000', arrow: 'Programa de embaixadores' },
+            ].map((item) => (
+              <div key={item.faixa} className="rounded-lg border bg-background p-3">
+                <div className="mb-1 flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: faixaColors[item.faixa] }} />
+                  <span className="text-sm font-bold text-foreground">{item.faixa}</span>
+                </div>
+                <p className="mb-1 text-xs text-muted-foreground">{item.range}</p>
+                <div className="flex items-center gap-1 text-xs text-primary">
+                  <ArrowRight className="h-3 w-3" />
+                  <span>{item.arrow}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {selectedFaixa && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Filtro ativo:</span>
