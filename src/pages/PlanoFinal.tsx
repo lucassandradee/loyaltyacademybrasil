@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, AlertTriangle, Users, DollarSign, Star, Clock, TrendingUp, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { scoreClients, defaultParams, allClusterNames, clusterColors } from '@/lib/rfv-logic';
-import { classifyNBO, allFaixaNames, faixaColors } from '@/lib/nbo-logic';
+import { classifyNBO, allFaixaNames, faixaColors, type ScoredNBOClient } from '@/lib/nbo-logic';
 import { calculateCXKPIs, analyzeCausasRaiz } from '@/lib/cx-logic';
 import * as XLSX from 'xlsx';
 
 import type { ClientData } from '@/lib/rfv-logic';
-import type { NBOClient } from '@/lib/nbo-logic';
+
 import type { CXTicket } from '@/lib/cx-logic';
 
 interface DiagnosticData {
@@ -21,7 +21,7 @@ const PlanoFinal = () => {
   const [loading, setLoading] = useState(true);
   const [diagnostic, setDiagnostic] = useState<DiagnosticData | null>(null);
   const [rfvData, setRfvData] = useState<ClientData[] | null>(null);
-  const [nboData, setNboData] = useState<NBOClient[] | null>(null);
+  const [nboData, setNboData] = useState<ClientData[] | null>(null);
   const [cxData, setCxData] = useState<CXTicket[] | null>(null);
 
   useEffect(() => {
@@ -33,13 +33,13 @@ const PlanoFinal = () => {
       const [diagRes, rfvRes, nboRes, cxRes] = await Promise.all([
         supabase.from('diagnostic_responses').select('answers').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('rfv_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('nbo_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('rfv_uploads').select('client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('cx_uploads').select('ticket_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
 
       if (diagRes.data) setDiagnostic(diagRes.data as any);
       if (rfvRes.data?.client_data) setRfvData(rfvRes.data.client_data as unknown as ClientData[]);
-      if (nboRes.data?.client_data) setNboData(nboRes.data.client_data as unknown as NBOClient[]);
+      if (nboRes.data?.client_data) setNboData(nboRes.data.client_data as unknown as ClientData[]);
       if (cxRes.data?.ticket_data) setCxData(cxRes.data.ticket_data as unknown as CXTicket[]);
       setLoading(false);
     };
