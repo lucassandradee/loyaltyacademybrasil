@@ -21,7 +21,7 @@ const PlanoFinal = () => {
   const [loading, setLoading] = useState(true);
   const [diagnostic, setDiagnostic] = useState<DiagnosticData | null>(null);
   const [rfvData, setRfvData] = useState<ClientData[] | null>(null);
-  const [nboData, setNboData] = useState<NBOClient[] | null>(null);
+  const [nboData, setNboData] = useState<ClientData[] | null>(null);
   const [cxData, setCxData] = useState<CXTicket[] | null>(null);
 
   useEffect(() => {
