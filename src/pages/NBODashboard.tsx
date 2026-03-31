@@ -106,7 +106,7 @@ const NBODashboard = () => {
       <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
         <CardContent className="p-5">
           <div className="mb-3 flex items-center gap-2">
-            <Info className="h-5 w-5 text-primary" />
+            <Info className="h-5 w-5 text-blue-500" />
             <h3 className="text-sm font-bold text-foreground">Como funciona: RFV → Next Best Offer</h3>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
