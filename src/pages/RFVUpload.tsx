@@ -179,7 +179,7 @@ const RFVUpload = () => {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-8 text-center">
         <Upload className="mx-auto mb-4 h-12 w-12 text-primary" />
-        <h1 className="text-3xl font-bold text-foreground">Upload de Dados</h1>
+        <h1 className="text-3xl font-bold text-foreground">Upload Base de Dados</h1>
         <p className="mt-2 text-muted-foreground">Carregue sua base de clientes para a análise RFV</p>
       </div>
 
