@@ -125,7 +125,7 @@ const NBODashboard = () => {
                   <span className="text-sm font-bold text-foreground">{item.faixa}</span>
                 </div>
                 <p className="mb-1 text-xs text-muted-foreground">{item.range}</p>
-                <div className="flex items-center gap-1 text-xs text-primary">
+                <div className="flex items-center gap-1 text-xs text-blue-500">
                   <ArrowRight className="h-3 w-3" />
                   <span>{item.arrow}</span>
                 </div>
