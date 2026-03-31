@@ -10,7 +10,7 @@ import { calculateCXKPIs, analyzeCausasRaiz } from '@/lib/cx-logic';
 import * as XLSX from 'xlsx';
 
 import type { ClientData } from '@/lib/rfv-logic';
-import type { NBOClient } from '@/lib/nbo-logic';
+
 import type { CXTicket } from '@/lib/cx-logic';
 
 interface DiagnosticData {
