@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, AlertTriangle, Users, DollarSign, Star, Clock, TrendingUp, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { scoreClients, defaultParams, allClusterNames, clusterColors } from '@/lib/rfv-logic';
-import { classifyNBO, allFaixaNames, faixaColors } from '@/lib/nbo-logic';
+import { classifyNBO, allFaixaNames, faixaColors, type ScoredNBOClient } from '@/lib/nbo-logic';
 import { calculateCXKPIs, analyzeCausasRaiz } from '@/lib/cx-logic';
 import * as XLSX from 'xlsx';
 
