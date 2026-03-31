@@ -14,6 +14,11 @@ import Perfil from "./pages/Perfil";
 import RFVUpload from "./pages/RFVUpload";
 import RFVParametros from "./pages/RFVParametros";
 import RFVDashboard from "./pages/RFVDashboard";
+import NBOUpload from "./pages/NBOUpload";
+import NBODashboard from "./pages/NBODashboard";
+import CXUpload from "./pages/CXUpload";
+import CXDashboard from "./pages/CXDashboard";
+import PlanoFinal from "./pages/PlanoFinal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +44,11 @@ const App = () => (
             <Route path="/rfv" element={<RFVUpload />} />
             <Route path="/rfv/parametros" element={<RFVParametros />} />
             <Route path="/rfv/dashboard" element={<RFVDashboard />} />
+            <Route path="/nbo" element={<NBOUpload />} />
+            <Route path="/nbo/dashboard" element={<NBODashboard />} />
+            <Route path="/cx" element={<CXUpload />} />
+            <Route path="/cx/dashboard" element={<CXDashboard />} />
+            <Route path="/plano-final" element={<PlanoFinal />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
