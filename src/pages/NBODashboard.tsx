@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, Clock, Search, X, Download } from 'lucide-react';
+import { Users, DollarSign, Clock, Search, X, Download, Info, ArrowRight } from 'lucide-react';
 import { classifyNBO, allFaixaNames, faixaColors, faixaActions, faixa5W2H, faixaEisenhower } from '@/lib/nbo-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
