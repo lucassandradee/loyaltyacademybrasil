@@ -110,7 +110,7 @@ export function AppSidebar() {
 
         {/* Module 2 */}
         <SidebarGroup>
-          <SidebarGroupLabel>Módulo 2 — RFV</SidebarGroupLabel>
+          <SidebarGroupLabel>Passo 2 — RFV</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {module2Items.map((item) => {
