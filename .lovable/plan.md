@@ -1,46 +1,130 @@
 
 
-# Persistir Dados RFV + Gerador de Dados Aleatórios
+# Passo 3 (Next Best Offer) + Passo 4 (Customer Experience) + Plano Final
 
-## Problema Atual
-Os dados do upload RFV são passados apenas via `location.state` (memória do React Router). Se o usuário recarrega a página ou volta depois, perde tudo. Nada é salvo no banco.
+## Conceito do Passo 3 — Next Best Offer (NBO)
 
-## Solução em 2 partes
+A ideia é: dado o histórico de compras/gastos dos clientes, propor **quebras de faixas de gasto** para criar promoções segmentadas. O usuário faz upload de uma base com clientes e seus gastos, e o sistema:
+- Segmenta em faixas de gasto (ex: até R$500, R$501-2000, R$2001-5000, acima de R$5000)
+- Propõe a "próxima melhor oferta" para cada faixa (upsell para a faixa acima)
+- Gera um plano de ação com promoções recomendadas por faixa
 
-### 1. Persistir dados RFV no banco
+## Conceito do Passo 4 — Customer Experience (CX)
 
-**Nova tabela `rfv_uploads`**:
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `client_data` (jsonb) -- array completo de ClientData
-- `created_at` (timestamptz, default now())
-- RLS: usuário vê/insere/atualiza apenas os próprios registros
-- Constraint de unicidade em `user_id` (1 upload ativo por usuário, usa UPSERT)
+Upload de base de chamados contendo: TMA, NPS, motivo/causa raiz. O dashboard mostra:
+- KPIs: TMA médio/mín/máx, NPS médio/mín/máx
+- Ranking de causas raiz por volume
+- Impacto estimado no NPS se resolver cada causa (baseado na proporção)
+- Plano de ação CX
 
-**Fluxo ajustado**:
-- `RFVUpload.tsx`: após processar o arquivo, salvar o array no banco via `supabase.from('rfv_uploads').upsert()`
-- `RFVParametros.tsx`: se `location.state` estiver vazio, buscar do banco
-- `RFVDashboard.tsx`: idem -- fallback para o banco se não tiver state
-- Isso garante que recarregar a página não perde os dados
+## Conceito do Passo 5 — Plano Final Consolidado
 
-### 2. Gerador de dados aleatórios com download
+Página que puxa os resultados dos passos 1-4 e gera uma conclusão global com próximos passos.
 
-Substituir o botão "Usar Dados de Demonstração" por uma seção interativa:
+---
 
-- **Slider ou input numérico** para escolher quantidade de clientes (50 a 200)
-- **Botão "Gerar Dados Aleatórios"**: cria N clientes com nomes, IDs e valores RFV randomizados dentro de faixas realistas
-- **Botão "Baixar Excel"**: gera um `.xlsx` com os dados gerados usando a lib `xlsx` (já instalada) e faz download no navegador
-- **Botão "Usar para Análise"**: carrega os dados gerados diretamente no fluxo RFV (salva no banco e navega para parametrização)
+## Estrutura de arquivos
 
-A função geradora ficará em `rfv-logic.ts` e criará dados com distribuição variada (nomes brasileiros aleatórios, recência 1-365, frequência 1-20, valor 200-15000).
-
-## Arquivos alterados
-
-| Arquivo | Mudança |
+| Arquivo | Descrição |
 |---|---|
-| Migration SQL | Criar tabela `rfv_uploads` com RLS |
-| `src/lib/rfv-logic.ts` | Função `generateRandomClients(count)` + lista de nomes |
-| `src/pages/RFVUpload.tsx` | Salvar no banco após upload; seção de geração aleatória com slider, download e uso direto |
-| `src/pages/RFVParametros.tsx` | Fallback: buscar dados do banco se state vazio |
-| `src/pages/RFVDashboard.tsx` | Fallback: buscar dados do banco se state vazio |
+| `src/lib/nbo-logic.ts` | Interfaces, segmentação por faixas de gasto, propostas de oferta por faixa |
+| `src/lib/nbo-random.ts` | Gerador de dados aleatórios NBO |
+| `src/pages/NBOUpload.tsx` | Upload de base + geração aleatória + histórico (mesmo padrão do RFV) |
+| `src/pages/NBODashboard.tsx` | Dashboard com faixas de gasto, gráficos, tabela de clientes, plano de ação |
+| `src/lib/cx-logic.ts` | Interfaces (chamado com TMA, NPS, causa raiz), cálculos de impacto |
+| `src/lib/cx-random.ts` | Gerador de dados aleatórios de chamados |
+| `src/pages/CXUpload.tsx` | Upload de base de chamados + geração aleatória + histórico |
+| `src/pages/CXDashboard.tsx` | Dashboard CX com KPIs, ranking causas raiz, impacto NPS, plano de ação |
+| `src/pages/PlanoFinal.tsx` | Consolidação: resume resultados dos 4 passos, próximos passos |
+| `src/components/AppSidebar.tsx` | Adicionar Passo 3, 4 e Plano Final na sidebar |
+| `src/App.tsx` | Novas rotas |
+| Migration SQL | Tabelas `nbo_uploads` e `cx_uploads` com RLS |
+
+---
+
+## Detalhes por componente
+
+### Passo 3 — NBO
+
+**Base esperada**: colunas `nome`, `id_cliente`, `gasto_total`, `categoria_preferida` (opcional), `ultima_compra_dias`
+
+**Faixas de gasto** (configuráveis): Bronze (até R$500), Prata (R$501-2000), Ouro (R$2001-5000), Diamante (acima R$5000)
+
+**Próxima melhor oferta por faixa**:
+- Bronze → "Cupom de 15% para compras acima de R$500" (puxar para Prata)
+- Prata → "Frete grátis + 10% em compras acima de R$2000" (puxar para Ouro)
+- Ouro → "Acesso VIP + cashback 5% acima de R$5000" (puxar para Diamante)
+- Diamante → "Experiência exclusiva, programa de embaixadores"
+
+**Dashboard**: gráfico de barras por faixa, tabela de clientes filtrável, plano de ação 5W2H + Eisenhower
+
+### Passo 4 — CX
+
+**Base esperada**: colunas `id_chamado`, `cliente`, `tma_minutos`, `nps_score`, `causa_raiz`, `data_chamado`
+
+**KPIs**: cards com TMA (médio, mín, máx) e NPS (médio, mín, máx)
+
+**Causas raiz**: ranking por volume, com cálculo de "se eliminar essa causa, NPS melhora X pontos" baseado na média do NPS dos chamados daquela causa vs média geral
+
+**Plano de ação**: 5W2H + Eisenhower por causa raiz (top 5)
+
+### Passo 5 — Plano Final
+
+- Card resumo do diagnóstico (Passo 1)
+- Card resumo da segmentação RFV (Passo 2): distribuição de clusters
+- Card resumo NBO (Passo 3): distribuição por faixa
+- Card resumo CX (Passo 4): NPS médio, top causas
+- Seção "Próximos Passos" com recomendações consolidadas
+- Botão para baixar tudo em PDF/Excel
+
+### Sidebar
+
+```text
+Plano Estratégico de Loyalty
+  └─ Plano Estratégico
+
+Passo 2 — RFV
+  ├─ Upload Base de Dados
+  ├─ Parametrização
+  └─ Dashboard
+
+Passo 3 — Next Best Offer
+  ├─ Upload Base de Dados
+  └─ Dashboard
+
+Passo 4 — Customer Experience
+  ├─ Upload Base de Dados
+  └─ Dashboard
+
+Plano Final
+  └─ Visão Consolidada
+```
+
+Cada passo tem bloqueio condicional (mesma lógica: só libera sub-itens após upload).
+
+### Banco de dados
+
+Duas novas tabelas com a mesma estrutura do `rfv_uploads`:
+
+```sql
+CREATE TABLE nbo_uploads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  client_data jsonb NOT NULL,
+  file_name text NOT NULL DEFAULT 'Upload',
+  client_count integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE cx_uploads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  ticket_data jsonb NOT NULL,
+  file_name text NOT NULL DEFAULT 'Upload',
+  ticket_count integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+```
+
+RLS idêntico ao rfv_uploads (SELECT/INSERT/UPDATE/DELETE para o próprio user_id).
 
