@@ -44,7 +44,6 @@ const App = () => (
             <Route path="/rfv" element={<RFVUpload />} />
             <Route path="/rfv/parametros" element={<RFVParametros />} />
             <Route path="/rfv/dashboard" element={<RFVDashboard />} />
-            <Route path="/nbo" element={<NBOUpload />} />
             <Route path="/nbo/dashboard" element={<NBODashboard />} />
             <Route path="/cx" element={<CXUpload />} />
             <Route path="/cx/dashboard" element={<CXDashboard />} />
