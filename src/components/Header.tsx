@@ -48,8 +48,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-3">
           <img src={espmLogo} alt="ESPM" className="h-10 w-auto object-contain" />
           <div className="hidden sm:block">
-            <span className="text-sm font-semibold text-foreground">Loyalty & RFV</span>
-            <span className="ml-2 text-xs text-muted-foreground">Plataforma Educacional</span>
+            <span className="text-sm font-semibold text-foreground">Certificação em Loyalty Management 4.0</span>
           </div>
         </Link>
         <div>
