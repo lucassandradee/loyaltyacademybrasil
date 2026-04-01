@@ -44,7 +44,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <img src={espmLogo} alt="ESPM" className="h-10 w-auto object-contain" />
           <div className="hidden sm:block">
