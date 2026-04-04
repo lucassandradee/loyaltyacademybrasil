@@ -4,6 +4,7 @@ import { scoreClientsPercentile, defaultPercentileParams, clusterMap } from './r
 export interface ScoredNBOClient extends ClientData {
   faixa: string;
   oferta: string;
+  oferta_curta: string;
   oferta_regra: string;
   gasto_total: number;
   nbo_score: number;
