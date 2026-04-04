@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 const RFVDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const locState = location.state as { clientData: ClientData[]; params: RFVParams } | null;
+  const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
