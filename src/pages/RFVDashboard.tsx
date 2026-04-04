@@ -193,7 +193,7 @@ const RFVDashboard = () => {
           </CardHeader>
           <CardContent>
             <Dialog>
-              <div className="flex gap-6 items-center">
+              <div className="flex gap-6 items-start">
                 <div className="flex-1 min-w-0">
                   <ResponsiveContainer width="100%" height={310}>
                     <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
@@ -216,7 +216,7 @@ const RFVDashboard = () => {
                 </div>
                 {/* Desktop: mini regras clicável */}
                 <DialogTrigger asChild>
-                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors justify-center">
+                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors mt-1">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Regras</p>
                       <span className="text-[8px] text-muted-foreground">clique para expandir</span>
