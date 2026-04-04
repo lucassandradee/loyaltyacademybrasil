@@ -262,9 +262,9 @@ const RFVDashboard = () => {
                 </ResponsiveContainer>
               </div>
               {/* Desktop: regras inline */}
-              <div className="hidden lg:block w-[220px] shrink-0 rounded-md border bg-muted/30 p-2">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Regras</p>
-                <div className="space-y-1">
+              <div className="hidden lg:block w-[180px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden">
+                <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Regras</p>
+                <div className="space-y-0.5">
                   {(() => {
                     const grouped: Record<string, string[]> = {};
                     Object.entries(clusterMap).forEach(([code, name]) => {
@@ -275,21 +275,27 @@ const RFVDashboard = () => {
                       s === '3' ? 'bg-emerald-500 text-white' :
                       s === '2' ? 'bg-orange-400 text-white' :
                       'bg-muted text-muted-foreground';
+                    const maxCodes = 3;
                     return allClusterNames.map(name => {
                       const codes = grouped[name];
                       if (!codes) return null;
+                      const visible = codes.slice(0, maxCodes);
+                      const remaining = codes.length - maxCodes;
                       return (
-                        <div key={name} className="flex items-center gap-1.5">
-                          <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
-                          <span className="text-[10px] font-medium text-foreground truncate flex-1">{name}</span>
-                          <div className="flex gap-0.5 shrink-0">
-                            {codes.map(code => (
+                        <div key={name} className="flex items-center gap-1" title={codes.map(c => c.split('').join('-')).join(', ')}>
+                          <div className="w-0.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
+                          <span className="text-[9px] font-medium text-foreground truncate min-w-[60px] max-w-[60px]">{name}</span>
+                          <div className="flex gap-0.5 shrink-0 overflow-hidden">
+                            {visible.map(code => (
                               <span key={code} className="inline-flex gap-px">
                                 {code.split('').map((s, i) => (
-                                  <span key={i} className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded text-[8px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                  <span key={i} className={`inline-flex h-3 w-3 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
                                 ))}
                               </span>
                             ))}
+                            {remaining > 0 && (
+                              <span className="text-[8px] text-muted-foreground font-medium">…</span>
+                            )}
                           </div>
                         </div>
                       );
