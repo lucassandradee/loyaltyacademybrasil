@@ -242,7 +242,7 @@ const NBODashboard = () => {
                     <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: clusterColors[c.cluster], color: clusterColors[c.cluster] }}>{c.cluster}</Badge>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
-                  <TableCell className="max-w-[180px] text-xs text-muted-foreground">{c.oferta}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.oferta_curta}</TableCell>
                   <TableCell className="max-w-[220px] text-xs text-muted-foreground">{generateOfferExplanation(c)}</TableCell>
                   <TableCell className="text-center">
                     <OfferExplainerPopover client={c} />
