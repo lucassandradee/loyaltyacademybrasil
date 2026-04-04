@@ -221,7 +221,7 @@ const NBODashboard = () => {
                 <XAxis type="number" tick={{ fontSize: 12 }} />
                 <YAxis type="category" dataKey="oferta" width={280} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(value: number) => [`${value} clientes`, 'Quantidade']} contentStyle={{ fontSize: 12 }} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => { if (data?.oferta) toggleOferta(data.oferta); }}>
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => { if (data?.payload?.oferta) toggleOferta(data.payload.oferta); else if (data?.oferta) toggleOferta(data.oferta); }}>
                   {offerDistribution.map((entry, i) => (
                     <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} opacity={!selectedOferta || selectedOferta === entry.oferta ? 1 : 0.3} className="cursor-pointer" />
                   ))}
