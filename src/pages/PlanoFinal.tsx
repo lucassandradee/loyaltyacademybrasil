@@ -192,8 +192,8 @@ const PlanoFinal = () => {
             <div>
               <div className="mb-4 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-lg bg-accent p-3">
-                  <p className="text-xs text-muted-foreground">NPS Médio</p>
-                  <p className="text-xl font-bold text-foreground">{cxKpis.nps_medio.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">NPS</p>
+                  <p className="text-xl font-bold text-foreground">{cxKpis.nps_real.toFixed(1)}</p>
                 </div>
                 <div className="rounded-lg bg-accent p-3">
                   <p className="text-xs text-muted-foreground">TMA Médio</p>
