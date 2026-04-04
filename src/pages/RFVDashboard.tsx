@@ -7,14 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2, X } from 'lucide-react';
-import { ClientData, RFVParams, defaultParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
 import ActionPlanTabs from '@/components/rfv/ActionPlanTabs';
 import { supabase } from '@/integrations/supabase/client';
 
 const RFVDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const locState = location.state as { clientData: ClientData[]; params: RFVParams } | null;
+  const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
@@ -45,7 +45,7 @@ const RFVDashboard = () => {
   }, [locState, navigate]);
 
   const clientData = locState?.clientData || dbData;
-  const params = locState?.params || defaultParams;
+  const params = locState?.params || defaultPercentileParams(3);
 
   const scored = useMemo(() => {
     if (!clientData) return [];
