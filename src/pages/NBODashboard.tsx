@@ -260,31 +260,35 @@ const NBODashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Offer Distribution */}
+      {/* Offer Distribution Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Distribuição de Ofertas</CardTitle>
           <p className="text-xs text-muted-foreground">Agrupamento por tipo de oferta recomendada</p>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Oferta</TableHead>
-                <TableHead className="text-center">Clientes</TableHead>
-                <TableHead className="text-center">% da Base</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {offerDistribution.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-sm">{item.oferta}</TableCell>
-                  <TableCell className="text-center font-bold">{item.count}</TableCell>
-                  <TableCell className="text-center text-muted-foreground">{item.pct}%</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis
+                  type="category"
+                  dataKey="oferta"
+                  width={280}
+                  tick={{ fontSize: 10 }}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => [`${value} clientes`, 'Quantidade']}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {offerDistribution.map((_, i) => (
+                    <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>
