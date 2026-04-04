@@ -189,37 +189,16 @@ const PlanoFinal = () => {
           <CardTitle className="flex items-center gap-2 text-base"><Star className="h-5 w-5" /> Passo 3 — Customer Experience</CardTitle>
         </CardHeader>
 
-      {/* Step 4 - CX */}
+      {/* Step 4 - Diagnostic / Plano Estratégico */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Star className="h-5 w-5" /> Passo 4 — Customer Experience</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5" /> Passo 4 — Plano Estratégico</CardTitle>
         </CardHeader>
         <CardContent>
-          {cxKpis && cxCausas ? (
-            <div>
-              <div className="mb-4 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg bg-accent p-3">
-                  <p className="text-xs text-muted-foreground">NPS Médio</p>
-                  <p className="text-xl font-bold text-foreground">{cxKpis.nps_medio.toFixed(1)}</p>
-                </div>
-                <div className="rounded-lg bg-accent p-3">
-                  <p className="text-xs text-muted-foreground">TMA Médio</p>
-                  <p className="text-xl font-bold text-foreground">{cxKpis.tma_medio.toFixed(1)} min</p>
-                </div>
-                <div className="rounded-lg bg-accent p-3">
-                  <p className="text-xs text-muted-foreground">Total Chamados</p>
-                  <p className="text-xl font-bold text-foreground">{cxData!.length}</p>
-                </div>
-              </div>
-              <p className="mb-2 text-sm font-medium text-foreground">Top Causas Raiz:</p>
-              <div className="flex flex-wrap gap-2">
-                {cxCausas.slice(0, 5).map(c => (
-                  <Badge key={c.causa} variant="outline">{c.causa}: {c.count} ({c.pct.toFixed(1)}%)</Badge>
-                ))}
-              </div>
-            </div>
+          {diagnostic ? (
+            <p className="text-sm text-muted-foreground">✅ Diagnóstico e Framework LAB concluídos. O plano estratégico foi gerado com base nas suas respostas.</p>
           ) : (
-            <p className="text-sm text-muted-foreground">⚠️ Análise CX ainda não realizada.</p>
+            <p className="text-sm text-muted-foreground">⚠️ Complete o diagnóstico e o formulário LAB para gerar o plano estratégico.</p>
           )}
         </CardContent>
       </Card>
