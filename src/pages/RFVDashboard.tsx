@@ -56,6 +56,7 @@ const RFVDashboard = () => {
   const totalClients = scored.length;
   const avgTicket = totalClients > 0 ? scored.reduce((s, c) => s + c.valor, 0) / totalClients : 0;
   const avgFreq = totalClients > 0 ? scored.reduce((s, c) => s + c.frequencia, 0) / totalClients : 0;
+  const avgRecencia = totalClients > 0 ? scored.reduce((s, c) => s + c.recencia, 0) / totalClients : 0;
 
   const clusterCounts = useMemo(() => {
     const counts: Record<string, number> = {};
