@@ -60,6 +60,7 @@ const DimensionSliderCard = ({
 
   // Build score segments info
   const segments = Array.from({ length: numScores }, (_, i) => {
+    // For inverted (recency): low percentile = low value = BEST = highest score
     const scoreNum = inverted ? numScores - i : i + 1;
     const fromPct = i === 0 ? 0 : percentiles[i - 1];
     const toPct = i === numScores - 1 ? 100 : percentiles[i];
@@ -67,16 +68,19 @@ const DimensionSliderCard = ({
     const estimatedClients = Math.round((pctRange / 100) * totalClients);
 
     let rangeText = '';
-    if (i === 0 && cutoffs[0] !== undefined) {
-      rangeText = inverted ? `Acima de ${formatValue(cutoffs[0])}` : `Até ${formatValue(cutoffs[0])}`;
-    } else if (i === numScores - 1 && cutoffs[i - 1] !== undefined) {
-      rangeText = inverted ? `Até ${formatValue(cutoffs[i - 1])}` : `Acima de ${formatValue(cutoffs[i - 1])}`;
-    } else if (cutoffs[i - 1] !== undefined && cutoffs[i] !== undefined) {
+    if (i === 0) {
+      rangeText = `Até ${formatValue(cutoffs[0])}`;
+    } else if (i === numScores - 1) {
+      rangeText = `Acima de ${formatValue(cutoffs[i - 1])}`;
+    } else {
       rangeText = `${formatValue(cutoffs[i - 1])} — ${formatValue(cutoffs[i])}`;
     }
 
     return { scoreNum, fromPct, toPct, pctRange, estimatedClients, rangeText };
   });
+
+  // Sort by scoreNum for the right panel display (always 1, 2, 3 order)
+  const displaySegments = [...segments].sort((a, b) => a.scoreNum - b.scoreNum);
 
   return (
     <Card>
@@ -103,7 +107,7 @@ const DimensionSliderCard = ({
                   className="h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
                   style={{
                     width: `${seg.pctRange}%`,
-                    backgroundColor: getScoreColor(i, numScores),
+                    backgroundColor: getScoreColor(seg.scoreNum - 1, numScores),
                     minWidth: seg.pctRange > 5 ? undefined : '4px',
                   }}
                 >
@@ -149,14 +153,14 @@ const DimensionSliderCard = ({
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Distribuição dos scores na sua base:</span>
             </div>
-            {segments.map((seg, i) => (
+            {displaySegments.map((seg) => (
               <div
-                key={i}
+                key={seg.scoreNum}
                 className="flex items-center gap-3 rounded-md border p-2.5"
               >
                 <div
                   className="h-8 w-8 rounded-md flex items-center justify-center text-xs font-bold text-white shrink-0"
-                  style={{ backgroundColor: getScoreColor(i, numScores) }}
+                  style={{ backgroundColor: getScoreColor(seg.scoreNum - 1, numScores) }}
                 >
                   {seg.scoreNum}
                 </div>
@@ -164,8 +168,8 @@ const DimensionSliderCard = ({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">
                       Score {seg.scoreNum}
-                      {i === numScores - 1 && <span className="text-xs text-muted-foreground ml-1">(Top)</span>}
-                      {i === 0 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
+                      {seg.scoreNum === numScores && <span className="text-xs text-muted-foreground ml-1">(Top)</span>}
+                      {seg.scoreNum === 1 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {seg.fromPct.toFixed(1)}% — {seg.toPct.toFixed(1)}%
