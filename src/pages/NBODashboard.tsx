@@ -5,22 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, Clock, Search, X, Download, Info, ArrowRight } from 'lucide-react';
-import { classifyNBO, allFaixaNames, faixaColors, faixaActions, faixa5W2H, faixaEisenhower } from '@/lib/nbo-logic';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Users, DollarSign, Clock, Search, X, Info, HelpCircle } from 'lucide-react';
+import { classifyNBO, allFaixaNames, faixaColors, faixaActions } from '@/lib/nbo-logic';
+import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
-import * as XLSX from 'xlsx';
+import type { ScoredNBOClient } from '@/lib/nbo-logic';
 
 const NBODashboard = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedFaixa, setSelectedFaixa] = useState<string | null>(null);
-  const [filterFaixa, setFilterFaixa] = useState('Todos');
   const [clientData, setClientData] = useState<ClientData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const perPage = 10;
@@ -55,6 +52,17 @@ const NBODashboard = () => {
     }));
   }, [scored, totalClients]);
 
+  // RFV cluster composition per NBO tier
+  const faixaClusterComposition = useMemo(() => {
+    const comp: Record<string, Record<string, number>> = {};
+    allFaixaNames.forEach(f => { comp[f] = {}; });
+    scored.forEach(c => {
+      if (!comp[c.faixa][c.cluster]) comp[c.faixa][c.cluster] = 0;
+      comp[c.faixa][c.cluster]++;
+    });
+    return comp;
+  }, [scored]);
+
   const toggleFaixa = (name: string) => { setSelectedFaixa(prev => prev === name ? null : name); setPage(0); };
 
   const filtered = useMemo(() => {
@@ -67,31 +75,6 @@ const NBODashboard = () => {
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
-  const activeFilter = selectedFaixa || filterFaixa;
-  const clustersToShow = activeFilter === 'Todos' ? allFaixaNames : [activeFilter];
-
-  const handleDownloadExcel = () => {
-    const wb = XLSX.utils.book_new();
-    const w2hRows: any[] = [];
-    clustersToShow.forEach(name => {
-      (faixa5W2H[name] || []).forEach(p => {
-        w2hRows.push({ Segmento: name, 'O quê': p.what, 'Por quê': p.why, Onde: p.where, Quando: p.when, Quem: p.who, Como: p.how, Quanto: p.howMuch });
-      });
-    });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(w2hRows), '5W2H');
-    const eRows: any[] = [];
-    clustersToShow.forEach(name => {
-      const m = faixaEisenhower[name]; if (!m) return;
-      const add = (q: string, items: string[]) => items.forEach(item => eRows.push({ Segmento: name, Quadrante: q, Ação: item }));
-      add('🔴 Urgente + Importante', m.urgentImportant);
-      add('🔵 Não Urgente + Importante', m.notUrgentImportant);
-      add('🟡 Urgente + Não Importante', m.urgentNotImportant);
-      add('⚪ Não Urgente + Não Importante', m.notUrgentNotImportant);
-    });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(eRows), 'Matriz Eisenhower');
-    XLSX.writeFile(wb, 'plano-de-acao-nbo.xlsx');
-  };
-
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando dados...</div>;
   if (!clientData) return null;
 
@@ -99,39 +82,27 @@ const NBODashboard = () => {
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Análise Next Best Offer</h1>
-        <p className="text-muted-foreground">Segmentação por faixas de gasto (baseada na mesma base do RFV)</p>
+        <p className="text-muted-foreground">Segmentação ponderada por scores RFV (mesma base do Passo 1)</p>
       </div>
 
-      {/* De-Para RFV → NBO */}
+      {/* Explanatory Card */}
       <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
         <CardContent className="p-5">
           <div className="mb-3 flex items-center gap-2">
             <Info className="h-5 w-5 text-blue-500" />
-            <h3 className="text-sm font-bold text-foreground">Como funciona: RFV → Next Best Offer</h3>
+            <h3 className="text-sm font-bold text-foreground">Como funciona: Scoring Ponderado → Pirâmide NBO</h3>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">
-            O NBO reutiliza a base de clientes já enviada no <strong>Passo 2 (RFV)</strong>. O campo <strong>Valor</strong> (gasto acumulado) é usado para classificar cada cliente em uma faixa de gasto, gerando ofertas de upgrade personalizadas.
+          <p className="mb-3 text-sm text-muted-foreground">
+            O NBO reutiliza a base de clientes do <strong>Passo 1 (RFV)</strong> e calcula uma pontuação ponderada para cada cliente:
           </p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { faixa: 'Bronze', range: 'Valor até R$ 500', arrow: 'Cupom 15% p/ subir a Prata' },
-              { faixa: 'Prata', range: 'R$ 501 a R$ 2.000', arrow: 'Frete grátis + 10% p/ subir a Ouro' },
-              { faixa: 'Ouro', range: 'R$ 2.001 a R$ 5.000', arrow: 'Cashback 5% p/ subir a Diamante' },
-              { faixa: 'Diamante', range: 'Acima de R$ 5.000', arrow: 'Programa de embaixadores' },
-            ].map((item) => (
-              <div key={item.faixa} className="rounded-lg border bg-background p-3">
-                <div className="mb-1 flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: faixaColors[item.faixa] }} />
-                  <span className="text-sm font-bold text-foreground">{item.faixa}</span>
-                </div>
-                <p className="mb-1 text-xs text-muted-foreground">{item.range}</p>
-                <div className="flex items-center gap-1 text-xs text-blue-500">
-                  <ArrowRight className="h-3 w-3" />
-                  <span>{item.arrow}</span>
-                </div>
-              </div>
-            ))}
+          <div className="mb-3 rounded-lg border bg-background p-3">
+            <p className="text-sm font-mono text-foreground text-center">
+              <strong>Pontuação NBO</strong> = Valor × <span className="text-primary font-bold">3</span> + Frequência × <span className="text-primary font-bold">2</span> + Recência × <span className="text-primary font-bold">1</span>
+            </p>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Os clientes são rankeados por essa pontuação e distribuídos na pirâmide: <strong>10% Diamante</strong> (topo), <strong>20% Ouro</strong>, <strong>30% Prata</strong> e <strong>40% Bronze</strong> (base). Ofertas inteligentes são geradas com base na faixa + perfil individual de cada cliente.
+          </p>
         </CardContent>
       </Card>
 
@@ -148,7 +119,7 @@ const NBODashboard = () => {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
-          { icon: DollarSign, label: 'Valor Médio (Gasto)', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
         ].map((kpi, i) => (
           <Card key={i}>
@@ -163,54 +134,25 @@ const NBODashboard = () => {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Distribuição por Faixa</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={faixaCounts} onClick={(data: any) => { if (data?.activePayload?.[0]?.payload?.name) toggleFaixa(data.activePayload[0].payload.name); }} className="cursor-pointer">
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis />
-                <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {faixaCounts.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} opacity={selectedFaixa && selectedFaixa !== entry.name ? 0.3 : 1} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Pyramid + RFV Composition */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-base">Pirâmide NBO — Distribuição e Composição RFV</CardTitle>
+          <p className="text-xs text-muted-foreground">Clique em um nível da pirâmide para filtrar</p>
+        </CardHeader>
+        <CardContent>
+          <PyramidChart
+            faixaCounts={faixaCounts}
+            faixaClusterComposition={faixaClusterComposition}
+            selectedFaixa={selectedFaixa}
+            onToggleFaixa={toggleFaixa}
+            totalClients={totalClients}
+          />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Composição da Base (%)</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma fatia para filtrar</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={faixaCounts.filter(c => c.count > 0)} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={90}
-                  label={({ name, pct }) => `${name}: ${pct}%`} labelLine
-                  onClick={(_: any, index: number) => { const visible = faixaCounts.filter(c => c.count > 0); if (visible[index]) toggleFaixa(visible[index].name); }}
-                  className="cursor-pointer">
-                  {faixaCounts.filter(c => c.count > 0).map((entry, i) => (
-                    <Cell key={i} fill={entry.color} opacity={selectedFaixa && selectedFaixa !== entry.name ? 0.3 : 1} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Faixa Cards */}
-      <h2 className="mb-4 text-xl font-bold text-foreground">Faixas de Gasto</h2>
+      {/* Faixa Cards — Diamante → Bronze */}
+      <h2 className="mb-4 text-xl font-bold text-foreground">Faixas NBO</h2>
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {faixaCounts.map((faixa) => (
           <Card key={faixa.name}
@@ -229,89 +171,7 @@ const NBODashboard = () => {
         ))}
       </div>
 
-      {/* Action Plan */}
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <CardTitle className="text-base">Plano de Ação</CardTitle>
-              {selectedFaixa ? (
-                <Badge style={{ backgroundColor: faixaColors[selectedFaixa], color: '#fff' }}>{selectedFaixa}</Badge>
-              ) : (
-                <Select value={filterFaixa} onValueChange={setFilterFaixa}>
-                  <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todas as faixas</SelectItem>
-                    {allFaixaNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <Button variant="outline" size="sm" onClick={handleDownloadExcel}><Download className="mr-2 h-4 w-4" /> Baixar Excel</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="5w2h">
-            <TabsList><TabsTrigger value="5w2h">5W2H</TabsTrigger><TabsTrigger value="eisenhower">Matriz de Eisenhower</TabsTrigger></TabsList>
-            <TabsContent value="5w2h">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[100px]">Faixa</TableHead>
-                      <TableHead className="min-w-[140px]">O quê</TableHead>
-                      <TableHead className="min-w-[160px]">Por quê</TableHead>
-                      <TableHead className="min-w-[100px]">Onde</TableHead>
-                      <TableHead className="min-w-[100px]">Quando</TableHead>
-                      <TableHead className="min-w-[100px]">Quem</TableHead>
-                      <TableHead className="min-w-[160px]">Como</TableHead>
-                      <TableHead className="min-w-[120px]">Quanto</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clustersToShow.map(name => {
-                      const plans = faixa5W2H[name] || [];
-                      return plans.map((p, i) => (
-                        <TableRow key={`${name}-${i}`}>
-                          {i === 0 && (
-                            <TableCell rowSpan={plans.length} className="align-top">
-                              <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[name], color: faixaColors[name] }}>{name}</Badge>
-                            </TableCell>
-                          )}
-                          <TableCell className="font-medium">{p.what}</TableCell>
-                          <TableCell>{p.why}</TableCell><TableCell>{p.where}</TableCell>
-                          <TableCell>{p.when}</TableCell><TableCell>{p.who}</TableCell>
-                          <TableCell>{p.how}</TableCell><TableCell>{p.howMuch}</TableCell>
-                        </TableRow>
-                      ));
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-            <TabsContent value="eisenhower">
-              <div className="space-y-6">
-                {clustersToShow.map(name => {
-                  const matrix = faixaEisenhower[name]; if (!matrix) return null;
-                  return (
-                    <div key={name}>
-                      {clustersToShow.length > 1 && <div className="mb-3"><Badge variant="outline" className="text-xs" style={{ borderColor: faixaColors[name], color: faixaColors[name] }}>{name}</Badge></div>}
-                      <div className="grid grid-cols-2 gap-4">
-                        <EisenhowerQuadrant title="🔴 Urgente + Importante" subtitle="Fazer agora" items={matrix.urgentImportant} borderClass="border-destructive/30" bgClass="bg-destructive/5" titleClass="text-destructive" />
-                        <EisenhowerQuadrant title="🔵 Não Urgente + Importante" subtitle="Agendar" items={matrix.notUrgentImportant} borderClass="border-primary/30" bgClass="bg-primary/5" titleClass="text-primary" />
-                        <EisenhowerQuadrant title="🟡 Urgente + Não Importante" subtitle="Delegar" items={matrix.urgentNotImportant} borderClass="border-amber-500/30" bgClass="bg-amber-500/5" titleClass="text-amber-600" />
-                        <EisenhowerQuadrant title="⚪ Não Urgente + Não Importante" subtitle="Eliminar ou adiar" items={matrix.notUrgentNotImportant} borderClass="border-muted-foreground/30" bgClass="bg-muted/50" titleClass="text-muted-foreground" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Table */}
+      {/* Client Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -327,10 +187,13 @@ const NBODashboard = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead><TableHead>ID</TableHead>
-                <TableHead className="text-center">Valor (Gasto)</TableHead>
-                <TableHead className="text-center">Frequência</TableHead>
+                <TableHead className="text-center">Valor</TableHead>
+                <TableHead className="text-center">Freq.</TableHead>
                 <TableHead className="text-center">Recência</TableHead>
-                <TableHead>Faixa</TableHead><TableHead>Oferta</TableHead>
+                <TableHead className="text-center">Score</TableHead>
+                <TableHead>Faixa</TableHead>
+                <TableHead>Oferta</TableHead>
+                <TableHead className="text-center">Regra</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -341,8 +204,14 @@ const NBODashboard = () => {
                   <TableCell className="text-center">R$ {c.gasto_total.toLocaleString('pt-BR')}</TableCell>
                   <TableCell className="text-center">{c.frequencia}</TableCell>
                   <TableCell className="text-center">{c.recencia}d</TableCell>
+                  <TableCell className="text-center">
+                    <span className="font-mono text-xs">{c.nbo_score}</span>
+                  </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
                   <TableCell className="max-w-[200px] text-xs text-muted-foreground">{c.oferta}</TableCell>
+                  <TableCell className="text-center">
+                    <OfferExplainerPopover client={c} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -360,22 +229,178 @@ const NBODashboard = () => {
   );
 };
 
-function EisenhowerQuadrant({ title, subtitle, items, borderClass, bgClass, titleClass }: {
-  title: string; subtitle: string; items: string[]; borderClass: string; bgClass: string; titleClass: string;
-}) {
+/* ─── Pyramid Chart ─── */
+
+interface PyramidChartProps {
+  faixaCounts: { name: string; count: number; pct: string; color: string }[];
+  faixaClusterComposition: Record<string, Record<string, number>>;
+  selectedFaixa: string | null;
+  onToggleFaixa: (name: string) => void;
+  totalClients: number;
+}
+
+function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, onToggleFaixa, totalClients }: PyramidChartProps) {
+  const tiers = faixaCounts; // Already in order: Diamante, Ouro, Prata, Bronze
+  const pyramidW = 280;
+  const pyramidH = 320;
+  const gap = 4;
+  const tierH = (pyramidH - gap * (tiers.length - 1)) / tiers.length;
+
+  // Each tier is a trapezoid: narrower at top, wider at bottom
+  const minTopW = 60;
+  const maxBottomW = pyramidW;
+
   return (
-    <div className={`rounded-lg border ${borderClass} ${bgClass} p-4`}>
-      <p className={`mb-1 text-sm font-bold ${titleClass}`}>{title}</p>
-      <p className="mb-3 text-xs text-muted-foreground">{subtitle}</p>
-      <ul className="space-y-2">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-xs text-foreground">
-            <Checkbox className="mt-0.5 h-3.5 w-3.5" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="flex items-start gap-8">
+      {/* SVG Pyramid */}
+      <div className="shrink-0">
+        <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
+          {tiers.map((tier, i) => {
+            const y = i * (tierH + gap);
+            const topW = minTopW + ((maxBottomW - minTopW) * i) / (tiers.length - 1);
+            const botW = i < tiers.length - 1 ? minTopW + ((maxBottomW - minTopW) * (i + 1)) / (tiers.length - 1) : maxBottomW;
+            const topX = (pyramidW - topW) / 2;
+            const botX = (pyramidW - botW) / 2;
+            const isActive = !selectedFaixa || selectedFaixa === tier.name;
+
+            return (
+              <g key={tier.name} onClick={() => onToggleFaixa(tier.name)} className="cursor-pointer">
+                <polygon
+                  points={`${topX},${y} ${topX + topW},${y} ${botX + botW},${y + tierH} ${botX},${y + tierH}`}
+                  fill={tier.color}
+                  opacity={isActive ? 1 : 0.3}
+                  stroke="white"
+                  strokeWidth={1}
+                />
+                <text
+                  x={pyramidW / 2}
+                  y={y + tierH / 2}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="fill-white text-xs font-bold pointer-events-none"
+                  style={{ fontSize: '12px' }}
+                >
+                  {tier.name}
+                </text>
+                <text
+                  x={pyramidW / 2}
+                  y={y + tierH / 2 + 16}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="fill-white/80 pointer-events-none"
+                  style={{ fontSize: '10px' }}
+                >
+                  {tier.count} ({tier.pct}%)
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* RFV Composition bars */}
+      <div className="flex-1 flex flex-col justify-between" style={{ height: pyramidH }}>
+        {tiers.map((tier, i) => {
+          const composition = faixaClusterComposition[tier.name] || {};
+          const tierTotal = tier.count || 1;
+          const isActive = !selectedFaixa || selectedFaixa === tier.name;
+          // Get clusters sorted by count descending
+          const clusters = Object.entries(composition)
+            .sort((a, b) => b[1] - a[1])
+            .filter(([, count]) => count > 0);
+
+          return (
+            <div
+              key={tier.name}
+              className={`transition-opacity ${isActive ? 'opacity-100' : 'opacity-30'}`}
+              style={{ height: tierH }}
+            >
+              <p className="text-xs font-semibold text-foreground mb-1">{tier.name}</p>
+              <div className="flex h-5 w-full overflow-hidden rounded-sm">
+                {clusters.map(([cluster, count]) => {
+                  const pct = (count / tierTotal) * 100;
+                  return (
+                    <Popover key={cluster}>
+                      <PopoverTrigger asChild>
+                        <div
+                          className="h-full cursor-pointer hover:brightness-110 transition-all relative group"
+                          style={{ width: `${pct}%`, backgroundColor: clusterColors[cluster] || 'hsl(var(--muted))' }}
+                          title={`${cluster}: ${count} (${pct.toFixed(1)}%)`}
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2 text-xs">
+                        <p className="font-semibold">{cluster}</p>
+                        <p className="text-muted-foreground">{count} clientes ({pct.toFixed(1)}%)</p>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })}
+              </div>
+              {/* Legend: top 3 clusters */}
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                {clusters.slice(0, 3).map(([cluster, count]) => (
+                  <span key={cluster} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: clusterColors[cluster] || 'hsl(var(--muted))' }} />
+                    {cluster} ({((count / tierTotal) * 100).toFixed(0)}%)
+                  </span>
+                ))}
+                {clusters.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground">+{clusters.length - 3} mais</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
+  );
+}
+
+/* ─── Offer Explainer Popover ─── */
+
+function OfferExplainerPopover({ client }: { client: ScoredNBOClient }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">{client.nome}</p>
+            <Badge variant="outline" className="mt-1 text-xs" style={{ borderColor: faixaColors[client.faixa], color: faixaColors[client.faixa] }}>{client.faixa}</Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded bg-muted p-2 text-center">
+              <p className="text-[10px] text-muted-foreground">Recência</p>
+              <p className="text-sm font-bold">{client.r_score}</p>
+            </div>
+            <div className="rounded bg-muted p-2 text-center">
+              <p className="text-[10px] text-muted-foreground">Frequência</p>
+              <p className="text-sm font-bold">{client.f_score}</p>
+            </div>
+            <div className="rounded bg-muted p-2 text-center">
+              <p className="text-[10px] text-muted-foreground">Valor</p>
+              <p className="text-sm font-bold">{client.v_score}</p>
+            </div>
+          </div>
+          <div className="rounded bg-muted p-2 text-center">
+            <p className="text-[10px] text-muted-foreground">Score NBO (V×3 + F×2 + R×1)</p>
+            <p className="text-lg font-bold text-primary">{client.nbo_score}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-foreground mb-1">Regra aplicada:</p>
+            <p className="text-xs text-muted-foreground">{client.oferta_regra}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-foreground mb-1">Oferta gerada:</p>
+            <p className="text-xs text-muted-foreground">{client.oferta}</p>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
