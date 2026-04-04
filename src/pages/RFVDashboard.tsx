@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,11 +183,65 @@ const RFVDashboard = () => {
       </Card>
 
       {/* Charts */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
+      <div className="mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
+                <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors">
+                    <Settings2 className="h-3.5 w-3.5" /> Regras
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Regras de Classificação</DialogTitle>
+                    <p className="text-sm text-muted-foreground">Combinações de scores R, F e V que definem cada segmento</p>
+                  </DialogHeader>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                    {(() => {
+                      const grouped: Record<string, string[]> = {};
+                      Object.entries(clusterMap).forEach(([code, name]) => {
+                        if (!grouped[name]) grouped[name] = [];
+                        grouped[name].push(code);
+                      });
+                      const scoreColor = (s: string) =>
+                        s === '3' ? 'bg-emerald-500 text-white' :
+                        s === '2' ? 'bg-orange-400 text-white' :
+                        'bg-muted text-muted-foreground';
+                      return allClusterNames.map(name => {
+                        const codes = grouped[name];
+                        if (!codes) return null;
+                        return (
+                          <div
+                            key={name}
+                            className="flex items-start gap-3 rounded-md border p-2 text-sm"
+                            style={{ borderLeftWidth: 4, borderLeftColor: clusterColors[name] }}
+                          >
+                            <span className="min-w-[140px] font-semibold text-foreground shrink-0">{name}</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {codes.map(code => (
+                                <span key={code} className="inline-flex gap-0.5">
+                                  {code.split('').map((s, i) => (
+                                    <span key={i} className={`inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${scoreColor(s)}`}>
+                                      {s}
+                                    </span>
+                                  ))}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -207,52 +262,6 @@ const RFVDashboard = () => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Regras de Classificação</CardTitle>
-            <p className="text-xs text-muted-foreground">Combinações de scores R, F e V que definem cada segmento</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-              {(() => {
-                const grouped: Record<string, string[]> = {};
-                Object.entries(clusterMap).forEach(([code, name]) => {
-                  if (!grouped[name]) grouped[name] = [];
-                  grouped[name].push(code);
-                });
-                const scoreColor = (s: string) =>
-                  s === '3' ? 'bg-emerald-500 text-white' :
-                  s === '2' ? 'bg-orange-400 text-white' :
-                  'bg-muted text-muted-foreground';
-                return allClusterNames.map(name => {
-                  const codes = grouped[name];
-                  if (!codes) return null;
-                  return (
-                    <div
-                      key={name}
-                      className="flex items-start gap-3 rounded-md border p-2 text-sm"
-                      style={{ borderLeftWidth: 4, borderLeftColor: clusterColors[name] }}
-                    >
-                      <span className="min-w-[140px] font-semibold text-foreground shrink-0">{name}</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {codes.map(code => (
-                          <span key={code} className="inline-flex gap-0.5">
-                            {code.split('').map((s, i) => (
-                              <span key={i} className={`inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${scoreColor(s)}`}>
-                                {s}
-                              </span>
-                            ))}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
           </CardContent>
         </Card>
       </div>
