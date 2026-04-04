@@ -69,11 +69,13 @@ const NBODashboard = () => {
 
   const toggleFaixa = (name: string) => { setSelectedFaixa(prev => prev === name ? null : name); setPage(0); };
   const toggleCluster = (name: string) => { setSelectedCluster(prev => prev === name ? null : name); setPage(0); };
+  const toggleOferta = (name: string) => { setSelectedOferta(prev => prev === name ? null : name); setPage(0); };
 
   const filtered = useMemo(() => {
     let list = scored;
     if (selectedFaixa) list = list.filter(c => c.faixa === selectedFaixa);
     if (selectedCluster) list = list.filter(c => c.cluster === selectedCluster);
+    if (selectedOferta) list = list.filter(c => c.oferta_curta === selectedOferta);
     if (search) { const q = search.toLowerCase(); list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q)); }
     return list;
   }, [scored, search, selectedFaixa, selectedCluster]);
