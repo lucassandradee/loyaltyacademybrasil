@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle } from 'lucide-react';
 import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation } from '@/lib/nbo-logic';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
