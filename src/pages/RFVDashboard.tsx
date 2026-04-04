@@ -216,7 +216,7 @@ const RFVDashboard = () => {
                 </div>
                 {/* Desktop: mini regras clicável */}
                 <DialogTrigger asChild>
-                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors justify-center">
+                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors self-stretch justify-center">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Regras</p>
                       <span className="text-[8px] text-muted-foreground">clique para expandir</span>
