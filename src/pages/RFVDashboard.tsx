@@ -156,7 +156,7 @@ const RFVDashboard = () => {
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
-          { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: DollarSign, label: 'Valor por cliente', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
           { icon: ShoppingCart, label: 'Frequência Média', value: avgFreq.toFixed(1) + ' compras' },
         ].map((kpi, i) => (
