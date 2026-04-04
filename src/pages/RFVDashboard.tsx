@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2, X } from 'lucide-react';
-import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap } from '@/lib/rfv-logic';
 import ActionPlanTabs from '@/components/rfv/ActionPlanTabs';
 import { supabase } from '@/integrations/supabase/client';
 
