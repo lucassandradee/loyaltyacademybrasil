@@ -76,9 +76,12 @@ const NBODashboard = () => {
     if (selectedFaixa) list = list.filter(c => c.faixa === selectedFaixa);
     if (selectedCluster) list = list.filter(c => c.cluster === selectedCluster);
     if (selectedOferta) list = list.filter(c => c.oferta_curta === selectedOferta);
-    if (search) { const q = search.toLowerCase(); list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q)); }
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q));
+    }
     return list;
-  }, [scored, search, selectedFaixa, selectedCluster]);
+  }, [scored, search, selectedFaixa, selectedCluster, selectedOferta]);
 
   // Offer distribution
   const offerDistribution = useMemo(() => {
@@ -217,13 +220,19 @@ const NBODashboard = () => {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }} onClick={(state: any) => { if (state?.activePayload?.[0]?.payload?.oferta) toggleOferta(state.activePayload[0].payload.oferta); }}>
+              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
                 <XAxis type="number" tick={{ fontSize: 12 }} />
                 <YAxis type="category" dataKey="oferta" width={280} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(value: number) => [`${value} clientes`, 'Quantidade']} contentStyle={{ fontSize: 12 }} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer">
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                   {offerDistribution.map((entry, i) => (
-                    <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} opacity={!selectedOferta || selectedOferta === entry.oferta ? 1 : 0.3} className="cursor-pointer" />
+                    <Cell
+                      key={i}
+                      fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`}
+                      opacity={!selectedOferta || selectedOferta === entry.oferta ? 1 : 0.3}
+                      className="cursor-pointer"
+                      onClick={() => toggleOferta(entry.oferta)}
+                    />
                   ))}
                 </Bar>
               </BarChart>
