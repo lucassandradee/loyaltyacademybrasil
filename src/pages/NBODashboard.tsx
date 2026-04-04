@@ -13,6 +13,7 @@ import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
 import type { ScoredNBOClient } from '@/lib/nbo-logic';
+import { downloadCSV } from '@/lib/export-utils';
 
 const NBODashboard = () => {
   const navigate = useNavigate();
