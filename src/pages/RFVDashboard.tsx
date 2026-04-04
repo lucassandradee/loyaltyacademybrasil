@@ -335,9 +335,6 @@ const RFVDashboard = () => {
         ))}
       </div>
 
-      {/* Action Plan */}
-      <ActionPlanTabs selectedCluster={selectedCluster} />
-
       {/* Data Table */}
       <Card>
         <CardHeader>
