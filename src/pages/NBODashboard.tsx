@@ -310,13 +310,14 @@ interface PyramidChartProps {
 
 function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, selectedCluster, onToggleFaixa, onToggleCluster, totalClients }: PyramidChartProps) {
   const tiers = faixaCounts;
-  const pyramidW = 360;
-  const pyramidH = 340;
+  const pyramidW = 420;
+  const pyramidH = 360;
+  const innerBaseW = 360;
+  const innerTopW = 0;
+  const topPadding = 10;
+  const bottomPadding = 10;
   const gap = 4;
-  const tierH = (pyramidH - gap * (tiers.length - 1)) / tiers.length;
-
-  const minTopW = 30;
-  const maxBottomW = pyramidW;
+  const tierH = (pyramidH - topPadding - bottomPadding - gap * (tiers.length - 1)) / tiers.length;
 
   return (
     <div className="flex flex-col lg:flex-row items-start gap-6">
@@ -324,9 +325,11 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, sel
       <div className="shrink-0" style={{ width: pyramidW, minWidth: pyramidW }}>
         <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
           {tiers.map((tier, i) => {
-            const y = i * (tierH + gap);
-            const topW = minTopW + ((maxBottomW - minTopW) * i) / (tiers.length - 1);
-            const botW = i < tiers.length - 1 ? minTopW + ((maxBottomW - minTopW) * (i + 1)) / (tiers.length - 1) : maxBottomW;
+            const y = topPadding + i * (tierH + gap);
+            const progressTop = i / tiers.length;
+            const progressBottom = (i + 1) / tiers.length;
+            const topW = innerTopW + (innerBaseW - innerTopW) * progressTop;
+            const botW = innerTopW + (innerBaseW - innerTopW) * progressBottom;
             const topX = (pyramidW - topW) / 2;
             const botX = (pyramidW - botW) / 2;
             const isActive = !selectedFaixa || selectedFaixa === tier.name;
