@@ -1,113 +1,54 @@
 
 
-# Reestruturação Completa: Logo, Formulário, Ordem dos Passos e Plano LAB
+# Parametrização RFV por Percentil
 
-## Resumo
+## Problema Atual
+O usuário define valores absolutos (ex: "Top >= R$5.000") para cada score. Isso é problemático porque sem conhecer a distribuição dos dados, pode-se acabar com 95% da base num único score, gerando uma análise inútil.
 
-Trocar o logo ESPM pelo Loyalty Academy Brasil, reestruturar o formulário inicial com perguntas de perfil da empresa, reordenar os passos (1=RFV, 2=NBO, 3=CX, 4=Plano Estratégico baseado no Framework LAB), e criar um formulário adicional antes do plano final com as perguntas do Framework LAB.
+## Solução
+Trocar para **percentil**: o usuário escolhe quantos níveis de score (3, 4, 5...) e define os pontos de corte em % da base. O sistema calcula automaticamente os valores reais com base na distribuição dos dados.
 
----
+## Como vai funcionar
 
-## 1. Trocar o Logo
+1. O usuário escolhe o **número de scores** (padrão: 3) via um seletor
+2. Os percentis são pré-preenchidos de forma uniforme (ex: 3 scores = 33.3% / 66.6% / 100%)
+3. O usuário pode ajustar os percentis manualmente via inputs numéricos
+4. Para cada variável (R, F, V), o sistema mostra o **valor real correspondente** ao percentil (ex: "Percentil 33.3% = R$ 1.850")
+5. Ao clicar "Gerar Análise", o sistema calcula os cortes reais a partir dos percentis e classifica os clientes
 
-- Copiar `user-uploads://lab.webp` para `src/assets/lab-logo.webp`
-- Atualizar `Header.tsx`: importar o novo logo no lugar de `espm-logo.jpg`
-- Atualizar `Index.tsx`: trocar "Plataforma Educacional ESPM" por "Loyalty Academy Brasil"
-- Atualizar `generate-pdf.ts`: trocar textos "ESPM" por "Loyalty Academy Brasil"
+## UI da Parametrização (RFVParametros.tsx)
 
-## 2. Reestruturar o Formulário Inicial (Diagnostico.tsx)
+- Seletor no topo: "Quantidade de Scores: [3] [4] [5] [+/-]"
+- Para cada variável (Recência, Frequência, Valor), um card com:
+  - N-1 linhas de corte de percentil (para 3 scores: 2 linhas)
+  - Cada linha: input de percentil (%) + valor calculado da base exibido ao lado (read-only)
+  - Ex: "Score 1: 0% a [33.3]% → até R$ 1.850 | Score 2: [33.3]% a [66.6]% → R$ 1.850–R$ 5.200 | Score 3: [66.6]% a 100% → acima de R$ 5.200"
+- Nota: para Recência, menor valor = melhor (invertido). O sistema trata isso automaticamente.
 
-**Remover**: a pergunta sobre Tiers (`id: 'tiers'`)
+## Mudanças Técnicas
 
-**Manter**: perguntas de modelo, frequência, dados, infos, desafio
+### `src/lib/rfv-logic.ts`
+- Novo tipo `RFVPercentileParams`: `{ numScores: number; recencia: number[]; frequencia: number[]; valor: number[] }` onde os arrays são os pontos de corte em percentil (ex: `[33.3, 66.6]` para 3 scores)
+- Nova função `computePercentilesFromData(clients, percentiles)` que ordena os dados e retorna os valores reais nos percentis indicados
+- Nova função `scoreByPercentile(value, cutoffs, inverted)` que atribui o score
+- Adaptar `scoreClients` para aceitar o novo formato de params
+- O `clusterMap` precisa suportar scores dinâmicos (3, 4, 5 etc). Para manter compatibilidade, quando `numScores = 3` o mapeamento de clusters continua igual. Para 4+ scores, o cluster será determinado pela média dos 3 scores mapeada para os 8 clusters existentes.
 
-**Adicionar novas perguntas de perfil da empresa**:
-- **Produtos/Serviços**: campo dinâmico com botão "+" onde o usuário adiciona: nome do produto, breve descrição e % de representatividade na venda
-- **Ano de fundação**: input numérico
-- **Tamanho médio da base de clientes**: seleção (Até 1.000 / 1.001–10.000 / 10.001–50.000 / 50.001–200.000 / Acima de 200.000)
-- **Segmento/Indústria**: seleção (Varejo, Serviços, Tecnologia, Saúde, Alimentação, Educação, Outro)
-- **Faturamento anual estimado**: seleção (Até R$1M / R$1M–10M / R$10M–50M / R$50M–200M / Acima de R$200M)
+### `src/pages/RFVParametros.tsx`
+- Substituir os 3 cards de valores absolutos por cards com inputs de percentil
+- Adicionar seletor de quantidade de scores
+- Calcular e exibir os valores reais correspondentes em tempo real
+- Passar os cutoffs calculados (não os percentis) para o dashboard
 
-Atualizar `DiagnosticAnswers` em `diagnostic-logic.ts` para incluir os novos campos. Remover `tiers` do tipo.
+### `src/pages/RFVDashboard.tsx`
+- Recebe os dados já classificados ou os novos params percentuais
+- Sem grandes mudanças na visualização
 
-## 3. Reordenar os Passos
+### `src/pages/NBODashboard.tsx`
+- Sem mudança — usa `classifyNBO` que trabalha sobre os dados brutos (valor), não sobre os scores RFV
 
-**Nova ordem na sidebar (`AppSidebar.tsx`)**:
-- Passo 1 — RFV (upload, parametrização, dashboard)
-- Passo 2 — Next Best Offer (dashboard)
-- Passo 3 — Customer Experience (upload, dashboard)
-- Passo 4 — Plano Estratégico de Loyalty (formulário LAB + resultado)
-
-**Atualizar**: labels da sidebar, remover o antigo "Plano Estratégico de Loyalty" do topo, mover para o final como Passo 4.
-
-O "Plano Final / Visão Consolidada" permanece como item final.
-
-## 4. Criar Formulário do Framework LAB (nova página)
-
-Nova página `FormularioLAB.tsx` com perguntas baseadas no framework da imagem, organizado em seções:
-
-1. **Top Objetivos** (multi-select): Expansão, Ganho de Share, Segmentar e premiar por valor, Adquirir clientes, Reter clientes, Combater concorrência, Reduzir custos, Diversificação, Serviços financeiros, Aumentar NPS, Outros
-2. **Estrutura do Programa** (single): Programa Próprio, Coalizão, Parceiro, Híbrido
-3. **Tipo** (multi-select): Ganhar & Trocar, Tierização Interna, Tierização Pública, Brindes, Gamificação, Comunidades, Comportamento e Estilo, Recomendação, Assinatura
-4. **Plataforma (LMS)** (single): Própria, Terceirizada
-5. **Estratégia** (multi-select): Apoio C-Level, Lançamento Piloto, Roll-out, Lançamento Big-Bang, Anuidade para todos, Tiers, Marketplace, Clube de Descontos, Gamificação, Pilares ESG, OPM, Estratégia de saída, Calendário de comunicação, Capacitação força de vendas
-6. **Time Estratégico** (single): Próprio, Terceirizado, Híbrido
-7. **Benefícios Tangíveis** (multi-select): Descontos, Pontos que expiram, Pontos que não expiram, Cashback/Gift back, Pontos/troca
-8. **Benefícios Intangíveis** (multi-select): Privilégios, Serviços exclusivos, Outros
-9. **Tierização/Segmentação** (single): Pública, Interna, Não aplicar
-10. **Segmentação** (multi-select): Existente (Valor/RFV), Básico + Jornada, Completo, Tipo de benefício, Geolocalização, Outras
-11. **Cadastro** (multi-select): Loja física/digital, App, Site
-12. **Infos Cadastro** (single): Básico + Jornada, Completo
-13. **Canais de Comunicação** (multi-select com ranking): App/Push, E-mail, WhatsApp/SMS, PDV, Recibo no caixa, Mala impressa, Mídia massa, Mídias sociais
-14. **Operações** (multi-select): Unificação Database, CRM, Uso de dados/Hiperpersonalização, Call center próprio vs terceirizado, Atendimento humano vs bot vs híbrido, IA
-15. **Custos** (multi-select): Impacta ROI programa vs não, Custos adicionais, Quem absorve (lojas, matriz, híbrido)
-
-Rota: `/lab-framework` — acessível antes de gerar o Plano Estratégico final.
-
-## 5. Adaptar o Plano Estratégico (Resultado.tsx)
-
-O Plano Estratégico agora será o **Passo 4**, gerado após RFV + NBO + CX + formulário LAB. Ele incorporará:
-- Os dados do perfil da empresa (formulário inicial)
-- Os resultados da análise RFV, NBO e CX
-- As respostas do formulário LAB
-
-A estrutura do plano seguirá as colunas do Framework LAB:
-1. Top Objetivos
-2. Estrutura do Programa / Plataforma
-3. Estratégia
-4. Benefícios (tangíveis e intangíveis)
-5. Tierização / Segmentação
-6. Cadastro / Canais de Comunicação
-7. Operações
-8. Custos do Programa
-
-Cada seção mostrará as escolhas do usuário + recomendações inteligentes baseadas nos dados dos passos anteriores.
-
-## 6. Atualizar Navegação e Fluxo
-
-- Sidebar: nova ordem dos passos
-- `Index.tsx`: atualizar textos e CTA para refletir o novo fluxo (primeiro RFV, não diagnóstico)
-- Após login/cadastro, redirecionar para upload RFV (Passo 1)
-- O formulário do perfil da empresa pode ser parte do onboarding (após cadastro)
-- O formulário LAB fica antes do Plano Estratégico (Passo 4)
-
-## Detalhes Técnicos
-
-**Arquivos a criar**:
-- `src/pages/FormularioLAB.tsx` — formulário com perguntas do framework
-- Atualizar `src/lib/diagnostic-logic.ts` — novo tipo com campos de perfil + LAB, remover `tiers`
-
-**Arquivos a modificar**:
-- `src/components/Header.tsx` — novo logo
-- `src/components/AppSidebar.tsx` — reordenar passos
-- `src/pages/Diagnostico.tsx` — novas perguntas de perfil, remover tiers, UI para produtos dinâmicos
-- `src/pages/Resultado.tsx` — integrar dados LAB + analytics na geração do plano
-- `src/pages/PlanoFinal.tsx` — ajustar referências de passos
-- `src/pages/Index.tsx` — atualizar textos
-- `src/lib/generate-pdf.ts` — atualizar branding
-- `src/App.tsx` — nova rota `/lab-framework`
-
-**Banco de dados**: 
-- Criar nova tabela `lab_responses` (id, user_id, answers jsonb, created_at) com RLS para o próprio user
-- Ou reutilizar `diagnostic_responses` expandindo o campo `answers` (mais simples, sem migração)
+## Arquivos a modificar
+- `src/lib/rfv-logic.ts` — novo sistema de scoring por percentil
+- `src/pages/RFVParametros.tsx` — nova UI com percentis
+- `src/pages/RFVDashboard.tsx` — adaptar para receber novo formato de params
 
