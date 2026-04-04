@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle } from 'lucide-react';
 import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation } from '@/lib/nbo-logic';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
@@ -142,7 +143,7 @@ const NBODashboard = () => {
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
-          { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: DollarSign, label: 'Valor por cliente', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
           { icon: ShoppingCart, label: 'Frequência Média', value: avgFreq.toFixed(1) + ' compras' },
         ].map((kpi, i) => (
@@ -259,31 +260,35 @@ const NBODashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Offer Distribution */}
+      {/* Offer Distribution Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Distribuição de Ofertas</CardTitle>
           <p className="text-xs text-muted-foreground">Agrupamento por tipo de oferta recomendada</p>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Oferta</TableHead>
-                <TableHead className="text-center">Clientes</TableHead>
-                <TableHead className="text-center">% da Base</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {offerDistribution.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-sm">{item.oferta}</TableCell>
-                  <TableCell className="text-center font-bold">{item.count}</TableCell>
-                  <TableCell className="text-center text-muted-foreground">{item.pct}%</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis
+                  type="category"
+                  dataKey="oferta"
+                  width={280}
+                  tick={{ fontSize: 10 }}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => [`${value} clientes`, 'Quantidade']}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {offerDistribution.map((_, i) => (
+                    <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -304,8 +309,8 @@ interface PyramidChartProps {
 
 function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, selectedCluster, onToggleFaixa, onToggleCluster, totalClients }: PyramidChartProps) {
   const tiers = faixaCounts;
-  const pyramidW = 400;
-  const pyramidH = 380;
+  const pyramidW = 360;
+  const pyramidH = 340;
   const gap = 4;
   const tierH = (pyramidH - gap * (tiers.length - 1)) / tiers.length;
 
@@ -313,10 +318,10 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, sel
   const maxBottomW = pyramidW;
 
   return (
-    <div className="flex items-start gap-6">
+    <div className="flex flex-col lg:flex-row items-start gap-6">
       {/* SVG Pyramid */}
-      <div className="shrink-0">
-        <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
+      <div className="shrink-0 w-full lg:w-auto overflow-visible">
+        <svg className="w-full lg:w-auto" style={{ maxWidth: pyramidW }} viewBox={`0 0 ${pyramidW} ${pyramidH}`} preserveAspectRatio="xMidYMid meet">
           {tiers.map((tier, i) => {
             const y = i * (tierH + gap);
             const topW = minTopW + ((maxBottomW - minTopW) * i) / (tiers.length - 1);
