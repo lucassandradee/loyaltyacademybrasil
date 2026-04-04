@@ -242,7 +242,7 @@ const RFVDashboard = () => {
           <CardContent>
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={310}>
                   <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
                     <XAxis type="number" />
                     <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
@@ -262,7 +262,7 @@ const RFVDashboard = () => {
                 </ResponsiveContainer>
               </div>
               {/* Desktop: regras inline */}
-              <div className="hidden lg:block w-[180px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden">
+              <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden self-start">
                 <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Regras</p>
                 <div className="space-y-0.5">
                   {(() => {
