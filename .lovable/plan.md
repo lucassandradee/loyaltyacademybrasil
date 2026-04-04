@@ -1,130 +1,113 @@
 
 
-# Passo 3 (Next Best Offer) + Passo 4 (Customer Experience) + Plano Final
+# Reestruturação Completa: Logo, Formulário, Ordem dos Passos e Plano LAB
 
-## Conceito do Passo 3 — Next Best Offer (NBO)
+## Resumo
 
-A ideia é: dado o histórico de compras/gastos dos clientes, propor **quebras de faixas de gasto** para criar promoções segmentadas. O usuário faz upload de uma base com clientes e seus gastos, e o sistema:
-- Segmenta em faixas de gasto (ex: até R$500, R$501-2000, R$2001-5000, acima de R$5000)
-- Propõe a "próxima melhor oferta" para cada faixa (upsell para a faixa acima)
-- Gera um plano de ação com promoções recomendadas por faixa
-
-## Conceito do Passo 4 — Customer Experience (CX)
-
-Upload de base de chamados contendo: TMA, NPS, motivo/causa raiz. O dashboard mostra:
-- KPIs: TMA médio/mín/máx, NPS médio/mín/máx
-- Ranking de causas raiz por volume
-- Impacto estimado no NPS se resolver cada causa (baseado na proporção)
-- Plano de ação CX
-
-## Conceito do Passo 5 — Plano Final Consolidado
-
-Página que puxa os resultados dos passos 1-4 e gera uma conclusão global com próximos passos.
+Trocar o logo ESPM pelo Loyalty Academy Brasil, reestruturar o formulário inicial com perguntas de perfil da empresa, reordenar os passos (1=RFV, 2=NBO, 3=CX, 4=Plano Estratégico baseado no Framework LAB), e criar um formulário adicional antes do plano final com as perguntas do Framework LAB.
 
 ---
 
-## Estrutura de arquivos
+## 1. Trocar o Logo
 
-| Arquivo | Descrição |
-|---|---|
-| `src/lib/nbo-logic.ts` | Interfaces, segmentação por faixas de gasto, propostas de oferta por faixa |
-| `src/lib/nbo-random.ts` | Gerador de dados aleatórios NBO |
-| `src/pages/NBOUpload.tsx` | Upload de base + geração aleatória + histórico (mesmo padrão do RFV) |
-| `src/pages/NBODashboard.tsx` | Dashboard com faixas de gasto, gráficos, tabela de clientes, plano de ação |
-| `src/lib/cx-logic.ts` | Interfaces (chamado com TMA, NPS, causa raiz), cálculos de impacto |
-| `src/lib/cx-random.ts` | Gerador de dados aleatórios de chamados |
-| `src/pages/CXUpload.tsx` | Upload de base de chamados + geração aleatória + histórico |
-| `src/pages/CXDashboard.tsx` | Dashboard CX com KPIs, ranking causas raiz, impacto NPS, plano de ação |
-| `src/pages/PlanoFinal.tsx` | Consolidação: resume resultados dos 4 passos, próximos passos |
-| `src/components/AppSidebar.tsx` | Adicionar Passo 3, 4 e Plano Final na sidebar |
-| `src/App.tsx` | Novas rotas |
-| Migration SQL | Tabelas `nbo_uploads` e `cx_uploads` com RLS |
+- Copiar `user-uploads://lab.webp` para `src/assets/lab-logo.webp`
+- Atualizar `Header.tsx`: importar o novo logo no lugar de `espm-logo.jpg`
+- Atualizar `Index.tsx`: trocar "Plataforma Educacional ESPM" por "Loyalty Academy Brasil"
+- Atualizar `generate-pdf.ts`: trocar textos "ESPM" por "Loyalty Academy Brasil"
 
----
+## 2. Reestruturar o Formulário Inicial (Diagnostico.tsx)
 
-## Detalhes por componente
+**Remover**: a pergunta sobre Tiers (`id: 'tiers'`)
 
-### Passo 3 — NBO
+**Manter**: perguntas de modelo, frequência, dados, infos, desafio
 
-**Base esperada**: colunas `nome`, `id_cliente`, `gasto_total`, `categoria_preferida` (opcional), `ultima_compra_dias`
+**Adicionar novas perguntas de perfil da empresa**:
+- **Produtos/Serviços**: campo dinâmico com botão "+" onde o usuário adiciona: nome do produto, breve descrição e % de representatividade na venda
+- **Ano de fundação**: input numérico
+- **Tamanho médio da base de clientes**: seleção (Até 1.000 / 1.001–10.000 / 10.001–50.000 / 50.001–200.000 / Acima de 200.000)
+- **Segmento/Indústria**: seleção (Varejo, Serviços, Tecnologia, Saúde, Alimentação, Educação, Outro)
+- **Faturamento anual estimado**: seleção (Até R$1M / R$1M–10M / R$10M–50M / R$50M–200M / Acima de R$200M)
 
-**Faixas de gasto** (configuráveis): Bronze (até R$500), Prata (R$501-2000), Ouro (R$2001-5000), Diamante (acima R$5000)
+Atualizar `DiagnosticAnswers` em `diagnostic-logic.ts` para incluir os novos campos. Remover `tiers` do tipo.
 
-**Próxima melhor oferta por faixa**:
-- Bronze → "Cupom de 15% para compras acima de R$500" (puxar para Prata)
-- Prata → "Frete grátis + 10% em compras acima de R$2000" (puxar para Ouro)
-- Ouro → "Acesso VIP + cashback 5% acima de R$5000" (puxar para Diamante)
-- Diamante → "Experiência exclusiva, programa de embaixadores"
+## 3. Reordenar os Passos
 
-**Dashboard**: gráfico de barras por faixa, tabela de clientes filtrável, plano de ação 5W2H + Eisenhower
+**Nova ordem na sidebar (`AppSidebar.tsx`)**:
+- Passo 1 — RFV (upload, parametrização, dashboard)
+- Passo 2 — Next Best Offer (dashboard)
+- Passo 3 — Customer Experience (upload, dashboard)
+- Passo 4 — Plano Estratégico de Loyalty (formulário LAB + resultado)
 
-### Passo 4 — CX
+**Atualizar**: labels da sidebar, remover o antigo "Plano Estratégico de Loyalty" do topo, mover para o final como Passo 4.
 
-**Base esperada**: colunas `id_chamado`, `cliente`, `tma_minutos`, `nps_score`, `causa_raiz`, `data_chamado`
+O "Plano Final / Visão Consolidada" permanece como item final.
 
-**KPIs**: cards com TMA (médio, mín, máx) e NPS (médio, mín, máx)
+## 4. Criar Formulário do Framework LAB (nova página)
 
-**Causas raiz**: ranking por volume, com cálculo de "se eliminar essa causa, NPS melhora X pontos" baseado na média do NPS dos chamados daquela causa vs média geral
+Nova página `FormularioLAB.tsx` com perguntas baseadas no framework da imagem, organizado em seções:
 
-**Plano de ação**: 5W2H + Eisenhower por causa raiz (top 5)
+1. **Top Objetivos** (multi-select): Expansão, Ganho de Share, Segmentar e premiar por valor, Adquirir clientes, Reter clientes, Combater concorrência, Reduzir custos, Diversificação, Serviços financeiros, Aumentar NPS, Outros
+2. **Estrutura do Programa** (single): Programa Próprio, Coalizão, Parceiro, Híbrido
+3. **Tipo** (multi-select): Ganhar & Trocar, Tierização Interna, Tierização Pública, Brindes, Gamificação, Comunidades, Comportamento e Estilo, Recomendação, Assinatura
+4. **Plataforma (LMS)** (single): Própria, Terceirizada
+5. **Estratégia** (multi-select): Apoio C-Level, Lançamento Piloto, Roll-out, Lançamento Big-Bang, Anuidade para todos, Tiers, Marketplace, Clube de Descontos, Gamificação, Pilares ESG, OPM, Estratégia de saída, Calendário de comunicação, Capacitação força de vendas
+6. **Time Estratégico** (single): Próprio, Terceirizado, Híbrido
+7. **Benefícios Tangíveis** (multi-select): Descontos, Pontos que expiram, Pontos que não expiram, Cashback/Gift back, Pontos/troca
+8. **Benefícios Intangíveis** (multi-select): Privilégios, Serviços exclusivos, Outros
+9. **Tierização/Segmentação** (single): Pública, Interna, Não aplicar
+10. **Segmentação** (multi-select): Existente (Valor/RFV), Básico + Jornada, Completo, Tipo de benefício, Geolocalização, Outras
+11. **Cadastro** (multi-select): Loja física/digital, App, Site
+12. **Infos Cadastro** (single): Básico + Jornada, Completo
+13. **Canais de Comunicação** (multi-select com ranking): App/Push, E-mail, WhatsApp/SMS, PDV, Recibo no caixa, Mala impressa, Mídia massa, Mídias sociais
+14. **Operações** (multi-select): Unificação Database, CRM, Uso de dados/Hiperpersonalização, Call center próprio vs terceirizado, Atendimento humano vs bot vs híbrido, IA
+15. **Custos** (multi-select): Impacta ROI programa vs não, Custos adicionais, Quem absorve (lojas, matriz, híbrido)
 
-### Passo 5 — Plano Final
+Rota: `/lab-framework` — acessível antes de gerar o Plano Estratégico final.
 
-- Card resumo do diagnóstico (Passo 1)
-- Card resumo da segmentação RFV (Passo 2): distribuição de clusters
-- Card resumo NBO (Passo 3): distribuição por faixa
-- Card resumo CX (Passo 4): NPS médio, top causas
-- Seção "Próximos Passos" com recomendações consolidadas
-- Botão para baixar tudo em PDF/Excel
+## 5. Adaptar o Plano Estratégico (Resultado.tsx)
 
-### Sidebar
+O Plano Estratégico agora será o **Passo 4**, gerado após RFV + NBO + CX + formulário LAB. Ele incorporará:
+- Os dados do perfil da empresa (formulário inicial)
+- Os resultados da análise RFV, NBO e CX
+- As respostas do formulário LAB
 
-```text
-Plano Estratégico de Loyalty
-  └─ Plano Estratégico
+A estrutura do plano seguirá as colunas do Framework LAB:
+1. Top Objetivos
+2. Estrutura do Programa / Plataforma
+3. Estratégia
+4. Benefícios (tangíveis e intangíveis)
+5. Tierização / Segmentação
+6. Cadastro / Canais de Comunicação
+7. Operações
+8. Custos do Programa
 
-Passo 2 — RFV
-  ├─ Upload Base de Dados
-  ├─ Parametrização
-  └─ Dashboard
+Cada seção mostrará as escolhas do usuário + recomendações inteligentes baseadas nos dados dos passos anteriores.
 
-Passo 3 — Next Best Offer
-  ├─ Upload Base de Dados
-  └─ Dashboard
+## 6. Atualizar Navegação e Fluxo
 
-Passo 4 — Customer Experience
-  ├─ Upload Base de Dados
-  └─ Dashboard
+- Sidebar: nova ordem dos passos
+- `Index.tsx`: atualizar textos e CTA para refletir o novo fluxo (primeiro RFV, não diagnóstico)
+- Após login/cadastro, redirecionar para upload RFV (Passo 1)
+- O formulário do perfil da empresa pode ser parte do onboarding (após cadastro)
+- O formulário LAB fica antes do Plano Estratégico (Passo 4)
 
-Plano Final
-  └─ Visão Consolidada
-```
+## Detalhes Técnicos
 
-Cada passo tem bloqueio condicional (mesma lógica: só libera sub-itens após upload).
+**Arquivos a criar**:
+- `src/pages/FormularioLAB.tsx` — formulário com perguntas do framework
+- Atualizar `src/lib/diagnostic-logic.ts` — novo tipo com campos de perfil + LAB, remover `tiers`
 
-### Banco de dados
+**Arquivos a modificar**:
+- `src/components/Header.tsx` — novo logo
+- `src/components/AppSidebar.tsx` — reordenar passos
+- `src/pages/Diagnostico.tsx` — novas perguntas de perfil, remover tiers, UI para produtos dinâmicos
+- `src/pages/Resultado.tsx` — integrar dados LAB + analytics na geração do plano
+- `src/pages/PlanoFinal.tsx` — ajustar referências de passos
+- `src/pages/Index.tsx` — atualizar textos
+- `src/lib/generate-pdf.ts` — atualizar branding
+- `src/App.tsx` — nova rota `/lab-framework`
 
-Duas novas tabelas com a mesma estrutura do `rfv_uploads`:
-
-```sql
-CREATE TABLE nbo_uploads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  client_data jsonb NOT NULL,
-  file_name text NOT NULL DEFAULT 'Upload',
-  client_count integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE cx_uploads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  ticket_data jsonb NOT NULL,
-  file_name text NOT NULL DEFAULT 'Upload',
-  ticket_count integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-```
-
-RLS idêntico ao rfv_uploads (SELECT/INSERT/UPDATE/DELETE para o próprio user_id).
+**Banco de dados**: 
+- Criar nova tabela `lab_responses` (id, user_id, answers jsonb, created_at) com RLS para o próprio user
+- Ou reutilizar `diagnostic_responses` expandindo o campo `answers` (mais simples, sem migração)
 
