@@ -116,12 +116,6 @@ const RFVDashboard = () => {
     }
   };
 
-  const handlePieClick = (_: any, index: number) => {
-    const visibleClusters = clusterCounts.filter(c => c.count > 0);
-    if (visibleClusters[index]) {
-      toggleCluster(visibleClusters[index].name);
-    }
-  };
 
   if (loading) {
     return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando dados...</div>;
