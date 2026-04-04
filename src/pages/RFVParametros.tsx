@@ -60,38 +60,27 @@ const DimensionSliderCard = ({
 
   // Build score segments info
   const segments = Array.from({ length: numScores }, (_, i) => {
-    const scoreNum = i + 1;
+    // For inverted (recency): low percentile = low value = BEST = highest score
+    const scoreNum = inverted ? numScores - i : i + 1;
     const fromPct = i === 0 ? 0 : percentiles[i - 1];
     const toPct = i === numScores - 1 ? 100 : percentiles[i];
     const pctRange = toPct - fromPct;
     const estimatedClients = Math.round((pctRange / 100) * totalClients);
 
     let rangeText = '';
-    if (inverted) {
-      // For recency: lower percentile = lower recency = better
-      if (i === 0) {
-        rangeText = `Até ${formatValue(cutoffs[0])}`;
-      } else if (i === numScores - 1) {
-        rangeText = `Acima de ${formatValue(cutoffs[i - 1])}`;
-      } else {
-        rangeText = `${formatValue(cutoffs[i - 1])} — ${formatValue(cutoffs[i])}`;
-      }
+    if (i === 0) {
+      rangeText = `Até ${formatValue(cutoffs[0])}`;
+    } else if (i === numScores - 1) {
+      rangeText = `Acima de ${formatValue(cutoffs[i - 1])}`;
     } else {
-      if (i === 0) {
-        rangeText = `Até ${formatValue(cutoffs[0])}`;
-      } else if (i === numScores - 1) {
-        rangeText = `Acima de ${formatValue(cutoffs[i - 1])}`;
-      } else {
-        rangeText = `${formatValue(cutoffs[i - 1])} — ${formatValue(cutoffs[i])}`;
-      }
+      rangeText = `${formatValue(cutoffs[i - 1])} — ${formatValue(cutoffs[i])}`;
     }
 
     return { scoreNum, fromPct, toPct, pctRange, estimatedClients, rangeText };
   });
 
-  // For display on the right panel, always show Score 1 first, Score N last (Top)
-  // But for the colored bar, for inverted dims the best score (highest) is on the LEFT (low percentile)
-  const barSegments = inverted ? [...segments].reverse() : segments;
+  // Sort by scoreNum for the right panel display (always 1, 2, 3 order)
+  const displaySegments = [...segments].sort((a, b) => a.scoreNum - b.scoreNum);
 
   return (
     <Card>
