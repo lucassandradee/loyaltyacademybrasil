@@ -81,6 +81,55 @@ export function generateSmartOffer(faixa: string, r: number, f: number, v: numbe
   return { oferta: 'Cupom progressivo: 15% na 1ª compra, 20% na 2ª, 25% na 3ª este mês', regra: 'Bronze padrão: criar hábito de compra com incentivos crescentes' };
 }
 
+/** Generate humanized explanation for the offer */
+export function generateOfferExplanation(client: ScoredNBOClient): string {
+  const nome = client.nome.split(' ')[0]; // first name
+  const rn = client.r_score;
+  const fn = client.f_score;
+  const vn = client.v_score;
+
+  // Build recency description
+  let recDesc = '';
+  if (rn >= 3) recDesc = 'comprou recentemente';
+  else if (rn === 2) recDesc = 'comprou há um tempo moderado';
+  else recDesc = 'não compra há bastante tempo';
+
+  // Build frequency description
+  let freqDesc = '';
+  if (fn >= 3) freqDesc = 'compra com muita frequência';
+  else if (fn === 2) freqDesc = 'compra com frequência moderada';
+  else freqDesc = 'compra raramente';
+
+  // Build value description
+  let valDesc = '';
+  if (vn >= 3) valDesc = 'gasta valores altos';
+  else if (vn === 2) valDesc = 'gasta valores moderados';
+  else valDesc = 'gasta valores baixos';
+
+  // Build recommendation reasoning
+  let reason = '';
+  if (client.faixa === 'Diamante') {
+    if (fn <= 1) reason = 'Como é um cliente de alto valor mas com baixa frequência, o foco é incentivar compras mais recorrentes para maximizar o potencial.';
+    else if (rn <= 1) reason = 'Apesar de ser um cliente premium, está se afastando. É urgente reativá-lo com uma abordagem VIP personalizada.';
+    else reason = 'É um dos melhores clientes da base. O objetivo é mantê-lo engajado com experiências exclusivas e tratamento diferenciado.';
+  } else if (client.faixa === 'Ouro') {
+    if (rn <= 1) reason = 'Este cliente tem potencial alto mas está se distanciando. Uma oferta agressiva de retorno pode reativá-lo antes que seja tarde.';
+    else if (vn >= 3) reason = 'Já gasta bem e está próximo do nível Diamante. Um incentivo direcionado pode levá-lo ao topo da pirâmide.';
+    else reason = 'Está em uma boa posição e pode evoluir. O foco é acelerar a progressão com benefícios de fidelidade.';
+  } else if (client.faixa === 'Prata') {
+    if (fn >= 3) reason = 'Compra bastante mas com ticket menor. Incentivar aumento de valor por compra pode elevá-lo para a faixa Ouro.';
+    else if (rn >= 3 && fn <= 1) reason = 'Comprou recentemente mas ainda não criou hábito. Engajar agora enquanto está "quente" é a melhor estratégia.';
+    else reason = 'Tem potencial de crescimento. Incentivos graduais podem aumentar tanto a frequência quanto o valor das compras.';
+  } else {
+    if (fn >= 3) reason = 'Compra com frequência mas gasta pouco. Um desafio de meta de gasto pode transformar esse comportamento.';
+    else if (rn >= 3) reason = 'Comprou recentemente, é uma oportunidade de ouro para criar engajamento desde o início.';
+    else if (rn <= 1 && fn <= 1) reason = 'É um cliente praticamente inativo. Uma oferta de reativação forte é a última tentativa de recuperação.';
+    else reason = 'Precisa de incentivos crescentes para criar o hábito de compra e aumentar o engajamento com a marca.';
+  }
+
+  return `${nome} ${recDesc}, ${freqDesc} e ${valDesc}. ${reason}`;
+}
+
 /** Classify clients into NBO tiers using weighted RFV scoring + percentile distribution */
 export function classifyNBO(clients: ClientData[]): ScoredNBOClient[] {
   // First, score clients with RFV percentile system

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, DollarSign, ShoppingCart, ArrowLeft, Search, Settings2, X } from 'lucide-react';
+import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, Search, Settings2, X } from 'lucide-react';
 import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap } from '@/lib/rfv-logic';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +56,7 @@ const RFVDashboard = () => {
   const totalClients = scored.length;
   const avgTicket = totalClients > 0 ? scored.reduce((s, c) => s + c.valor, 0) / totalClients : 0;
   const avgFreq = totalClients > 0 ? scored.reduce((s, c) => s + c.frequencia, 0) / totalClients : 0;
+  const avgRecencia = totalClients > 0 ? scored.reduce((s, c) => s + c.recencia, 0) / totalClients : 0;
 
   const clusterCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -152,10 +153,11 @@ const RFVDashboard = () => {
       )}
 
       {/* KPIs */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
           { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
           { icon: ShoppingCart, label: 'Frequência Média', value: avgFreq.toFixed(1) + ' compras' },
         ].map((kpi, i) => (
           <Card key={i}>

@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, DollarSign, Clock, Search, X, Info, HelpCircle } from 'lucide-react';
-import { classifyNBO, allFaixaNames, faixaColors, faixaActions } from '@/lib/nbo-logic';
+import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle } from 'lucide-react';
+import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation } from '@/lib/nbo-logic';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
@@ -18,6 +18,7 @@ const NBODashboard = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedFaixa, setSelectedFaixa] = useState<string | null>(null);
+  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
   const [clientData, setClientData] = useState<ClientData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const perPage = 10;
@@ -40,6 +41,7 @@ const NBODashboard = () => {
   const totalClients = scored.length;
   const avgGasto = totalClients > 0 ? scored.reduce((s, c) => s + c.gasto_total, 0) / totalClients : 0;
   const avgRecencia = totalClients > 0 ? scored.reduce((s, c) => s + c.recencia, 0) / totalClients : 0;
+  const avgFreq = totalClients > 0 ? scored.reduce((s, c) => s + c.frequencia, 0) / totalClients : 0;
 
   const faixaCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -52,7 +54,6 @@ const NBODashboard = () => {
     }));
   }, [scored, totalClients]);
 
-  // RFV cluster composition per NBO tier
   const faixaClusterComposition = useMemo(() => {
     const comp: Record<string, Record<string, number>> = {};
     allFaixaNames.forEach(f => { comp[f] = {}; });
@@ -64,13 +65,27 @@ const NBODashboard = () => {
   }, [scored]);
 
   const toggleFaixa = (name: string) => { setSelectedFaixa(prev => prev === name ? null : name); setPage(0); };
+  const toggleCluster = (name: string) => { setSelectedCluster(prev => prev === name ? null : name); setPage(0); };
 
   const filtered = useMemo(() => {
     let list = scored;
     if (selectedFaixa) list = list.filter(c => c.faixa === selectedFaixa);
+    if (selectedCluster) list = list.filter(c => c.cluster === selectedCluster);
     if (search) { const q = search.toLowerCase(); list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q)); }
     return list;
-  }, [scored, search, selectedFaixa]);
+  }, [scored, search, selectedFaixa, selectedCluster]);
+
+  // Offer distribution
+  const offerDistribution = useMemo(() => {
+    const map = new Map<string, ScoredNBOClient[]>();
+    scored.forEach(c => {
+      if (!map.has(c.oferta)) map.set(c.oferta, []);
+      map.get(c.oferta)!.push(c);
+    });
+    return Array.from(map.entries())
+      .map(([oferta, clients]) => ({ oferta, count: clients.length, pct: totalClients > 0 ? ((clients.length / totalClients) * 100).toFixed(1) : '0' }))
+      .sort((a, b) => b.count - a.count);
+  }, [scored, totalClients]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -106,21 +121,30 @@ const NBODashboard = () => {
         </CardContent>
       </Card>
 
-      {selectedFaixa && (
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filtro ativo:</span>
-          <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: faixaColors[selectedFaixa], color: '#fff' }} onClick={() => setSelectedFaixa(null)}>
-            {selectedFaixa} <X className="h-3 w-3" />
-          </Badge>
+      {/* Active filters */}
+      {(selectedFaixa || selectedCluster) && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+          {selectedFaixa && (
+            <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: faixaColors[selectedFaixa], color: '#fff' }} onClick={() => setSelectedFaixa(null)}>
+              {selectedFaixa} <X className="h-3 w-3" />
+            </Badge>
+          )}
+          {selectedCluster && (
+            <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }} onClick={() => setSelectedCluster(null)}>
+              {selectedCluster} <X className="h-3 w-3" />
+            </Badge>
+          )}
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      {/* KPIs — 4 columns */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
           { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { icon: Clock, label: 'Recência Média', value: `${avgRecencia.toFixed(0)} dias` },
+          { icon: ShoppingCart, label: 'Frequência Média', value: avgFreq.toFixed(1) + ' compras' },
         ].map((kpi, i) => (
           <Card key={i}>
             <CardContent className="flex items-center gap-4 p-6">
@@ -138,14 +162,16 @@ const NBODashboard = () => {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-base">Pirâmide NBO — Distribuição e Composição RFV</CardTitle>
-          <p className="text-xs text-muted-foreground">Clique em um nível da pirâmide para filtrar</p>
+          <p className="text-xs text-muted-foreground">Clique em um nível da pirâmide ou em um segmento RFV para filtrar</p>
         </CardHeader>
         <CardContent>
           <PyramidChart
             faixaCounts={faixaCounts}
             faixaClusterComposition={faixaClusterComposition}
             selectedFaixa={selectedFaixa}
+            selectedCluster={selectedCluster}
             onToggleFaixa={toggleFaixa}
+            onToggleCluster={toggleCluster}
             totalClients={totalClients}
           />
         </CardContent>
@@ -172,10 +198,10 @@ const NBODashboard = () => {
       </div>
 
       {/* Client Table */}
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <CardTitle className="text-base">Dados dos Clientes{selectedFaixa && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}</CardTitle>
+            <CardTitle className="text-base">Dados dos Clientes{(selectedFaixa || selectedCluster) && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}</CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar..." className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
@@ -186,29 +212,36 @@ const NBODashboard = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead><TableHead>ID</TableHead>
-                <TableHead className="text-center">Valor</TableHead>
-                <TableHead className="text-center">Freq.</TableHead>
-                <TableHead className="text-center">Recência</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead className="text-center">R</TableHead>
+                <TableHead className="text-center">F</TableHead>
+                <TableHead className="text-center">V</TableHead>
                 <TableHead className="text-center">Score</TableHead>
+                <TableHead>Cluster RFV</TableHead>
                 <TableHead>Faixa</TableHead>
                 <TableHead>Oferta</TableHead>
-                <TableHead className="text-center">Regra</TableHead>
+                <TableHead>Motivo</TableHead>
+                <TableHead className="text-center">Detalhes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageData.map((c) => (
                 <TableRow key={c.id_cliente}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.id_cliente}</TableCell>
-                  <TableCell className="text-center">R$ {c.gasto_total.toLocaleString('pt-BR')}</TableCell>
-                  <TableCell className="text-center">{c.frequencia}</TableCell>
-                  <TableCell className="text-center">{c.recencia}d</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{c.id_cliente}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{c.r_score}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{c.f_score}</TableCell>
+                  <TableCell className="text-center font-mono text-xs">{c.v_score}</TableCell>
                   <TableCell className="text-center">
                     <span className="font-mono text-xs">{c.nbo_score}</span>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: clusterColors[c.cluster], color: clusterColors[c.cluster] }}>{c.cluster}</Badge>
+                  </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
-                  <TableCell className="max-w-[200px] text-xs text-muted-foreground">{c.oferta}</TableCell>
+                  <TableCell className="max-w-[180px] text-xs text-muted-foreground">{c.oferta}</TableCell>
+                  <TableCell className="max-w-[220px] text-xs text-muted-foreground">{generateOfferExplanation(c)}</TableCell>
                   <TableCell className="text-center">
                     <OfferExplainerPopover client={c} />
                   </TableCell>
@@ -225,6 +258,34 @@ const NBODashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Offer Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Distribuição de Ofertas</CardTitle>
+          <p className="text-xs text-muted-foreground">Agrupamento por tipo de oferta recomendada</p>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Oferta</TableHead>
+                <TableHead className="text-center">Clientes</TableHead>
+                <TableHead className="text-center">% da Base</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {offerDistribution.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell className="text-sm">{item.oferta}</TableCell>
+                  <TableCell className="text-center font-bold">{item.count}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">{item.pct}%</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -235,23 +296,24 @@ interface PyramidChartProps {
   faixaCounts: { name: string; count: number; pct: string; color: string }[];
   faixaClusterComposition: Record<string, Record<string, number>>;
   selectedFaixa: string | null;
+  selectedCluster: string | null;
   onToggleFaixa: (name: string) => void;
+  onToggleCluster: (name: string) => void;
   totalClients: number;
 }
 
-function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, onToggleFaixa, totalClients }: PyramidChartProps) {
-  const tiers = faixaCounts; // Already in order: Diamante, Ouro, Prata, Bronze
-  const pyramidW = 280;
-  const pyramidH = 320;
+function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, selectedCluster, onToggleFaixa, onToggleCluster, totalClients }: PyramidChartProps) {
+  const tiers = faixaCounts;
+  const pyramidW = 400;
+  const pyramidH = 380;
   const gap = 4;
   const tierH = (pyramidH - gap * (tiers.length - 1)) / tiers.length;
 
-  // Each tier is a trapezoid: narrower at top, wider at bottom
-  const minTopW = 60;
+  const minTopW = 80;
   const maxBottomW = pyramidW;
 
   return (
-    <div className="flex items-start gap-8">
+    <div className="flex items-start gap-6">
       {/* SVG Pyramid */}
       <div className="shrink-0">
         <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
@@ -278,17 +340,17 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, onT
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="fill-white text-xs font-bold pointer-events-none"
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: '13px' }}
                 >
                   {tier.name}
                 </text>
                 <text
                   x={pyramidW / 2}
-                  y={y + tierH / 2 + 16}
+                  y={y + tierH / 2 + 18}
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="fill-white/80 pointer-events-none"
-                  style={{ fontSize: '10px' }}
+                  style={{ fontSize: '11px' }}
                 >
                   {tier.count} ({tier.pct}%)
                 </text>
@@ -300,11 +362,10 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, onT
 
       {/* RFV Composition bars */}
       <div className="flex-1 flex flex-col justify-between" style={{ height: pyramidH }}>
-        {tiers.map((tier, i) => {
+        {tiers.map((tier) => {
           const composition = faixaClusterComposition[tier.name] || {};
           const tierTotal = tier.count || 1;
           const isActive = !selectedFaixa || selectedFaixa === tier.name;
-          // Get clusters sorted by count descending
           const clusters = Object.entries(composition)
             .sort((a, b) => b[1] - a[1])
             .filter(([, count]) => count > 0);
@@ -319,24 +380,18 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, onT
               <div className="flex h-5 w-full overflow-hidden rounded-sm">
                 {clusters.map(([cluster, count]) => {
                   const pct = (count / tierTotal) * 100;
+                  const isClusterActive = !selectedCluster || selectedCluster === cluster;
                   return (
-                    <Popover key={cluster}>
-                      <PopoverTrigger asChild>
-                        <div
-                          className="h-full cursor-pointer hover:brightness-110 transition-all relative group"
-                          style={{ width: `${pct}%`, backgroundColor: clusterColors[cluster] || 'hsl(var(--muted))' }}
-                          title={`${cluster}: ${count} (${pct.toFixed(1)}%)`}
-                        />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-2 text-xs">
-                        <p className="font-semibold">{cluster}</p>
-                        <p className="text-muted-foreground">{count} clientes ({pct.toFixed(1)}%)</p>
-                      </PopoverContent>
-                    </Popover>
+                    <div
+                      key={cluster}
+                      className={`h-full cursor-pointer hover:brightness-110 transition-all ${!isClusterActive ? 'opacity-30' : ''}`}
+                      style={{ width: `${pct}%`, backgroundColor: clusterColors[cluster] || 'hsl(var(--muted))' }}
+                      title={`${cluster}: ${count} (${pct.toFixed(1)}%)`}
+                      onClick={() => onToggleCluster(cluster)}
+                    />
                   );
                 })}
               </div>
-              {/* Legend: top 3 clusters */}
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                 {clusters.slice(0, 3).map(([cluster, count]) => (
                   <span key={cluster} className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -370,7 +425,10 @@ function OfferExplainerPopover({ client }: { client: ScoredNBOClient }) {
         <div className="space-y-3">
           <div>
             <p className="text-sm font-bold text-foreground">{client.nome}</p>
-            <Badge variant="outline" className="mt-1 text-xs" style={{ borderColor: faixaColors[client.faixa], color: faixaColors[client.faixa] }}>{client.faixa}</Badge>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="text-xs" style={{ borderColor: faixaColors[client.faixa], color: faixaColors[client.faixa] }}>{client.faixa}</Badge>
+              <Badge variant="outline" className="text-xs" style={{ borderColor: clusterColors[client.cluster], color: clusterColors[client.cluster] }}>{client.cluster}</Badge>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded bg-muted p-2 text-center">
