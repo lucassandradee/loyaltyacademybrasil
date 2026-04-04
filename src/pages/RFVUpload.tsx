@@ -222,7 +222,7 @@ const RFVUpload = () => {
               A planilha deve conter obrigatoriamente as seguintes colunas:
               <strong> Nome, ID do Cliente (CPF/CNPJ), Recência </strong>(dias desde a última compra),
               <strong> Frequência </strong>(quantidade de compras),
-              <strong> Valor Monetário </strong>(ticket médio).
+              <strong> Valor Monetário </strong>(valor total gasto).
             </p>
           </div>
         </div>
