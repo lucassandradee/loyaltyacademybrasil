@@ -162,7 +162,7 @@ export function classifyNBO(clients: ClientData[]): ScoredNBOClient[] {
       const rn = Math.min(3, Math.max(1, c.r_score));
       const fn = Math.min(3, Math.max(1, c.f_score));
       const vn = Math.min(3, Math.max(1, c.v_score));
-      const { oferta, regra } = generateSmartOffer(tier.name, rn, fn, vn);
+      const { oferta, oferta_curta, regra } = generateSmartOffer(tier.name, rn, fn, vn);
       result.push({
         nome: c.nome,
         id_cliente: c.id_cliente,
@@ -177,6 +177,7 @@ export function classifyNBO(clients: ClientData[]): ScoredNBOClient[] {
         nbo_score: c.nbo_score,
         faixa: tier.name,
         oferta,
+        oferta_curta,
         oferta_regra: regra,
       });
     }

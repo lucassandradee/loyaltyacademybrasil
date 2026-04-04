@@ -320,8 +320,8 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, sel
   return (
     <div className="flex flex-col lg:flex-row items-start gap-6">
       {/* SVG Pyramid */}
-      <div className="shrink-0 w-full lg:w-auto overflow-visible">
-        <svg className="w-full lg:w-auto" style={{ maxWidth: pyramidW }} viewBox={`0 0 ${pyramidW} ${pyramidH}`} preserveAspectRatio="xMidYMid meet">
+      <div className="shrink-0" style={{ width: pyramidW, minWidth: pyramidW }}>
+        <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
           {tiers.map((tier, i) => {
             const y = i * (tierH + gap);
             const topW = minTopW + ((maxBottomW - minTopW) * i) / (tiers.length - 1);
