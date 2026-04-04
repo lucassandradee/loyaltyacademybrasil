@@ -221,7 +221,7 @@ const RFVDashboard = () => {
                       <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Regras</p>
                       <span className="text-[8px] text-muted-foreground">clique para expandir</span>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1.5">
                       {(() => {
                         const grouped: Record<string, string[]> = {};
                         Object.entries(clusterMap).forEach(([code, name]) => {
@@ -239,14 +239,14 @@ const RFVDashboard = () => {
                           const visible = codes.slice(0, maxCodes);
                           const remaining = codes.length - maxCodes;
                           return (
-                            <div key={name} className="flex items-center gap-1">
-                              <div className="w-0.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
+                            <div key={name} className="flex items-center gap-1.5">
+                              <div className="w-0.5 h-3 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
                               <span className="text-[9px] font-medium text-foreground truncate min-w-[70px] max-w-[70px]">{name}</span>
-                              <div className="flex gap-0.5 flex-wrap">
+                              <div className="flex gap-1.5 flex-wrap">
                                 {visible.map(code => (
-                                  <span key={code} className="inline-flex gap-px">
+                                  <span key={code} className="inline-flex gap-px rounded border border-border/40 px-0.5 py-0.5">
                                     {code.split('').map((s, i) => (
-                                      <span key={i} className={`inline-flex h-3 w-3 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                      <span key={i} className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
                                     ))}
                                   </span>
                                 ))}
