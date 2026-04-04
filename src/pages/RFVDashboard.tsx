@@ -346,14 +346,24 @@ const RFVDashboard = () => {
               Dados dos Clientes
               {selectedCluster && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}
             </CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, ID ou cluster..."
-                className="pl-9"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(0); }}
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, ID ou cluster..."
+                  className="pl-9"
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(0); }}
+                />
+              </div>
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => {
+                downloadCSV(filtered.map(c => ({
+                  Nome: c.nome, ID: c.id_cliente, Recência: c.recencia, Frequência: c.frequencia,
+                  'Valor Total': c.gasto_total, R: c.r_score, F: c.f_score, V: c.v_score, Cluster: c.cluster,
+                })), 'rfv-clientes.csv');
+              }}>
+                <Download className="h-4 w-4" /> Exportar
+              </Button>
             </div>
           </div>
         </CardHeader>
