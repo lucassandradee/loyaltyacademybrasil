@@ -128,7 +128,7 @@ const NBODashboard = () => {
       </Card>
 
       {/* Active filters */}
-      {(selectedFaixa || selectedCluster) && (
+      {(selectedFaixa || selectedCluster || selectedOferta) && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Filtros ativos:</span>
           {selectedFaixa && (
@@ -139,6 +139,11 @@ const NBODashboard = () => {
           {selectedCluster && (
             <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }} onClick={() => setSelectedCluster(null)}>
               {selectedCluster} <X className="h-3 w-3" />
+            </Badge>
+          )}
+          {selectedOferta && (
+            <Badge className="cursor-pointer gap-1 text-sm bg-primary text-primary-foreground" onClick={() => setSelectedOferta(null)}>
+              {selectedOferta} <X className="h-3 w-3" />
             </Badge>
           )}
         </div>
