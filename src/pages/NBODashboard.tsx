@@ -223,6 +223,7 @@ const NBODashboard = () => {
                 <TableHead>Cluster RFV</TableHead>
                 <TableHead>Faixa</TableHead>
                 <TableHead>Oferta</TableHead>
+                <TableHead>Descrição da Oferta</TableHead>
                 <TableHead>Motivo</TableHead>
                 <TableHead className="text-center">Detalhes</TableHead>
               </TableRow>
