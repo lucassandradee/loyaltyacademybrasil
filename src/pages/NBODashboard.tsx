@@ -21,6 +21,7 @@ const NBODashboard = () => {
   const [page, setPage] = useState(0);
   const [selectedFaixa, setSelectedFaixa] = useState<string | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [selectedOferta, setSelectedOferta] = useState<string | null>(null);
   const [clientData, setClientData] = useState<ClientData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const perPage = 10;
