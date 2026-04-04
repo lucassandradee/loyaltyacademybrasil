@@ -55,40 +55,38 @@ const DimensionSliderCard = ({
   };
 
   const handleSliderChange = (newValues: number[]) => {
-    onPercentilesChange(dimKey, newValues);
+    const nextValues = inverted
+      ? newValues.map((value) => 100 - value).reverse()
+      : newValues;
+
+    onPercentilesChange(dimKey, nextValues.map((value) => Math.round(value * 10) / 10));
   };
 
-  // Build score segments info
-  // Build segments: always Score 1 = worst, Score N = best (Top)
-  // For inverted (recency): low percentile = low value = BEST, so we reverse scoreNum
-  // But we DISPLAY percentiles inverted so Score 3 always shows "90-100%" visually
-  const segments = Array.from({ length: numScores }, (_, i) => {
-    const scoreNum = inverted ? numScores - i : i + 1;
-    const fromPct = i === 0 ? 0 : percentiles[i - 1];
-    const toPct = i === numScores - 1 ? 100 : percentiles[i];
-    const pctRange = toPct - fromPct;
+  const displayPercentiles = useMemo(
+    () => (inverted ? [...percentiles].map((value) => 100 - value).reverse() : percentiles),
+    [inverted, percentiles]
+  );
+
+  const segments = Array.from({ length: numScores }, (_, index) => {
+    const scoreNum = index + 1;
+    const displayFromPct = index === 0 ? 0 : displayPercentiles[index - 1];
+    const displayToPct = index === numScores - 1 ? 100 : displayPercentiles[index];
+    const pctRange = displayToPct - displayFromPct;
     const estimatedClients = Math.round((pctRange / 100) * totalClients);
 
-    // Display percentiles: for inverted, show mirrored so Score 3 = "90-100%"
-    const displayFromPct = inverted ? 100 - toPct : fromPct;
-    const displayToPct = inverted ? 100 - fromPct : toPct;
+    const dataIndex = inverted ? numScores - index - 1 : index;
 
     let rangeText = '';
-    if (i === 0) {
-      rangeText = inverted ? `Acima de ${formatValue(cutoffs[0])}` : `Até ${formatValue(cutoffs[0])}`;
-    } else if (i === numScores - 1) {
-      rangeText = inverted ? `Até ${formatValue(cutoffs[i - 1])}` : `Acima de ${formatValue(cutoffs[i - 1])}`;
+    if (dataIndex === 0) {
+      rangeText = `Até ${formatValue(cutoffs[0])}`;
+    } else if (dataIndex === numScores - 1) {
+      rangeText = `Acima de ${formatValue(cutoffs[dataIndex - 1])}`;
     } else {
-      rangeText = inverted
-        ? `${formatValue(cutoffs[i])} — ${formatValue(cutoffs[i - 1])}`
-        : `${formatValue(cutoffs[i - 1])} — ${formatValue(cutoffs[i])}`;
+      rangeText = `${formatValue(cutoffs[dataIndex - 1])} — ${formatValue(cutoffs[dataIndex])}`;
     }
 
-    return { scoreNum, fromPct, toPct, pctRange, estimatedClients, rangeText, displayFromPct, displayToPct };
+    return { scoreNum, displayFromPct, displayToPct, pctRange, estimatedClients, rangeText };
   });
-
-  // Sort by scoreNum for display (always 1, 2, 3 order)
-  const displaySegments = [...segments].sort((a, b) => a.scoreNum - b.scoreNum);
 
   return (
     <Card>
@@ -97,22 +95,20 @@ const DimensionSliderCard = ({
           <Icon className="h-5 w-5 text-primary" />
           {label}
           {inverted && (
-            <span className="text-xs font-normal text-muted-foreground ml-2">↓ Menor = melhor score</span>
+            <span className="ml-2 text-xs font-normal text-muted-foreground">↓ Menor = melhor score</span>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Left: Visual slider */}
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">Arraste os pontos para ajustar os percentis de corte:</p>
-            
-            {/* Colored segments bar */}
-            <div className="relative h-8 rounded-full overflow-hidden flex">
-              {displaySegments.map((seg) => (
+
+            <div className="relative flex h-8 overflow-hidden rounded-full">
+              {segments.map((seg) => (
                 <div
                   key={seg.scoreNum}
-                  className="h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
+                  className="flex h-full items-center justify-center text-[10px] font-bold text-white transition-all"
                   style={{
                     width: `${seg.pctRange}%`,
                     backgroundColor: getScoreColor(seg.scoreNum - 1, numScores),
@@ -124,11 +120,9 @@ const DimensionSliderCard = ({
               ))}
             </div>
 
-            {/* Radix multi-thumb slider with colored track */}
             <div className="relative h-5">
-              {/* Colored track segments behind the slider */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full overflow-hidden flex">
-                {displaySegments.map((seg) => (
+              <div className="absolute inset-x-0 top-1/2 flex h-2 -translate-y-1/2 overflow-hidden rounded-full">
+                {segments.map((seg) => (
                   <div
                     key={seg.scoreNum}
                     className="h-full transition-all"
@@ -141,8 +135,8 @@ const DimensionSliderCard = ({
                 ))}
               </div>
               <SliderPrimitive.Root
-                className="relative flex w-full touch-none select-none items-center h-5"
-                value={percentiles}
+                className="relative flex h-5 w-full touch-none select-none items-center"
+                value={displayPercentiles}
                 onValueChange={handleSliderChange}
                 min={0}
                 max={100}
@@ -152,13 +146,13 @@ const DimensionSliderCard = ({
                 <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-transparent">
                   <SliderPrimitive.Range className="absolute h-full bg-transparent" />
                 </SliderPrimitive.Track>
-                {percentiles.map((_, i) => {
-                  // Color thumb based on the score to its right (i+1 segment boundary)
-                  const thumbColor = getScoreColor(i + 1, numScores);
+                {displayPercentiles.map((_, index) => {
+                  const thumbColor = getScoreColor(index + 1, numScores);
+
                   return (
                     <SliderPrimitive.Thumb
-                      key={i}
-                      className="block h-5 w-5 rounded-full border-2 bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-grab active:cursor-grabbing"
+                      key={index}
+                      className="block h-5 w-5 cursor-grab rounded-full border-2 bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:cursor-grabbing"
                       style={{ borderColor: thumbColor }}
                     />
                   );
@@ -166,39 +160,37 @@ const DimensionSliderCard = ({
               </SliderPrimitive.Root>
             </div>
 
-            {/* Percentile labels */}
-            <div className="flex justify-between text-[10px] text-muted-foreground px-1">
+            <div className="flex justify-between px-1 text-[10px] text-muted-foreground">
               <span>0%</span>
-              {percentiles.map((p, i) => (
-                <span key={i} className="font-medium text-foreground">{p.toFixed(1)}%</span>
+              {displayPercentiles.map((value, index) => (
+                <span key={index} className="font-medium text-foreground">{value.toFixed(1)}%</span>
               ))}
               <span>100%</span>
             </div>
           </div>
 
-          {/* Right: Score summary */}
           <div className="space-y-2">
-            <div className="flex items-center gap-1 mb-3">
+            <div className="mb-3 flex items-center gap-1">
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Distribuição dos scores na sua base:</span>
             </div>
-            {displaySegments.map((seg) => (
+            {segments.map((seg) => (
               <div
                 key={seg.scoreNum}
                 className="flex items-center gap-3 rounded-md border p-2.5"
               >
                 <div
-                  className="h-8 w-8 rounded-md flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  className="h-8 w-8 shrink-0 rounded-md flex items-center justify-center text-xs font-bold text-white"
                   style={{ backgroundColor: getScoreColor(seg.scoreNum - 1, numScores) }}
                 >
                   {seg.scoreNum}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">
                       Score {seg.scoreNum}
-                      {seg.scoreNum === numScores && <span className="text-xs text-muted-foreground ml-1">(Top)</span>}
-                      {seg.scoreNum === 1 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
+                      {seg.scoreNum === numScores && <span className="ml-1 text-xs text-muted-foreground">(Top)</span>}
+                      {seg.scoreNum === 1 && <span className="ml-1 text-xs text-muted-foreground">(Base)</span>}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {seg.displayFromPct.toFixed(1)}% — {seg.displayToPct.toFixed(1)}%
