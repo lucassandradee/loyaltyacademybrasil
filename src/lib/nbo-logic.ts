@@ -48,38 +48,38 @@ function calcNBOScore(r: number, f: number, v: number): number {
 }
 
 /** Generate smart offer based on faixa + individual RFV scores */
-export function generateSmartOffer(faixa: string, r: number, f: number, v: number): { oferta: string; regra: string } {
+export function generateSmartOffer(faixa: string, r: number, f: number, v: number): { oferta: string; oferta_curta: string; regra: string } {
   // Normalize scores to 1-3
   const rn = Math.min(3, Math.max(1, r));
   const fn = Math.min(3, Math.max(1, f));
   const vn = Math.min(3, Math.max(1, v));
 
   if (faixa === 'Diamante') {
-    if (fn <= 1) return { oferta: 'Programa de pontos em dobro para incentivar compras mais frequentes', regra: 'Diamante com frequência baixa (F=1): precisa aumentar recorrência' };
-    if (rn <= 1) return { oferta: 'Campanha de reativação VIP com benefício exclusivo e contato personalizado', regra: 'Diamante com recência baixa (R=1): cliente valioso se afastando' };
-    if (vn <= 2 && fn >= 3) return { oferta: 'Cashback progressivo de 8% para compras acima do ticket médio', regra: 'Diamante com valor médio mas alta frequência: incentivar aumento de ticket' };
-    return { oferta: 'Experiência exclusiva de embaixador: eventos VIP, pré-lançamentos e concierge dedicado', regra: 'Diamante completo (scores altos): manter engajamento premium' };
+    if (fn <= 1) return { oferta: 'Programa de pontos em dobro para incentivar compras mais frequentes', oferta_curta: 'Pontos em dobro', regra: 'Diamante com frequência baixa (F=1): precisa aumentar recorrência' };
+    if (rn <= 1) return { oferta: 'Campanha de reativação VIP com benefício exclusivo e contato personalizado', oferta_curta: 'Reativação VIP', regra: 'Diamante com recência baixa (R=1): cliente valioso se afastando' };
+    if (vn <= 2 && fn >= 3) return { oferta: 'Cashback progressivo de 8% para compras acima do ticket médio', oferta_curta: 'Cashback 8%', regra: 'Diamante com valor médio mas alta frequência: incentivar aumento de ticket' };
+    return { oferta: 'Experiência exclusiva de embaixador: eventos VIP, pré-lançamentos e concierge dedicado', oferta_curta: 'Embaixador VIP', regra: 'Diamante completo (scores altos): manter engajamento premium' };
   }
 
   if (faixa === 'Ouro') {
-    if (rn <= 1) return { oferta: 'Oferta de retorno exclusiva: 15% off + frete grátis para reativar', regra: 'Ouro com recência baixa (R=1): reativar antes de perder' };
-    if (fn <= 1) return { oferta: 'Desafio de compras: complete 3 compras este mês e ganhe cashback 10%', regra: 'Ouro com frequência baixa (F=1): criar hábito de compra' };
-    if (vn >= 3) return { oferta: 'Acesso antecipado a lançamentos + cashback 5% para subir a Diamante', regra: 'Ouro com valor alto (V=3): próximo da faixa Diamante, incentivar upgrade' };
-    return { oferta: 'Programa de fidelidade acelerado: pontos em dobro nas próximas 5 compras', regra: 'Ouro equilibrado: acelerar progressão para Diamante' };
+    if (rn <= 1) return { oferta: 'Oferta de retorno exclusiva: 15% off + frete grátis para reativar', oferta_curta: 'Retorno 15% off', regra: 'Ouro com recência baixa (R=1): reativar antes de perder' };
+    if (fn <= 1) return { oferta: 'Desafio de compras: complete 3 compras este mês e ganhe cashback 10%', oferta_curta: 'Desafio cashback 10%', regra: 'Ouro com frequência baixa (F=1): criar hábito de compra' };
+    if (vn >= 3) return { oferta: 'Acesso antecipado a lançamentos + cashback 5% para subir a Diamante', oferta_curta: 'Upgrade Diamante', regra: 'Ouro com valor alto (V=3): próximo da faixa Diamante, incentivar upgrade' };
+    return { oferta: 'Programa de fidelidade acelerado: pontos em dobro nas próximas 5 compras', oferta_curta: 'Fidelidade acelerada', regra: 'Ouro equilibrado: acelerar progressão para Diamante' };
   }
 
   if (faixa === 'Prata') {
-    if (fn >= 3) return { oferta: 'Upgrade para Ouro: meta de gasto de R$500 adicionais para desbloquear benefícios premium', regra: 'Prata com alta frequência (F=3): já compra bastante, incentivar aumento de valor' };
-    if (rn >= 3 && fn <= 1) return { oferta: 'Kit de boas-vindas especial + frete grátis nas próximas 3 compras', regra: 'Prata recente mas baixa frequência (R=3, F=1): engajar enquanto quente' };
-    if (vn >= 3) return { oferta: 'Cross-sell personalizado com 10% off em categorias complementares', regra: 'Prata com valor alto (V=3): diversificar consumo para aumentar frequência' };
-    return { oferta: 'Cupom de 10% + frete grátis em compras acima de R$200', regra: 'Prata equilibrado: incentivar aumento geral de engajamento' };
+    if (fn >= 3) return { oferta: 'Upgrade para Ouro: meta de gasto de R$500 adicionais para desbloquear benefícios premium', oferta_curta: 'Meta upgrade Ouro', regra: 'Prata com alta frequência (F=3): já compra bastante, incentivar aumento de valor' };
+    if (rn >= 3 && fn <= 1) return { oferta: 'Kit de boas-vindas especial + frete grátis nas próximas 3 compras', oferta_curta: 'Kit boas-vindas', regra: 'Prata recente mas baixa frequência (R=3, F=1): engajar enquanto quente' };
+    if (vn >= 3) return { oferta: 'Cross-sell personalizado com 10% off em categorias complementares', oferta_curta: 'Cross-sell 10%', regra: 'Prata com valor alto (V=3): diversificar consumo para aumentar frequência' };
+    return { oferta: 'Cupom de 10% + frete grátis em compras acima de R$200', oferta_curta: 'Cupom 10% + frete', regra: 'Prata equilibrado: incentivar aumento geral de engajamento' };
   }
 
   // Bronze
-  if (fn >= 3) return { oferta: 'Upgrade de categoria: atinja R$300 em compras e ganhe benefícios Prata por 3 meses', regra: 'Bronze com alta frequência (F=3): compra bastante mas pouco valor, incentivar ticket maior' };
-  if (rn >= 3) return { oferta: 'Cupom de 20% na próxima compra acima de R$150 — válido por 7 dias', regra: 'Bronze recente (R=3): comprou há pouco, oportunidade de crescimento' };
-  if (rn <= 1 && fn <= 1) return { oferta: 'Oferta de reativação: 25% off + brinde exclusivo na próxima compra', regra: 'Bronze inativo (R=1, F=1): última tentativa de engajamento' };
-  return { oferta: 'Cupom progressivo: 15% na 1ª compra, 20% na 2ª, 25% na 3ª este mês', regra: 'Bronze padrão: criar hábito de compra com incentivos crescentes' };
+  if (fn >= 3) return { oferta: 'Upgrade de categoria: atinja R$300 em compras e ganhe benefícios Prata por 3 meses', oferta_curta: 'Meta upgrade Prata', regra: 'Bronze com alta frequência (F=3): compra bastante mas pouco valor, incentivar ticket maior' };
+  if (rn >= 3) return { oferta: 'Cupom de 20% na próxima compra acima de R$150 — válido por 7 dias', oferta_curta: 'Cupom 20%', regra: 'Bronze recente (R=3): comprou há pouco, oportunidade de crescimento' };
+  if (rn <= 1 && fn <= 1) return { oferta: 'Oferta de reativação: 25% off + brinde exclusivo na próxima compra', oferta_curta: 'Reativação 25%', regra: 'Bronze inativo (R=1, F=1): última tentativa de engajamento' };
+  return { oferta: 'Cupom progressivo: 15% na 1ª compra, 20% na 2ª, 25% na 3ª este mês', oferta_curta: 'Cupom progressivo', regra: 'Bronze padrão: criar hábito de compra com incentivos crescentes' };
 }
 
 /** Generate humanized explanation for the offer */
