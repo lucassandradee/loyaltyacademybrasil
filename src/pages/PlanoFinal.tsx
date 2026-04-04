@@ -183,28 +183,11 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 3 - NBO */}
+      {/* Step 3 - CX */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-5 w-5" /> Passo 3 — Next Best Offer</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Star className="h-5 w-5" /> Passo 3 — Customer Experience</CardTitle>
         </CardHeader>
-        <CardContent>
-          {nboCounts ? (
-            <div>
-              <p className="mb-4 text-sm text-muted-foreground">Base de {nboScored!.length} clientes segmentados por faixa de gasto.</p>
-              <div className="flex flex-wrap gap-2">
-                {nboCounts.filter(c => c.count > 0).map(c => (
-                  <Badge key={c.name} variant="outline" style={{ borderColor: faixaColors[c.name], color: faixaColors[c.name] }}>
-                    {c.name}: {c.count} ({c.pct}%)
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">⚠️ Análise NBO ainda não realizada.</p>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Step 4 - CX */}
       <Card className="mb-6">
