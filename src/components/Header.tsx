@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import espmLogo from '@/assets/espm-logo.jpg';
+import labLogo from '@/assets/lab-logo.webp';
 
 const Header = () => {
   const navigate = useNavigate();
