@@ -293,7 +293,7 @@ const RFVDashboard = () => {
                           <span className="text-xs font-semibold text-foreground min-w-[120px]">{name}</span>
                           <div className="flex flex-wrap gap-1">
                             {codes.map(code => (
-                              <span key={code} className="inline-flex gap-px">
+                              <span key={code} className="inline-flex gap-px rounded border border-gray-400 px-0.5 py-0.5">
                                 {code.split('').map((s, i) => (
                                   <span key={i} className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${scoreColor(s)}`}>{s}</span>
                                 ))}
