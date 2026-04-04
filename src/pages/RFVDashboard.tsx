@@ -359,7 +359,7 @@ const RFVDashboard = () => {
               <Button variant="outline" size="sm" className="gap-1" onClick={() => {
                 downloadCSV(filtered.map(c => ({
                   Nome: c.nome, ID: c.id_cliente, Recência: c.recencia, Frequência: c.frequencia,
-                  'Valor Total': c.gasto_total, R: c.r_score, F: c.f_score, V: c.v_score, Cluster: c.cluster,
+                  'Valor Total': c.valor, R: c.r_score, F: c.f_score, V: c.v_score, Cluster: c.cluster,
                 })), 'rfv-clientes.csv');
               }}>
                 <Download className="h-4 w-4" /> Exportar
