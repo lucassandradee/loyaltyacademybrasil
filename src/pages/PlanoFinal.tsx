@@ -137,16 +137,25 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 1 - Diagnostic */}
+      {/* Step 1 - RFV */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5" /> Passo 1 — Diagnóstico Estratégico</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Users className="h-5 w-5" /> Passo 1 — Segmentação RFV</CardTitle>
         </CardHeader>
         <CardContent>
-          {diagnostic ? (
-            <p className="text-sm text-muted-foreground">✅ Diagnóstico concluído. As respostas foram registradas e utilizadas para gerar o plano estratégico de loyalty.</p>
+          {rfvClusters ? (
+            <div>
+              <p className="mb-4 text-sm text-muted-foreground">Base de {rfvScored!.length} clientes segmentados em {rfvClusters.filter(c => c.count > 0).length} clusters.</p>
+              <div className="flex flex-wrap gap-2">
+                {rfvClusters.filter(c => c.count > 0).map(c => (
+                  <Badge key={c.name} variant="outline" style={{ borderColor: clusterColors[c.name], color: clusterColors[c.name] }}>
+                    {c.name}: {c.count} ({c.pct}%)
+                  </Badge>
+                ))}
+              </div>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">⚠️ Diagnóstico ainda não realizado. Complete o passo 1 para enriquecer o plano final.</p>
+            <p className="text-sm text-muted-foreground">⚠️ Análise RFV ainda não realizada.</p>
           )}
         </CardContent>
       </Card>
