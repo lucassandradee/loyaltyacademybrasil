@@ -315,7 +315,7 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, sel
   const gap = 4;
   const tierH = (pyramidH - gap * (tiers.length - 1)) / tiers.length;
 
-  const minTopW = 80;
+  const minTopW = 30;
   const maxBottomW = pyramidW;
 
   return (
