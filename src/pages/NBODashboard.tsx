@@ -7,12 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle } from 'lucide-react';
+import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle, Download } from 'lucide-react';
 import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation } from '@/lib/nbo-logic';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
 import type { ScoredNBOClient } from '@/lib/nbo-logic';
+import { downloadCSV } from '@/lib/export-utils';
 
 const NBODashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const NBODashboard = () => {
   const [page, setPage] = useState(0);
   const [selectedFaixa, setSelectedFaixa] = useState<string | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [selectedOferta, setSelectedOferta] = useState<string | null>(null);
   const [clientData, setClientData] = useState<ClientData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const perPage = 10;
@@ -67,11 +69,13 @@ const NBODashboard = () => {
 
   const toggleFaixa = (name: string) => { setSelectedFaixa(prev => prev === name ? null : name); setPage(0); };
   const toggleCluster = (name: string) => { setSelectedCluster(prev => prev === name ? null : name); setPage(0); };
+  const toggleOferta = (name: string) => { setSelectedOferta(prev => prev === name ? null : name); setPage(0); };
 
   const filtered = useMemo(() => {
     let list = scored;
     if (selectedFaixa) list = list.filter(c => c.faixa === selectedFaixa);
     if (selectedCluster) list = list.filter(c => c.cluster === selectedCluster);
+    if (selectedOferta) list = list.filter(c => c.oferta_curta === selectedOferta);
     if (search) { const q = search.toLowerCase(); list = list.filter(c => c.nome.toLowerCase().includes(q) || c.id_cliente.includes(q)); }
     return list;
   }, [scored, search, selectedFaixa, selectedCluster]);
@@ -124,7 +128,7 @@ const NBODashboard = () => {
       </Card>
 
       {/* Active filters */}
-      {(selectedFaixa || selectedCluster) && (
+      {(selectedFaixa || selectedCluster || selectedOferta) && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Filtros ativos:</span>
           {selectedFaixa && (
@@ -135,6 +139,11 @@ const NBODashboard = () => {
           {selectedCluster && (
             <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: clusterColors[selectedCluster], color: '#fff' }} onClick={() => setSelectedCluster(null)}>
               {selectedCluster} <X className="h-3 w-3" />
+            </Badge>
+          )}
+          {selectedOferta && (
+            <Badge className="cursor-pointer gap-1 text-sm bg-primary text-primary-foreground" onClick={() => setSelectedOferta(null)}>
+              {selectedOferta} <X className="h-3 w-3" />
             </Badge>
           )}
         </div>
@@ -199,14 +208,50 @@ const NBODashboard = () => {
         ))}
       </div>
 
+      {/* Offer Distribution Chart */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-base">Distribuição de Ofertas</CardTitle>
+          <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar os clientes abaixo</p>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis type="category" dataKey="oferta" width={280} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(value: number) => [`${value} clientes`, 'Quantidade']} contentStyle={{ fontSize: 12 }} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => { if (data?.oferta) toggleOferta(data.oferta); }}>
+                  {offerDistribution.map((entry, i) => (
+                    <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} opacity={!selectedOferta || selectedOferta === entry.oferta ? 1 : 0.3} className="cursor-pointer" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Client Table */}
       <Card className="mb-8">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <CardTitle className="text-base">Dados dos Clientes{(selectedFaixa || selectedCluster) && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar..." className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
+            <CardTitle className="text-base">Dados dos Clientes{(selectedFaixa || selectedCluster || selectedOferta) && <span className="ml-2 text-sm font-normal text-muted-foreground">({filtered.length} de {totalClients})</span>}</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Buscar..." className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
+              </div>
+              <Button variant="outline" size="sm" className="gap-1" onClick={() => {
+                downloadCSV(filtered.map(c => ({
+                  Nome: c.nome, ID: c.id_cliente, Recência: c.recencia, Frequência: c.frequencia,
+                  'Valor Total': c.gasto_total, R: c.r_score, F: c.f_score, V: c.v_score,
+                  'Score NBO': c.nbo_score, 'Cluster RFV': c.cluster, Faixa: c.faixa,
+                  Oferta: c.oferta_curta, 'Descrição da Oferta': c.oferta, Motivo: generateOfferExplanation(c),
+                })), 'nbo-clientes.csv');
+              }}>
+                <Download className="h-4 w-4" /> Exportar
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -236,19 +281,13 @@ const NBODashboard = () => {
                   <TableCell className="text-center font-mono text-xs">{c.r_score}</TableCell>
                   <TableCell className="text-center font-mono text-xs">{c.f_score}</TableCell>
                   <TableCell className="text-center font-mono text-xs">{c.v_score}</TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-mono text-xs">{c.nbo_score}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: clusterColors[c.cluster], color: clusterColors[c.cluster] }}>{c.cluster}</Badge>
-                  </TableCell>
+                  <TableCell className="text-center"><span className="font-mono text-xs">{c.nbo_score}</span></TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: clusterColors[c.cluster], color: clusterColors[c.cluster] }}>{c.cluster}</Badge></TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.oferta_curta}</TableCell>
                   <TableCell className="max-w-[250px] text-xs text-muted-foreground">{c.oferta}</TableCell>
                   <TableCell className="max-w-[220px] text-xs text-muted-foreground">{generateOfferExplanation(c)}</TableCell>
-                  <TableCell className="text-center">
-                    <OfferExplainerPopover client={c} />
-                  </TableCell>
+                  <TableCell className="text-center"><OfferExplainerPopover client={c} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -260,38 +299,6 @@ const NBODashboard = () => {
               <Button variant="outline" size="sm" disabled={page >= pageCount - 1} onClick={() => setPage(page + 1)}>Próxima</Button>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Offer Distribution Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Distribuição de Ofertas</CardTitle>
-          <p className="text-xs text-muted-foreground">Agrupamento por tipo de oferta recomendada</p>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
-                <XAxis type="number" tick={{ fontSize: 12 }} />
-                <YAxis
-                  type="category"
-                  dataKey="oferta"
-                  width={280}
-                  tick={{ fontSize: 10 }}
-                />
-                <Tooltip
-                  formatter={(value: number, name: string) => [`${value} clientes`, 'Quantidade']}
-                  contentStyle={{ fontSize: 12 }}
-                />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {offerDistribution.map((_, i) => (
-                    <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
         </CardContent>
       </Card>
     </div>
