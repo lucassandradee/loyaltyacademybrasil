@@ -1,63 +1,50 @@
 
 
-# Reformulação da Análise NBO
+# Melhorias na Análise NBO + Padronização de KPIs
 
 ## Resumo
 
-8 mudanças na tela NBO: nova lógica de scoring ponderado com pirâmide, ofertas inteligentes baseadas no perfil RFV, remoção do plano de ação, e ajustes de texto/ordem.
+6 mudanças: ampliar pirâmide, padronizar 4 KPIs nos dois dashboards, filtro por segmentação RFV na pirâmide, colunas de scores/cluster na tabela, explicação humanizada das ofertas, e nova seção de distribuição de ofertas.
 
 ## Mudanças
 
-### 1. Corrigir texto do card explicativo (Passo 1, não Passo 2)
-- No card azul, trocar "Passo 2 (RFV)" por "Passo 1 (RFV)"
+### 1. Pirâmide maior, composição RFV menor
+- Aumentar `pyramidW` de 280 para ~400 e `pyramidH` de 320 para ~380
+- Reduzir proporcionalmente a largura da área de composição RFV (barras horizontais)
 
-### 2. KPI "Valor Médio (Gasto)" → "Valor monetário médio por cliente"
-- Mesmo texto usado no RFV Dashboard
+### 2. Padronizar 4 KPIs (NBO + RFV)
+- Ambos os dashboards passam a ter 4 cards: **Total de Clientes**, **Valor monetário médio por cliente**, **Recência Média**, **Frequência Média**
+- No RFV: adicionar card de Recência Média (trocar grid de 3 para 4)
+- No NBO: adicionar card de Frequência Média (trocar grid de 3 para 4)
 
-### 3. Nova lógica de scoring ponderado (`nbo-logic.ts`)
-- Calcular pontuação: `Valor * 3 + Frequência * 2 + Recência * 1`
-- Usar os scores RFV normalizados (1-3) do cliente para o cálculo
-- Precisamos acessar os scores RFV (r_score, f_score, v_score) — vamos importar a função de scoring do RFV e aplicar antes do NBO
-- Rankear clientes pela pontuação e distribuir: 40% Bronze (base), 30% Prata, 20% Ouro, 10% Diamante (topo)
-- Atualizar `classifyNBO` para usar essa nova lógica em vez de faixas fixas de valor
+### 3. Filtro por segmento RFV na pirâmide
+- Clicar nas barras de composição RFV dentro da pirâmide filtra a tabela de clientes por aquele cluster
+- Adicionar estado `selectedCluster` e combiná-lo com `selectedFaixa` no filtro
 
-### 4. Substituir gráficos por Pirâmide + Composição RFV
-- Remover BarChart e PieChart
-- Criar pirâmide SVG com 4 níveis (Diamante no topo, Bronze na base)
-- Ao lado de cada nível da pirâmide, mostrar barras horizontais com a composição dos clusters RFV daquele nível (ex: no nível Diamante, X% são Campeões, Y% Fidelizados, etc.)
-- Estilo visual similar ao desenho de referência do usuário: pirâmide à esquerda, barras segmentadas à direita acompanhando cada linha
-- Clicável para filtrar
+### 4. Colunas de scores e cluster RFV na tabela
+- Adicionar colunas: **R**, **F**, **V** (scores individuais) e **Cluster RFV**
+- O cluster já existe em `ScoredNBOClient` como `cluster`
 
-### 5. Atualizar texto explicativo do card azul
-- Reescrever para explicar a lógica de scoring ponderado (peso 3 valor, 2 frequência, 1 recência) e a distribuição percentual da pirâmide (40/30/20/10)
-- Remover os mini-cards de faixa fixa (Bronze = até R$500 etc.) pois agora a classificação é por percentil
+### 5. Explicação humanizada das ofertas
+- Substituir a coluna "Regra" por uma coluna "Motivo" com texto personalizado
+- Gerar texto contextual tipo: "O {nome} comprou recentemente, compra frequentemente e gasta valores altos. Por isso, recomendamos uma experiência exclusiva..."
+- Criar função `generateOfferExplanation(client)` em `nbo-logic.ts` que monta a frase com base nos scores e na faixa
+- O popover continua existindo com detalhes técnicos (scores, regra)
 
-### 6. Inverter ordem dos cards "Faixas de Gasto"
-- Ordem: Diamante, Ouro, Prata, Bronze (do melhor ao pior)
-
-### 7. Remover Plano de Ação
-- Deletar toda a seção do Action Plan (5W2H + Eisenhower)
-- Remover imports não utilizados (Tabs, Select, Checkbox, Download, XLSX, etc.)
-
-### 8. Ofertas inteligentes baseadas no perfil RFV
-- Criar função `generateSmartOffer(faixa, r_score, f_score, v_score)` que gera ofertas contextuais:
-  - Diamante + frequência baixa → "Programa de pontos em dobro para incentivar retorno"
-  - Diamante + recência baixa → "Campanha de reativação VIP com benefício exclusivo"
-  - Bronze + frequência alta → "Upgrade de categoria com meta de gasto"
-  - etc.
-- Cada regra terá um nome/motivo associado
-- Na tabela "Dados dos Clientes", adicionar coluna com botão/ícone que abre um popover/dialog explicando a regra usada para aquele cliente específico (qual score influenciou, por que aquela oferta)
+### 6. Seção de distribuição de ofertas
+- Nova seção após "Dados dos Clientes" mostrando agrupamento por tipo de oferta
+- Tabela/cards com: texto da oferta, quantidade de clientes, percentual da base
+- Agrupado por `oferta` (campo já existente no `ScoredNBOClient`)
 
 ## Arquivos modificados
 
-- `src/lib/nbo-logic.ts` — nova lógica de scoring ponderado, ofertas inteligentes, remover faixas fixas de valor
-- `src/pages/NBODashboard.tsx` — pirâmide SVG, novos textos, remoção do plano de ação, botão de explicação na tabela
+- `src/lib/nbo-logic.ts` — adicionar `generateOfferExplanation()`
+- `src/pages/NBODashboard.tsx` — pirâmide maior, 4 KPIs, filtro por cluster, colunas extras, motivo humanizado, seção de distribuição de ofertas
+- `src/pages/RFVDashboard.tsx` — adicionar card de Recência Média (4 KPIs)
 
 ## Detalhes técnicos
 
-- A pirâmide será um SVG com 4 trapézios empilhados, cada um com a cor da faixa
-- Para calcular a composição RFV por nível da pirâmide, cruzar o cluster RFV de cada cliente (precisa dos dados de scoring RFV) com a faixa NBO
-- O scoring RFV será calculado junto com o NBO usando `scoreClients` de `rfv-logic.ts` para obter r_score, f_score, v_score
-- A pontuação NBO = v_score*3 + f_score*2 + r_score*1 (max=18, min=6 com scores 1-3)
-- O popover de explicação da oferta mostrará: faixa, scores R/F/V, regra aplicada, e a oferta gerada
+- `generateOfferExplanation` analisa r_score, f_score, v_score para construir frases como "comprou há pouco tempo" (r>=2), "compra com frequência" (f>=2), "gasta valores altos" (v>=2) e conecta com a oferta sugerida
+- O filtro combina `selectedFaixa` AND `selectedCluster` — ambos podem estar ativos simultaneamente
+- A seção de distribuição de ofertas usa `Map<string, ScoredNBOClient[]>` agrupando por `oferta` e exibe contagem + percentual
 
