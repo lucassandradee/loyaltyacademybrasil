@@ -123,10 +123,10 @@ const PlanoFinal = () => {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: 'Diagnóstico', done: !!diagnostic },
               { label: 'RFV', done: !!rfvData },
               { label: 'Next Best Offer', done: !!nboData },
               { label: 'Customer Experience', done: !!cxData },
+              { label: 'Diagnóstico', done: !!diagnostic },
             ].map((step, i) => (
               <div key={i} className={`flex items-center gap-2 rounded-lg border p-3 ${step.done ? 'border-primary/30 bg-primary/5' : 'border-muted bg-muted/30'}`}>
                 {step.done ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <AlertTriangle className="h-5 w-5 text-muted-foreground" />}
