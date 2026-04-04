@@ -34,28 +34,36 @@ export const defaultParams: RFVParams = {
 };
 
 export function defaultPercentileParams(numScores: number = 3): RFVPercentileParams {
-  // Top-heavy distribution: top score always ~10%, bottom score ~50%, rest distributed in between
-  const cuts: number[] = [];
+  // Top-heavy distribution for freq/valor: top score always ~10%, bottom score ~50%
+  const freqValCuts: number[] = [];
   if (numScores === 2) {
-    cuts.push(90);
+    freqValCuts.push(90);
   } else if (numScores === 3) {
-    cuts.push(50, 90);
+    freqValCuts.push(50, 90);
   } else if (numScores === 4) {
-    cuts.push(35, 65, 90);
+    freqValCuts.push(35, 65, 90);
   } else if (numScores === 5) {
-    cuts.push(25, 50, 70, 90);
+    freqValCuts.push(25, 50, 70, 90);
   } else {
-    // For N scores: bottom gets ~50%, top gets ~10%, rest split evenly in 50-90 range
     const midCount = numScores - 2;
-    cuts.push(50);
+    freqValCuts.push(50);
     for (let i = 1; i < midCount; i++) {
-      cuts.push(50 + (40 * i) / midCount);
+      freqValCuts.push(50 + (40 * i) / midCount);
     }
-    cuts.push(90);
+    freqValCuts.push(90);
   }
-  // Round to 1 decimal
-  const rounded = cuts.map(c => Math.round(c * 10) / 10);
-  return { numScores, recencia: [...rounded], frequencia: [...rounded], valor: [...rounded] };
+
+  // For recência (inverted: lower = better), mirror the cutoffs so Score 3 = bottom 10%
+  // freq/valor [50, 90] → recência [10, 50] (inverted mirror)
+  const recCuts = freqValCuts.map(c => 100 - c).reverse();
+
+  const roundArr = (arr: number[]) => arr.map(c => Math.round(c * 10) / 10);
+  return {
+    numScores,
+    recencia: roundArr(recCuts),
+    frequencia: roundArr(freqValCuts),
+    valor: roundArr(freqValCuts),
+  };
 }
 
 export const clusterMap: Record<string, string> = {
