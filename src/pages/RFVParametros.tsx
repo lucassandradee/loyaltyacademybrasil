@@ -124,26 +124,47 @@ const DimensionSliderCard = ({
               ))}
             </div>
 
-            {/* Radix multi-thumb slider */}
-            <SliderPrimitive.Root
-              className="relative flex w-full touch-none select-none items-center h-5"
-              value={percentiles}
-              onValueChange={handleSliderChange}
-              min={0}
-              max={100}
-              step={0.5}
-              minStepsBetweenThumbs={2}
-            >
-              <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
-                <SliderPrimitive.Range className="absolute h-full bg-primary/30" />
-              </SliderPrimitive.Track>
-              {percentiles.map((_, i) => (
-                <SliderPrimitive.Thumb
-                  key={i}
-                  className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-grab active:cursor-grabbing"
-                />
-              ))}
-            </SliderPrimitive.Root>
+            {/* Radix multi-thumb slider with colored track */}
+            <div className="relative h-5">
+              {/* Colored track segments behind the slider */}
+              <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full overflow-hidden flex">
+                {displaySegments.map((seg) => (
+                  <div
+                    key={seg.scoreNum}
+                    className="h-full transition-all"
+                    style={{
+                      width: `${seg.pctRange}%`,
+                      backgroundColor: getScoreColor(seg.scoreNum - 1, numScores),
+                      opacity: 0.35,
+                    }}
+                  />
+                ))}
+              </div>
+              <SliderPrimitive.Root
+                className="relative flex w-full touch-none select-none items-center h-5"
+                value={percentiles}
+                onValueChange={handleSliderChange}
+                min={0}
+                max={100}
+                step={0.5}
+                minStepsBetweenThumbs={2}
+              >
+                <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-transparent">
+                  <SliderPrimitive.Range className="absolute h-full bg-transparent" />
+                </SliderPrimitive.Track>
+                {percentiles.map((_, i) => {
+                  // Color thumb based on the score to its right (i+1 segment boundary)
+                  const thumbColor = getScoreColor(i + 1, numScores);
+                  return (
+                    <SliderPrimitive.Thumb
+                      key={i}
+                      className="block h-5 w-5 rounded-full border-2 bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-grab active:cursor-grabbing"
+                      style={{ borderColor: thumbColor }}
+                    />
+                  );
+                })}
+              </SliderPrimitive.Root>
+            </div>
 
             {/* Percentile labels */}
             <div className="flex justify-between text-[10px] text-muted-foreground px-1">
