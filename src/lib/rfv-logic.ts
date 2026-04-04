@@ -12,6 +12,13 @@ export interface RFVParams {
   valor: { top: number; mid_min: number; mid_max: number; entry: number };
 }
 
+export interface RFVPercentileParams {
+  numScores: number;
+  recencia: number[];   // percentile cutoffs e.g. [33.3, 66.6] for 3 scores
+  frequencia: number[];
+  valor: number[];
+}
+
 export interface ScoredClient extends ClientData {
   r_score: number;
   f_score: number;
@@ -25,6 +32,14 @@ export const defaultParams: RFVParams = {
   frequencia: { top: 6, mid_min: 4, mid_max: 5, entry_min: 1, entry_max: 3 },
   valor: { top: 5000, mid_min: 1501, mid_max: 4999, entry: 1501 },
 };
+
+export function defaultPercentileParams(numScores: number = 3): RFVPercentileParams {
+  const cuts: number[] = [];
+  for (let i = 1; i < numScores; i++) {
+    cuts.push(Math.round((i / numScores) * 1000) / 10);
+  }
+  return { numScores, recencia: [...cuts], frequencia: [...cuts], valor: [...cuts] };
+}
 
 export const clusterMap: Record<string, string> = {
   '333': 'Campeão',
@@ -64,6 +79,91 @@ export const clusterActions: Record<string, string> = {
   'Novos Clientes': 'Onboarding excepcional e primeira experiência memorável. Apresentar o programa de fidelidade. Incentivar segunda compra com benefício especial.',
 };
 
+// --- Percentile scoring ---
+
+/** Given sorted ascending array and a percentile (0-100), return the value at that percentile */
+function valueAtPercentile(sorted: number[], pct: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = (pct / 100) * (sorted.length - 1);
+  const lower = Math.floor(idx);
+  const upper = Math.ceil(idx);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (idx - lower);
+}
+
+/** Compute real cutoff values from data for a set of percentile cutoffs */
+export function computeRealCutoffs(values: number[], percentiles: number[]): number[] {
+  const sorted = [...values].sort((a, b) => a - b);
+  return percentiles.map(p => valueAtPercentile(sorted, p));
+}
+
+/**
+ * Assign score based on percentile cutoff values.
+ * cutoffValues are the real values at each percentile boundary, sorted ascending.
+ * For "ascending" metrics (frequency, value): higher value = higher score.
+ * For "inverted" metrics (recency): lower value = higher score.
+ */
+function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverted: boolean): number {
+  if (inverted) {
+    // Lower value = higher score. cutoffValues are ascending.
+    // e.g. cutoffs [30, 90] for 3 scores:
+    // value <= 30 → score 3, value <= 90 → score 2, else → score 1
+    for (let i = 0; i < cutoffValues.length; i++) {
+      if (value <= cutoffValues[i]) return cutoffValues.length - i + 1;
+    }
+    return 1;
+  } else {
+    // Higher value = higher score. cutoffValues are ascending.
+    // e.g. cutoffs [1850, 5200] for 3 scores:
+    // value > 5200 → score 3, value > 1850 → score 2, else → score 1
+    for (let i = cutoffValues.length - 1; i >= 0; i--) {
+      if (value > cutoffValues[i]) return cutoffValues.length - i + 1;
+    }
+    return 1;
+  }
+}
+
+/** Map a dynamic score (1..N) to a normalized 1-3 score for cluster mapping */
+function normalizeScore(score: number, numScores: number): number {
+  if (numScores <= 3) return score;
+  // Map 1..N to 1..3
+  const ratio = (score - 1) / (numScores - 1); // 0..1
+  if (ratio >= 0.667) return 3;
+  if (ratio >= 0.333) return 2;
+  return 1;
+}
+
+export function scoreClientsPercentile(clients: ClientData[], params: RFVPercentileParams): ScoredClient[] {
+  const recValues = clients.map(c => c.recencia);
+  const freqValues = clients.map(c => c.frequencia);
+  const valValues = clients.map(c => c.valor);
+
+  const recCutoffs = computeRealCutoffs(recValues, params.recencia);
+  const freqCutoffs = computeRealCutoffs(freqValues, params.frequencia);
+  const valCutoffs = computeRealCutoffs(valValues, params.valor);
+
+  return clients.map(c => {
+    const r_raw = scoreByPercentileCutoffs(c.recencia, recCutoffs, true);
+    const f_raw = scoreByPercentileCutoffs(c.frequencia, freqCutoffs, false);
+    const v_raw = scoreByPercentileCutoffs(c.valor, valCutoffs, false);
+
+    const r = normalizeScore(r_raw, params.numScores);
+    const f = normalizeScore(f_raw, params.numScores);
+    const v = normalizeScore(v_raw, params.numScores);
+
+    const code = `${r}${f}${v}`;
+    return {
+      ...c,
+      r_score: r_raw,
+      f_score: f_raw,
+      v_score: v_raw,
+      rfv_code: code,
+      cluster: clusterMap[code] || 'Não classificado',
+    };
+  });
+}
+
+// Legacy scoring functions (kept for backward compat)
 export function scoreRecencia(dias: number, params: RFVParams): number {
   if (dias < params.recencia.top) return 3;
   if (dias <= params.recencia.mid_max) return 2;
@@ -82,7 +182,10 @@ export function scoreValor(val: number, params: RFVParams): number {
   return 1;
 }
 
-export function scoreClients(clients: ClientData[], params: RFVParams): ScoredClient[] {
+export function scoreClients(clients: ClientData[], params: RFVParams | RFVPercentileParams): ScoredClient[] {
+  if ('numScores' in params) {
+    return scoreClientsPercentile(clients, params);
+  }
   return clients.map(c => {
     const r = scoreRecencia(c.recencia, params);
     const f = scoreFrequencia(c.frequencia, params);
