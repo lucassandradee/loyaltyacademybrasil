@@ -217,11 +217,11 @@ const NBODashboard = () => {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }}>
+              <BarChart data={offerDistribution} layout="vertical" margin={{ left: 20, right: 30, top: 5, bottom: 5 }} onClick={(state: any) => { if (state?.activePayload?.[0]?.payload?.oferta) toggleOferta(state.activePayload[0].payload.oferta); }}>
                 <XAxis type="number" tick={{ fontSize: 12 }} />
                 <YAxis type="category" dataKey="oferta" width={280} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(value: number) => [`${value} clientes`, 'Quantidade']} contentStyle={{ fontSize: 12 }} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data: any) => { if (data?.oferta) toggleOferta(data.oferta); }}>
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} className="cursor-pointer">
                   {offerDistribution.map((entry, i) => (
                     <Cell key={i} fill={`hsl(${210 + i * 25}, 60%, ${50 + (i % 3) * 10}%)`} opacity={!selectedOferta || selectedOferta === entry.oferta ? 1 : 0.3} className="cursor-pointer" />
                   ))}
