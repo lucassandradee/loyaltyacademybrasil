@@ -262,7 +262,7 @@ const RFVDashboard = () => {
                 </ResponsiveContainer>
               </div>
               {/* Desktop: regras inline */}
-              <div className="hidden lg:block w-[180px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden">
+              <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden self-start">
                 <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Regras</p>
                 <div className="space-y-0.5">
                   {(() => {
