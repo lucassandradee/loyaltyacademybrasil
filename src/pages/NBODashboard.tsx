@@ -223,6 +223,7 @@ const NBODashboard = () => {
                 <TableHead>Cluster RFV</TableHead>
                 <TableHead>Faixa</TableHead>
                 <TableHead>Oferta</TableHead>
+                <TableHead>Descrição da Oferta</TableHead>
                 <TableHead>Motivo</TableHead>
                 <TableHead className="text-center">Detalhes</TableHead>
               </TableRow>
@@ -243,6 +244,7 @@ const NBODashboard = () => {
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.oferta_curta}</TableCell>
+                  <TableCell className="max-w-[250px] text-xs text-muted-foreground">{c.oferta}</TableCell>
                   <TableCell className="max-w-[220px] text-xs text-muted-foreground">{generateOfferExplanation(c)}</TableCell>
                   <TableCell className="text-center">
                     <OfferExplainerPopover client={c} />
@@ -310,9 +312,9 @@ interface PyramidChartProps {
 
 function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, selectedCluster, onToggleFaixa, onToggleCluster, totalClients }: PyramidChartProps) {
   const tiers = faixaCounts;
-  const pyramidW = 420;
+  const pyramidW = 480;
   const pyramidH = 360;
-  const innerBaseW = 360;
+  const innerBaseW = 420;
   const innerTopW = 0;
   const topPadding = 10;
   const bottomPadding = 10;
