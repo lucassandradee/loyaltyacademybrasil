@@ -160,25 +160,25 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 2 - RFV */}
+      {/* Step 2 - NBO */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Users className="h-5 w-5" /> Passo 2 — Segmentação RFV</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-5 w-5" /> Passo 2 — Next Best Offer</CardTitle>
         </CardHeader>
         <CardContent>
-          {rfvClusters ? (
+          {nboCounts ? (
             <div>
-              <p className="mb-4 text-sm text-muted-foreground">Base de {rfvScored!.length} clientes segmentados em {rfvClusters.filter(c => c.count > 0).length} clusters.</p>
+              <p className="mb-4 text-sm text-muted-foreground">Base de {nboScored!.length} clientes segmentados por faixa de gasto.</p>
               <div className="flex flex-wrap gap-2">
-                {rfvClusters.filter(c => c.count > 0).map(c => (
-                  <Badge key={c.name} variant="outline" style={{ borderColor: clusterColors[c.name], color: clusterColors[c.name] }}>
+                {nboCounts.filter(c => c.count > 0).map(c => (
+                  <Badge key={c.name} variant="outline" style={{ borderColor: faixaColors[c.name], color: faixaColors[c.name] }}>
                     {c.name}: {c.count} ({c.pct}%)
                   </Badge>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">⚠️ Análise RFV ainda não realizada.</p>
+            <p className="text-sm text-muted-foreground">⚠️ Análise NBO ainda não realizada.</p>
           )}
         </CardContent>
       </Card>
