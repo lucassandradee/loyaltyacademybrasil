@@ -242,7 +242,7 @@ const RFVDashboard = () => {
           <CardContent>
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={310}>
                   <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
                     <XAxis type="number" />
                     <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
