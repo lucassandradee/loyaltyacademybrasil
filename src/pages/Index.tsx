@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Target, BarChart3, Users } from 'lucide-react';
+import { ArrowRight, Target, BarChart3, Users, Headphones, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
@@ -19,34 +19,35 @@ const Index = () => {
       <div className="mx-auto max-w-3xl text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground">
           <Target className="h-4 w-4 text-primary" />
-          Plataforma Educacional ESPM
+          Loyalty Academy Brasil
         </div>
 
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Diagnóstico de Loyalty:
+          Certificação em Loyalty Management 4.0
           <br />
-          <span className="text-primary">Descubra o potencial da sua base de clientes</span>
+          <span className="text-primary">Construa sua estratégia de fidelização</span>
         </h1>
 
         <p className="mb-10 text-lg text-muted-foreground">
-          Responda algumas perguntas sobre o seu negócio e receba um plano estratégico
-          personalizado de fidelização, com recomendações práticas e acionáveis.
+          Responda o diagnóstico inicial, analise sua base de clientes com RFV, NBO e CX,
+          e receba um plano estratégico completo baseado no Framework LAB.
         </p>
 
         <Button
           size="lg"
           className="h-14 px-8 text-base font-semibold"
-          onClick={() => navigate(loggedIn ? '/resultado' : '/diagnostico')}
+          onClick={() => navigate(loggedIn ? '/rfv' : '/diagnostico')}
         >
-          {loggedIn ? 'Ver meu Plano' : 'Iniciar Diagnóstico'}
+          {loggedIn ? 'Ir para Análise RFV' : 'Iniciar Diagnóstico'}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-3">
+        <div className="mt-16 grid gap-6 sm:grid-cols-4">
           {[
-            { icon: Target, title: 'Diagnóstico Estratégico', desc: 'Avalie a maturidade do seu negócio para loyalty' },
-            { icon: BarChart3, title: 'Análise RFV', desc: 'Segmente sua base com metodologia Recência, Frequência e Valor' },
-            { icon: Users, title: '8 Clusters', desc: 'Identifique e aja sobre cada perfil de cliente' },
+            { icon: BarChart3, title: 'Passo 1 — RFV', desc: 'Segmente sua base com Recência, Frequência e Valor' },
+            { icon: Users, title: 'Passo 2 — NBO', desc: 'Proponha ofertas personalizadas por faixa de gasto' },
+            { icon: Headphones, title: 'Passo 3 — CX', desc: 'Analise chamados, NPS e causas raiz' },
+            { icon: FileText, title: 'Passo 4 — Plano', desc: 'Plano estratégico completo com Framework LAB' },
           ].map((item, i) => (
             <div key={i} className="rounded-lg border bg-card p-6 text-left">
               <item.icon className="mb-3 h-8 w-8 text-primary" />

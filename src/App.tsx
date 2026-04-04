@@ -18,6 +18,7 @@ import NBODashboard from "./pages/NBODashboard";
 import CXUpload from "./pages/CXUpload";
 import CXDashboard from "./pages/CXDashboard";
 import PlanoFinal from "./pages/PlanoFinal";
+import FormularioLAB from "./pages/FormularioLAB";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/nbo/dashboard" element={<NBODashboard />} />
             <Route path="/cx" element={<CXUpload />} />
             <Route path="/cx/dashboard" element={<CXDashboard />} />
+            <Route path="/lab-framework" element={<FormularioLAB />} />
             <Route path="/plano-final" element={<PlanoFinal />} />
           </Route>
 
