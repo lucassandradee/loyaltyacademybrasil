@@ -186,24 +186,42 @@ const RFVDashboard = () => {
       <div className="mb-8">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
-                <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
-              </div>
-              {/* Mobile: botão com dialog */}
-              <div className="lg:hidden">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors">
-                      <Settings2 className="h-3.5 w-3.5" /> Regras
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Regras de Classificação</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-1.5">
+            <div>
+              <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
+              <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Dialog>
+              <div className="flex gap-6 items-center">
+                <div className="flex-1 min-w-0">
+                  <ResponsiveContainer width="100%" height={310}>
+                    <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                        {clusterCounts.map((entry, i) => (
+                          <Cell
+                            key={i}
+                            fill={entry.color}
+                            opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
+                            stroke={selectedCluster === entry.name ? entry.color : 'none'}
+                            strokeWidth={selectedCluster === entry.name ? 3 : 0}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Desktop: mini regras clicável */}
+                <DialogTrigger asChild>
+                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Regras</p>
+                      <span className="text-[8px] text-muted-foreground">clique para expandir</span>
+                    </div>
+                    <div className="space-y-0.5">
                       {(() => {
                         const grouped: Record<string, string[]> = {};
                         Object.entries(clusterMap).forEach(([code, name]) => {
@@ -214,57 +232,47 @@ const RFVDashboard = () => {
                           s === '3' ? 'bg-emerald-500 text-white' :
                           s === '2' ? 'bg-orange-400 text-white' :
                           'bg-muted text-muted-foreground';
+                        const maxCodes = 5;
                         return allClusterNames.map(name => {
                           const codes = grouped[name];
                           if (!codes) return null;
+                          const visible = codes.slice(0, maxCodes);
+                          const remaining = codes.length - maxCodes;
                           return (
-                            <div key={name} className="flex items-center gap-2 rounded border px-2 py-1" style={{ borderLeftWidth: 3, borderLeftColor: clusterColors[name] }}>
-                              <span className="text-xs font-semibold text-foreground min-w-[120px]">{name}</span>
-                              <div className="flex flex-wrap gap-1">
-                                {codes.map(code => (
+                            <div key={name} className="flex items-center gap-1">
+                              <div className="w-0.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
+                              <span className="text-[9px] font-medium text-foreground truncate min-w-[70px] max-w-[70px]">{name}</span>
+                              <div className="flex gap-0.5 flex-wrap">
+                                {visible.map(code => (
                                   <span key={code} className="inline-flex gap-px">
                                     {code.split('').map((s, i) => (
-                                      <span key={i} className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                      <span key={i} className={`inline-flex h-3 w-3 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
                                     ))}
                                   </span>
                                 ))}
+                                {remaining > 0 && (
+                                  <span className="text-[8px] text-muted-foreground font-medium">+{remaining}</span>
+                                )}
                               </div>
                             </div>
                           );
                         });
                       })()}
                     </div>
-                  </DialogContent>
-                </Dialog>
+                  </div>
+                </DialogTrigger>
+                {/* Mobile: botão */}
+                <DialogTrigger asChild>
+                  <button className="lg:hidden flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors shrink-0">
+                    <Settings2 className="h-3.5 w-3.5" /> Regras
+                  </button>
+                </DialogTrigger>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-6">
-              <div className="flex-1 min-w-0">
-                <ResponsiveContainer width="100%" height={310}>
-                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
-                    <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                      {clusterCounts.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={entry.color}
-                          opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
-                          stroke={selectedCluster === entry.name ? entry.color : 'none'}
-                          strokeWidth={selectedCluster === entry.name ? 3 : 0}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Desktop: regras inline */}
-              <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-1.5 overflow-hidden self-start">
-                <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Regras</p>
-                <div className="space-y-0.5">
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Regras de Classificação</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-1.5">
                   {(() => {
                     const grouped: Record<string, string[]> = {};
                     Object.entries(clusterMap).forEach(([code, name]) => {
@@ -275,35 +283,28 @@ const RFVDashboard = () => {
                       s === '3' ? 'bg-emerald-500 text-white' :
                       s === '2' ? 'bg-orange-400 text-white' :
                       'bg-muted text-muted-foreground';
-                    const maxCodes = 3;
                     return allClusterNames.map(name => {
                       const codes = grouped[name];
                       if (!codes) return null;
-                      const visible = codes.slice(0, maxCodes);
-                      const remaining = codes.length - maxCodes;
                       return (
-                        <div key={name} className="flex items-center gap-1" title={codes.map(c => c.split('').join('-')).join(', ')}>
-                          <div className="w-0.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
-                          <span className="text-[9px] font-medium text-foreground truncate min-w-[60px] max-w-[60px]">{name}</span>
-                          <div className="flex gap-0.5 shrink-0 overflow-hidden">
-                            {visible.map(code => (
+                        <div key={name} className="flex items-center gap-2 rounded border px-2 py-1" style={{ borderLeftWidth: 3, borderLeftColor: clusterColors[name] }}>
+                          <span className="text-xs font-semibold text-foreground min-w-[120px]">{name}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {codes.map(code => (
                               <span key={code} className="inline-flex gap-px">
                                 {code.split('').map((s, i) => (
-                                  <span key={i} className={`inline-flex h-3 w-3 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                  <span key={i} className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${scoreColor(s)}`}>{s}</span>
                                 ))}
                               </span>
                             ))}
-                            {remaining > 0 && (
-                              <span className="text-[8px] text-muted-foreground font-medium">…</span>
-                            )}
                           </div>
                         </div>
                       );
                     });
                   })()}
                 </div>
-              </div>
-            </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>
