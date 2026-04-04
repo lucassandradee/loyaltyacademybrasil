@@ -216,12 +216,12 @@ const RFVDashboard = () => {
                 </div>
                 {/* Desktop: mini regras clicável */}
                 <DialogTrigger asChild>
-                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="hidden lg:flex lg:flex-col w-[324px] shrink-0 rounded-md border bg-muted/30 p-2 cursor-pointer hover:bg-muted/50 transition-colors justify-center">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">Regras</p>
                       <span className="text-[8px] text-muted-foreground">clique para expandir</span>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {(() => {
                         const grouped: Record<string, string[]> = {};
                         Object.entries(clusterMap).forEach(([code, name]) => {
@@ -232,26 +232,28 @@ const RFVDashboard = () => {
                           s === '3' ? 'bg-emerald-500 text-white' :
                           s === '2' ? 'bg-orange-400 text-white' :
                           'bg-muted text-muted-foreground';
-                        const maxCodes = 5;
                         return allClusterNames.map(name => {
                           const codes = grouped[name];
                           if (!codes) return null;
+                          const availableWidth = 324 - 16 - 4 - 12 - 70 - 12;
+                          const codeWidth = 3 * 14 + 4 + 6;
+                          const maxCodes = Math.max(1, Math.floor(availableWidth / codeWidth));
                           const visible = codes.slice(0, maxCodes);
                           const remaining = codes.length - maxCodes;
                           return (
-                            <div key={name} className="flex items-center gap-1.5">
+                            <div key={name} className="flex items-center gap-1.5 overflow-hidden">
                               <div className="w-0.5 h-3 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
                               <span className="text-[9px] font-medium text-foreground truncate min-w-[70px] max-w-[70px]">{name}</span>
-                              <div className="flex gap-1.5 flex-wrap">
+                              <div className="flex gap-1 shrink-0 overflow-hidden flex-nowrap">
                                 {visible.map(code => (
-                                  <span key={code} className="inline-flex gap-px rounded border border-border/40 px-0.5 py-0.5">
+                                  <span key={code} className="inline-flex gap-px rounded border border-border/40 px-0.5 py-0.5 shrink-0">
                                     {code.split('').map((s, i) => (
                                       <span key={i} className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded text-[7px] font-bold ${scoreColor(s)}`}>{s}</span>
                                     ))}
                                   </span>
                                 ))}
                                 {remaining > 0 && (
-                                  <span className="text-[8px] text-muted-foreground font-medium">+{remaining}</span>
+                                  <span className="text-[8px] text-muted-foreground font-medium shrink-0">…+{remaining}</span>
                                 )}
                               </div>
                             </div>
