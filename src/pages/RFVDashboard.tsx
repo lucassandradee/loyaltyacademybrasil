@@ -129,7 +129,7 @@ const RFVDashboard = () => {
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard RFV</h1>
+          <h1 className="text-3xl font-bold text-foreground">Análise RFV</h1>
           <p className="text-muted-foreground">Análise completa da segmentação de clientes</p>
         </div>
         <Button variant="outline" onClick={() => navigate('/rfv/parametros', { state: { clientData } })}>

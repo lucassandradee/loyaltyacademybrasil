@@ -98,7 +98,7 @@ const NBODashboard = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard Next Best Offer</h1>
+        <h1 className="text-3xl font-bold text-foreground">Análise Next Best Offer</h1>
         <p className="text-muted-foreground">Segmentação por faixas de gasto (baseada na mesma base do RFV)</p>
       </div>
 
