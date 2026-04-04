@@ -19,7 +19,7 @@ import {
 const step1Items = [
   { title: 'Upload Base de Dados', url: '/rfv', icon: Upload, alwaysEnabled: true },
   { title: 'Parametrização', url: '/rfv/parametros', icon: SlidersHorizontal, alwaysEnabled: false },
-  { title: 'Dashboard', url: '/rfv/dashboard', icon: BarChart3, alwaysEnabled: false },
+  { title: 'Análise', url: '/rfv/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
 const step2Items = [
