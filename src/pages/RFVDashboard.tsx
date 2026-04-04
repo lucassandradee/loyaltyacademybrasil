@@ -193,7 +193,7 @@ const RFVDashboard = () => {
           </CardHeader>
           <CardContent>
             <Dialog>
-              <div className="flex gap-6 items-center">
+              <div className="flex gap-6 items-start">
                 <div className="flex-1 min-w-0">
                   <ResponsiveContainer width="100%" height={310}>
                     <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
