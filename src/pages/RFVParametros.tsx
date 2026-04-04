@@ -112,13 +112,13 @@ const DimensionSliderCard = ({
             
             {/* Colored segments bar */}
             <div className="relative h-8 rounded-full overflow-hidden flex">
-              {segments.map((seg, i) => (
+              {barSegments.map((seg, i) => (
                 <div
                   key={i}
                   className="h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
                   style={{
                     width: `${seg.pctRange}%`,
-                    backgroundColor: getScoreColor(i, numScores),
+                    backgroundColor: getScoreColor(seg.scoreNum - 1, numScores),
                     minWidth: seg.pctRange > 5 ? undefined : '4px',
                   }}
                 >
