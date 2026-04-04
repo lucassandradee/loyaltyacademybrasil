@@ -80,8 +80,9 @@ const NBODashboard = () => {
   const offerDistribution = useMemo(() => {
     const map = new Map<string, ScoredNBOClient[]>();
     scored.forEach(c => {
-      if (!map.has(c.oferta)) map.set(c.oferta, []);
-      map.get(c.oferta)!.push(c);
+      const key = c.oferta_curta;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
     });
     return Array.from(map.entries())
       .map(([oferta, clients]) => ({ oferta, count: clients.length, pct: totalClients > 0 ? ((clients.length / totalClients) * 100).toFixed(1) : '0' }))
