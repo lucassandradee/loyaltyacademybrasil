@@ -155,7 +155,7 @@ const RFVDashboard = () => {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {[
           { icon: Users, label: 'Total de Clientes', value: totalClients.toLocaleString('pt-BR') },
-          { icon: DollarSign, label: 'Ticket Médio Global', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+          { icon: DollarSign, label: 'Valor monetário médio por cliente', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { icon: ShoppingCart, label: 'Frequência Média', value: avgFreq.toFixed(1) + ' compras' },
         ].map((kpi, i) => (
           <Card key={i}>
@@ -242,10 +242,10 @@ const RFVDashboard = () => {
           <CardContent>
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }} onClick={handleBarClick} className="cursor-pointer">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
                     <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                       {clusterCounts.map((entry, i) => (
