@@ -1,48 +1,34 @@
 
 
-# Redesign da Parametrização RFV — Layout Vertical com Slider Visual
+# Correção de Score 3 e Label de Valor
 
-## Resumo
+## Problemas Identificados
 
-Trocar o layout de 3 colunas lado a lado para **vertical (um embaixo do outro)**. Cada dimensão (R, F, V) terá um card com layout em 2 colunas: à esquerda um **slider multi-thumb** visual onde o usuário arrasta os pontos de corte numa barra de 0–100%, e à direita uma explicação clara dos scores resultantes com os valores reais da base.
+1. **Assimetria nos defaults de percentil**: Os mesmos cutoffs `[50, 90]` são usados para R, F e V. Para frequência/valor (higher=better), Score 3 = top 10%. Mas para recência (lower=better, inverted), Score 3 = bottom 50% dos dados. Isso cria uma inconsistência — 50% dos clientes ficam no Score 3 de recência, mas só 10% no Score 3 de valor.
 
-Além disso, mudar o **default** para uma distribuição desigual: Score 1 = 0–50%, Score 2 = 50–90%, Score 3 = 90–100% (top 10% da base). Ao mudar o número de scores, manter proporção similar (scores baixos pegam mais gente, score máximo sempre ~10%).
+2. **Label "ticket médio"**: Na página de upload (`RFVUpload.tsx` linha 225), o campo valor é descrito como "ticket médio". O usuário quer que seja "valor total gasto".
 
-## Mudanças
+## Correções
 
-### 1. `defaultPercentileParams` em `rfv-logic.ts`
+### 1. `src/lib/rfv-logic.ts` — Percentis invertidos para recência
 
-Trocar a distribuição uniforme para uma distribuição "top-heavy":
-- 3 scores: `[50, 90]` → Score 1: 0–50%, Score 2: 50–90%, Score 3: 90–100%
-- 4 scores: `[35, 65, 90]`
-- 5 scores: `[25, 50, 70, 90]`
-- N scores: distribuir proporcionalmente mantendo o último score sempre nos top 10%
+Mudar `defaultPercentileParams` para gerar cutoffs **invertidos** para recência. Para 3 scores:
+- Recência: `[10, 50]` → Score 1 = 50-100% (recência alta = ruim), Score 2 = 10-50%, Score 3 = 0-10% (recência baixa = melhor)
+- Frequência/Valor: `[50, 90]` → mantém como está
 
-### 2. `RFVParametros.tsx` — Redesign completo
+Assim, Score 3 sempre = ~10% melhores clientes em todas as dimensões.
 
-**Layout**: cards empilhados verticalmente (não mais `grid md:grid-cols-3`)
+Para N scores, aplicar a mesma lógica invertida: recência usa `[100-corte invertido]`.
 
-Cada card terá layout interno em 2 colunas (`grid md:grid-cols-2`):
+### 2. `src/pages/RFVUpload.tsx` — Trocar "ticket médio" por "valor total"
 
-**Coluna esquerda — Slider visual**:
-- Uma barra horizontal representando 0–100% da base
-- N-1 thumbs arrastáveis (usando Radix Slider com múltiplos valores)
-- Segmentos coloridos entre os thumbs (cores distintas por score)
-- Labels dos percentis nos thumbs
+Linha 225: mudar o texto descritivo de "Valor Monetário (ticket médio)" para "Valor Monetário (valor total gasto)".
 
-**Coluna direita — Resumo dos scores**:
-- Lista dos scores com: faixa percentil, valor real correspondente da base, e quantidade estimada de clientes
-- Texto explicativo: "Score 3 (Top): os 10% clientes com maior valor"
-- Para Recência: nota "↓ Menor = melhor"
+### 3. `src/pages/RFVParametros.tsx` — Ajustar display dos segmentos
 
-### 3. Componente `MultiRangeSlider`
-
-Usar o Slider do Radix (já instalado em `slider.tsx`) com prop `value` como array de N-1 valores. O Radix Slider suporta múltiplos thumbs nativamente passando um array.
-
-Renderizar segmentos coloridos via CSS posicionamento absoluto sobre o track.
+A lógica de display dos segmentos (linhas 62-79) já trata o caso inverted corretamente com `scoreNum = inverted ? numScores - i : i + 1`. Com os novos defaults invertidos para recência, o Score 3 ficará nos ~10% com menor recência (mais recentes), consistente com as outras dimensões.
 
 ## Arquivos a modificar
-
-- `src/lib/rfv-logic.ts` — mudar `defaultPercentileParams` para distribuição top-heavy
-- `src/pages/RFVParametros.tsx` — redesign completo: layout vertical, slider visual, painel explicativo
+- `src/lib/rfv-logic.ts` — defaults diferentes para recência vs frequência/valor
+- `src/pages/RFVUpload.tsx` — label "valor total gasto"
 
