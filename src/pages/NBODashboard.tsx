@@ -312,9 +312,9 @@ interface PyramidChartProps {
 
 function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, selectedCluster, onToggleFaixa, onToggleCluster, totalClients }: PyramidChartProps) {
   const tiers = faixaCounts;
-  const pyramidW = 550;
+  const pyramidW = 630;
   const pyramidH = 360;
-  const innerBaseW = 480;
+  const innerBaseW = 550;
   const innerTopW = 0;
   const topPadding = 10;
   const bottomPadding = 10;
