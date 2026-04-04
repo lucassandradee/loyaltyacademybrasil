@@ -164,14 +164,14 @@ const DimensionSliderCard = ({
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Distribuição dos scores na sua base:</span>
             </div>
-            {segments.map((seg, i) => (
+            {segments.map((seg) => (
               <div
-                key={i}
+                key={seg.scoreNum}
                 className="flex items-center gap-3 rounded-md border p-2.5"
               >
                 <div
                   className="h-8 w-8 rounded-md flex items-center justify-center text-xs font-bold text-white shrink-0"
-                  style={{ backgroundColor: getScoreColor(i, numScores) }}
+                  style={{ backgroundColor: getScoreColor(seg.scoreNum - 1, numScores) }}
                 >
                   {seg.scoreNum}
                 </div>
@@ -179,8 +179,8 @@ const DimensionSliderCard = ({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">
                       Score {seg.scoreNum}
-                      {i === numScores - 1 && <span className="text-xs text-muted-foreground ml-1">(Top)</span>}
-                      {i === 0 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
+                      {seg.scoreNum === numScores && <span className="text-xs text-muted-foreground ml-1">(Top)</span>}
+                      {seg.scoreNum === 1 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {seg.fromPct.toFixed(1)}% — {seg.toPct.toFixed(1)}%
