@@ -182,75 +182,120 @@ const RFVDashboard = () => {
       </Card>
 
       {/* Charts */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Distribuição por Cluster</CardTitle>
+                <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
+              </div>
+              {/* Mobile: botão com dialog */}
+              <div className="lg:hidden">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted transition-colors">
+                      <Settings2 className="h-3.5 w-3.5" /> Regras
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Regras de Classificação</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-1.5">
+                      {(() => {
+                        const grouped: Record<string, string[]> = {};
+                        Object.entries(clusterMap).forEach(([code, name]) => {
+                          if (!grouped[name]) grouped[name] = [];
+                          grouped[name].push(code);
+                        });
+                        const scoreColor = (s: string) =>
+                          s === '3' ? 'bg-emerald-500 text-white' :
+                          s === '2' ? 'bg-orange-400 text-white' :
+                          'bg-muted text-muted-foreground';
+                        return allClusterNames.map(name => {
+                          const codes = grouped[name];
+                          if (!codes) return null;
+                          return (
+                            <div key={name} className="flex items-center gap-2 rounded border px-2 py-1" style={{ borderLeftWidth: 3, borderLeftColor: clusterColors[name] }}>
+                              <span className="text-xs font-semibold text-foreground min-w-[120px]">{name}</span>
+                              <div className="flex flex-wrap gap-1">
+                                {codes.map(code => (
+                                  <span key={code} className="inline-flex gap-px">
+                                    {code.split('').map((s, i) => (
+                                      <span key={i} className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                    ))}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }} onClick={handleBarClick} className="cursor-pointer">
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {clusterCounts.map((entry, i) => (
-                    <Cell
-                      key={i}
-                      fill={entry.color}
-                      opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
-                      stroke={selectedCluster === entry.name ? entry.color : 'none'}
-                      strokeWidth={selectedCluster === entry.name ? 3 : 0}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Regras</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="space-y-1.5 max-h-[310px] overflow-y-auto pr-1">
-              {(() => {
-                const grouped: Record<string, string[]> = {};
-                Object.entries(clusterMap).forEach(([code, name]) => {
-                  if (!grouped[name]) grouped[name] = [];
-                  grouped[name].push(code);
-                });
-                const scoreColor = (s: string) =>
-                  s === '3' ? 'bg-emerald-500 text-white' :
-                  s === '2' ? 'bg-orange-400 text-white' :
-                  'bg-muted text-muted-foreground';
-                return allClusterNames.map(name => {
-                  const codes = grouped[name];
-                  if (!codes) return null;
-                  return (
-                    <div
-                      key={name}
-                      className="flex items-center gap-2 rounded border px-2 py-1"
-                      style={{ borderLeftWidth: 3, borderLeftColor: clusterColors[name] }}
-                    >
-                      <span className="text-[11px] font-semibold text-foreground truncate min-w-0 flex-1">{name}</span>
-                      <div className="flex flex-wrap gap-1 shrink-0">
-                        {codes.map(code => (
-                          <span key={code} className="inline-flex gap-px">
-                            {code.split('').map((s, i) => (
-                              <span key={i} className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${scoreColor(s)}`}>
-                                {s}
+            <div className="flex gap-6">
+              <div className="flex-1 min-w-0">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }} onClick={handleBarClick} className="cursor-pointer">
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                      {clusterCounts.map((entry, i) => (
+                        <Cell
+                          key={i}
+                          fill={entry.color}
+                          opacity={selectedCluster && selectedCluster !== entry.name ? 0.3 : 1}
+                          stroke={selectedCluster === entry.name ? entry.color : 'none'}
+                          strokeWidth={selectedCluster === entry.name ? 3 : 0}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Desktop: regras inline */}
+              <div className="hidden lg:block w-[220px] shrink-0 rounded-md border bg-muted/30 p-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Regras</p>
+                <div className="space-y-1">
+                  {(() => {
+                    const grouped: Record<string, string[]> = {};
+                    Object.entries(clusterMap).forEach(([code, name]) => {
+                      if (!grouped[name]) grouped[name] = [];
+                      grouped[name].push(code);
+                    });
+                    const scoreColor = (s: string) =>
+                      s === '3' ? 'bg-emerald-500 text-white' :
+                      s === '2' ? 'bg-orange-400 text-white' :
+                      'bg-muted text-muted-foreground';
+                    return allClusterNames.map(name => {
+                      const codes = grouped[name];
+                      if (!codes) return null;
+                      return (
+                        <div key={name} className="flex items-center gap-1.5">
+                          <div className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: clusterColors[name] }} />
+                          <span className="text-[10px] font-medium text-foreground truncate flex-1">{name}</span>
+                          <div className="flex gap-0.5 shrink-0">
+                            {codes.map(code => (
+                              <span key={code} className="inline-flex gap-px">
+                                {code.split('').map((s, i) => (
+                                  <span key={i} className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded text-[8px] font-bold ${scoreColor(s)}`}>{s}</span>
+                                ))}
                               </span>
                             ))}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
