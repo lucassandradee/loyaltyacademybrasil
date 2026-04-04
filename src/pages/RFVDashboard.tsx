@@ -45,7 +45,7 @@ const RFVDashboard = () => {
   }, [locState, navigate]);
 
   const clientData = locState?.clientData || dbData;
-  const params = locState?.params || defaultParams;
+  const params = locState?.params || defaultPercentileParams(3);
 
   const scored = useMemo(() => {
     if (!clientData) return [];
