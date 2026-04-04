@@ -123,10 +123,10 @@ const PlanoFinal = () => {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: 'Diagnóstico', done: !!diagnostic },
               { label: 'RFV', done: !!rfvData },
               { label: 'Next Best Offer', done: !!nboData },
               { label: 'Customer Experience', done: !!cxData },
+              { label: 'Diagnóstico', done: !!diagnostic },
             ].map((step, i) => (
               <div key={i} className={`flex items-center gap-2 rounded-lg border p-3 ${step.done ? 'border-primary/30 bg-primary/5' : 'border-muted bg-muted/30'}`}>
                 {step.done ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <AlertTriangle className="h-5 w-5 text-muted-foreground" />}
@@ -137,24 +137,10 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 1 - Diagnostic */}
+      {/* Step 1 - RFV */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5" /> Passo 1 — Diagnóstico Estratégico</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {diagnostic ? (
-            <p className="text-sm text-muted-foreground">✅ Diagnóstico concluído. As respostas foram registradas e utilizadas para gerar o plano estratégico de loyalty.</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">⚠️ Diagnóstico ainda não realizado. Complete o passo 1 para enriquecer o plano final.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Step 2 - RFV */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Users className="h-5 w-5" /> Passo 2 — Segmentação RFV</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Users className="h-5 w-5" /> Passo 1 — Segmentação RFV</CardTitle>
         </CardHeader>
         <CardContent>
           {rfvClusters ? (
@@ -174,10 +160,10 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 3 - NBO */}
+      {/* Step 2 - NBO */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-5 w-5" /> Passo 3 — Next Best Offer</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-5 w-5" /> Passo 2 — Next Best Offer</CardTitle>
         </CardHeader>
         <CardContent>
           {nboCounts ? (
@@ -197,10 +183,10 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 4 - CX */}
+      {/* Step 3 - CX */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Star className="h-5 w-5" /> Passo 4 — Customer Experience</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Star className="h-5 w-5" /> Passo 3 — Customer Experience</CardTitle>
         </CardHeader>
         <CardContent>
           {cxKpis && cxCausas ? (
@@ -228,6 +214,20 @@ const PlanoFinal = () => {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">⚠️ Análise CX ainda não realizada.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Step 4 - Diagnostic / Plano Estratégico */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5" /> Passo 4 — Plano Estratégico</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {diagnostic ? (
+            <p className="text-sm text-muted-foreground">✅ Diagnóstico e Framework LAB concluídos. O plano estratégico foi gerado com base nas suas respostas.</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">⚠️ Complete o diagnóstico e o formulário LAB para gerar o plano estratégico.</p>
           )}
         </CardContent>
       </Card>

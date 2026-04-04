@@ -268,7 +268,7 @@ const Resultado = () => {
 
       <div className="mt-8 text-center">
         <Button size="lg" onClick={() => navigate('/rfv')} className="h-12 px-8">
-          Ir para Análise de Dados RFV (Módulo 2)
+          Ir para Análise de Dados RFV (Passo 1)
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>

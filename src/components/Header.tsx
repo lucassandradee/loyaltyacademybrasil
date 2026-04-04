@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import espmLogo from '@/assets/espm-logo.jpg';
+import labLogo from '@/assets/lab-logo.webp';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
-          <img src={espmLogo} alt="ESPM" className="h-10 w-auto object-contain" />
+          <img src={labLogo} alt="Loyalty Academy Brasil" className="h-10 w-auto object-contain" />
           <div className="hidden sm:block">
             <span className="text-sm font-semibold text-foreground">Certificação em Loyalty Management 4.0</span>
           </div>
