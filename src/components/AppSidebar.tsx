@@ -23,7 +23,7 @@ const step1Items = [
 ];
 
 const step2Items = [
-  { title: 'Dashboard', url: '/nbo/dashboard', icon: BarChart3, alwaysEnabled: false },
+  { title: 'Análise', url: '/nbo/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
 const step3Items = [
