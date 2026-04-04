@@ -201,7 +201,7 @@ const DimensionSliderCard = ({
                       {seg.scoreNum === 1 && <span className="text-xs text-muted-foreground ml-1">(Base)</span>}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {seg.fromPct.toFixed(1)}% — {seg.toPct.toFixed(1)}%
+                      {seg.displayFromPct.toFixed(1)}% — {seg.displayToPct.toFixed(1)}%
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
