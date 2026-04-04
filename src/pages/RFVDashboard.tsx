@@ -242,10 +242,10 @@ const RFVDashboard = () => {
           <CardContent>
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 20 }} onClick={handleBarClick} className="cursor-pointer">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={clusterCounts} layout="vertical" margin={{ left: 10, top: 5, bottom: 5, right: 10 }} onClick={handleBarClick} className="cursor-pointer">
                     <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(v: number) => [`${v} clientes`, 'Quantidade']} />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                       {clusterCounts.map((entry, i) => (
