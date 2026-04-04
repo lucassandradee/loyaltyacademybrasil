@@ -80,8 +80,9 @@ const NBODashboard = () => {
   const offerDistribution = useMemo(() => {
     const map = new Map<string, ScoredNBOClient[]>();
     scored.forEach(c => {
-      if (!map.has(c.oferta)) map.set(c.oferta, []);
-      map.get(c.oferta)!.push(c);
+      const key = c.oferta_curta;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
     });
     return Array.from(map.entries())
       .map(([oferta, clients]) => ({ oferta, count: clients.length, pct: totalClients > 0 ? ((clients.length / totalClients) * 100).toFixed(1) : '0' }))
@@ -241,7 +242,7 @@ const NBODashboard = () => {
                     <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: clusterColors[c.cluster], color: clusterColors[c.cluster] }}>{c.cluster}</Badge>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: faixaColors[c.faixa], color: faixaColors[c.faixa] }}>{c.faixa}</Badge></TableCell>
-                  <TableCell className="max-w-[180px] text-xs text-muted-foreground">{c.oferta}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{c.oferta_curta}</TableCell>
                   <TableCell className="max-w-[220px] text-xs text-muted-foreground">{generateOfferExplanation(c)}</TableCell>
                   <TableCell className="text-center">
                     <OfferExplainerPopover client={c} />
@@ -320,8 +321,8 @@ function PyramidChart({ faixaCounts, faixaClusterComposition, selectedFaixa, sel
   return (
     <div className="flex flex-col lg:flex-row items-start gap-6">
       {/* SVG Pyramid */}
-      <div className="shrink-0 w-full lg:w-auto overflow-visible">
-        <svg className="w-full lg:w-auto" style={{ maxWidth: pyramidW }} viewBox={`0 0 ${pyramidW} ${pyramidH}`} preserveAspectRatio="xMidYMid meet">
+      <div className="shrink-0" style={{ width: pyramidW, minWidth: pyramidW }}>
+        <svg width={pyramidW} height={pyramidH} viewBox={`0 0 ${pyramidW} ${pyramidH}`}>
           {tiers.map((tier, i) => {
             const y = i * (tierH + gap);
             const topW = minTopW + ((maxBottomW - minTopW) * i) / (tiers.length - 1);
