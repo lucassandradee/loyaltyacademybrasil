@@ -153,7 +153,7 @@ const DimensionSliderCard = ({
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Distribuição dos scores na sua base:</span>
             </div>
-            {segments.map((seg) => (
+            {displaySegments.map((seg) => (
               <div
                 key={seg.scoreNum}
                 className="flex items-center gap-3 rounded-md border p-2.5"
