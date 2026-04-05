@@ -109,13 +109,23 @@ const CXUpload = () => {
     const causaCol = findCol(sample, ['causa', 'motivo', 'reason', 'root_cause']);
     const dataCol = findCol(sample, ['data', 'date', 'created']);
     if (!tmaCol || !npsCol || !causaCol) throw new Error('Colunas obrigatórias não encontradas. Verifique: TMA, NPS, Causa Raiz.');
+    const tmeCol = findCol(sample, ['tme', 'espera', 'wait']);
+    const fcrCol = findCol(sample, ['fcr', 'first_call', 'resolucao']);
+    const tipoCol = findCol(sample, ['tipo', 'type', 'categoria']);
+    const transcricaoCol = findCol(sample, ['transcricao', 'transcript']);
+    const comentarioCol = findCol(sample, ['comentario', 'comment', 'feedback']);
     return rows.map((r, i) => ({
       id_chamado: r[idCol || ''] || `CHM-${String(i + 1).padStart(5, '0')}`,
       cliente: r[clienteCol || ''] || `Cliente ${i + 1}`,
       tma_minutos: Number(r[tmaCol]) || 0,
+      tme_minutos: Number(r[tmeCol || ''] || 0),
       nps_score: Number(r[npsCol]) || 0,
+      fcr: Number(r[fcrCol || ''] || 0) as 0 | 1,
       causa_raiz: r[causaCol] || 'Outros',
+      tipo_chamado: r[tipoCol || ''] || 'Informação',
       data_chamado: r[dataCol || ''] || new Date().toISOString().split('T')[0],
+      transcricao: r[transcricaoCol || ''] || '',
+      comentario_nps: r[comentarioCol || ''] || '',
     }));
   };
 
