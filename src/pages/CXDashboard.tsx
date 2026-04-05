@@ -316,7 +316,7 @@ const CXDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Row 2: Ranking + NPS por Causa (2x2 grid) */}
+      {/* Row 2: Ranking + Chamados por Tipo */}
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Ranking de Causas Raiz</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
@@ -334,6 +334,25 @@ const CXDashboard = () => {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader><CardTitle className="text-base">Chamados por Tipo</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={tipoData} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="tipo" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {tipoData.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedTipo && selectedTipo !== entry.tipo ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleTipo(entry.tipo)} />))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 3: NPS + TMA + TME + FCR por Causa */}
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">NPS por Causa Raiz</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
           <CardContent>
@@ -381,10 +400,7 @@ const CXDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Row 3: FCR + Tipo de Chamado */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Taxa de FCR por Causa Raiz</CardTitle><p className="text-xs text-muted-foreground">% resolução no primeiro contato</p></CardHeader>
           <CardContent>
@@ -395,22 +411,6 @@ const CXDashboard = () => {
                 <Tooltip formatter={(v: number) => [`${v}%`, 'FCR']} />
                 <Bar dataKey="fcr" radius={[0, 4, 4, 0]}>
                   {fcrByCausa.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Chamados por Tipo</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={tipoData} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="tipo" width={120} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {tipoData.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedTipo && selectedTipo !== entry.tipo ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleTipo(entry.tipo)} />))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
