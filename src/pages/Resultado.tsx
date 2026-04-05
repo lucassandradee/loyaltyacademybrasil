@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ChevronRight, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users } from 'lucide-react';
+import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
@@ -10,7 +10,6 @@ import { generateNBOSummary, classifyNBO } from '@/lib/nbo-logic';
 import { generateCXSummary } from '@/lib/cx-logic';
 import type { ClientData } from '@/lib/rfv-logic';
 import type { CXTicket } from '@/lib/cx-logic';
-import { cn } from '@/lib/utils';
 
 interface PlanSection {
   id: string;
@@ -34,11 +33,8 @@ const sectionIcons: Record<string, any> = {
   plano: FileText,
 };
 
-/** Simple markdown to HTML converter */
 function markdownToHtml(md: string): string {
   if (!md) return '';
-
-  // If the content looks like raw JSON, try to extract sections
   if (md.trim().startsWith('{') || md.trim().startsWith('```json')) {
     return '<p><em>Conteúdo sendo processado...</em></p>';
   }
@@ -60,38 +56,22 @@ function markdownToHtml(md: string): string {
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br/>');
 
-  html = html.replace(/(<li>.*?<\/li>(?:<br\/>)?)+/g, (match) => {
-    return '<ul>' + match.replace(/<br\/>/g, '') + '</ul>';
-  });
-  html = html.replace(/(<tr>.*?<\/tr>(?:<br\/>)?)+/g, (match) => {
-    return '<table>' + match.replace(/<br\/>/g, '') + '</table>';
-  });
-
+  html = html.replace(/(<li>.*?<\/li>(?:<br\/>)?)+/g, (match) => '<ul>' + match.replace(/<br\/>/g, '') + '</ul>');
+  html = html.replace(/(<tr>.*?<\/tr>(?:<br\/>)?)+/g, (match) => '<table>' + match.replace(/<br\/>/g, '') + '</table>');
   return '<p>' + html + '</p>';
 }
 
 function parseSectionsFromContent(planContent: any): PlanSection[] {
   if (!planContent) return [];
-
-  // Already has sections array
   if (planContent.sections && Array.isArray(planContent.sections)) {
-    // Check if sections have valid content (not raw JSON)
     const firstSection = planContent.sections[0];
     if (firstSection?.content && !firstSection.content.trim().startsWith('{')) {
       return planContent.sections;
     }
   }
-
-  // If it's a string, try to parse it
   if (typeof planContent === 'string') {
-    try {
-      const parsed = JSON.parse(planContent);
-      return parseSectionsFromContent(parsed);
-    } catch {
-      return [{ id: 'plano', title: 'Plano Estratégico', content: planContent }];
-    }
+    try { return parseSectionsFromContent(JSON.parse(planContent)); } catch { return [{ id: 'plano', title: 'Plano Estratégico', content: planContent }]; }
   }
-
   return [];
 }
 
@@ -103,6 +83,39 @@ const Resultado = () => {
   const [sections, setSections] = useState<PlanSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const [hasLab, setHasLab] = useState(false);
+
+  // Notify sidebar when sections are ready
+  useEffect(() => {
+    if (sections.length > 0) {
+      localStorage.setItem('plan_sections_ready', 'true');
+      window.dispatchEvent(new Event('plan-sections-ready'));
+      // Set initial hash
+      if (!window.location.hash && sections[0]) {
+        window.location.hash = sections[0].id;
+      }
+    }
+    return () => {
+      localStorage.removeItem('plan_sections_ready');
+    };
+  }, [sections]);
+
+  // Listen for sidebar navigation clicks
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const sectionId = (e as CustomEvent).detail;
+      const idx = sections.findIndex(s => s.id === sectionId);
+      if (idx >= 0) setActiveSection(idx);
+    };
+    window.addEventListener('plan-navigate', handler);
+    return () => window.removeEventListener('plan-navigate', handler);
+  }, [sections]);
+
+  // Update hash when active section changes
+  useEffect(() => {
+    if (sections[activeSection]) {
+      window.location.hash = sections[activeSection].id;
+    }
+  }, [activeSection, sections]);
 
   const loadAndGenerate = async (forceRegenerate = false) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -146,22 +159,16 @@ const Resultado = () => {
     }
 
     setHasLab(true);
-
-    let rfvSummary = '';
-    let nboSummary = '';
-    let cxSummary = '';
+    let rfvSummary = '', nboSummary = '', cxSummary = '';
 
     if (rfvRes.data?.client_data) {
       const clientData = rfvRes.data.client_data as unknown as ClientData[];
       const scored = scoreClients(clientData, defaultPercentileParams(3));
       rfvSummary = generateRFVSummary(scored);
-      const nboScored = classifyNBO(clientData);
-      nboSummary = generateNBOSummary(nboScored);
+      nboSummary = generateNBOSummary(classifyNBO(clientData));
     }
-
     if (cxRes.data?.ticket_data) {
-      const tickets = cxRes.data.ticket_data as unknown as CXTicket[];
-      cxSummary = generateCXSummary(tickets);
+      cxSummary = generateCXSummary(cxRes.data.ticket_data as unknown as CXTicket[]);
     }
 
     setGenerating(true);
@@ -171,19 +178,18 @@ const Resultado = () => {
       const { data: funcData, error: funcError } = await supabase.functions.invoke('generate-plan', {
         body: { profile, labAnswers, rfvSummary, nboSummary, cxSummary },
       });
-
       if (funcError) throw new Error(funcError.message);
       if (funcData?.error) throw new Error(funcData.error);
 
       const planSections = parseSectionsFromContent(funcData);
       setSections(planSections);
 
-      await supabase.from('generated_plans').delete().eq('user_id', (await supabase.auth.getUser()).data.user!.id);
+      const userId = (await supabase.auth.getUser()).data.user!.id;
+      await supabase.from('generated_plans').delete().eq('user_id', userId);
       await supabase.from('generated_plans').insert({
-        user_id: (await supabase.auth.getUser()).data.user!.id,
+        user_id: userId,
         plan_content: JSON.parse(JSON.stringify({ sections: planSections })),
       });
-
     } catch (err: any) {
       console.error('Plan generation error:', err);
       toast({ title: 'Erro ao gerar plano', description: err.message || 'Tente novamente.', variant: 'destructive' });
@@ -192,9 +198,7 @@ const Resultado = () => {
     }
   };
 
-  useEffect(() => {
-    loadAndGenerate();
-  }, []);
+  useEffect(() => { loadAndGenerate(); }, []);
 
   const handleRegenerate = () => {
     setSections([]);
@@ -211,17 +215,12 @@ const Resultado = () => {
       const maxW = w - 28;
       const BRAND_BLUE: [number, number, number] = [30, 64, 175];
       const DARK_GRAY: [number, number, number] = [51, 51, 51];
-      const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
 
       const checkBreak = (y: number, needed: number) => {
-        if (y + needed > doc.internal.pageSize.getHeight() - 25) {
-          doc.addPage();
-          return 28;
-        }
+        if (y + needed > doc.internal.pageSize.getHeight() - 25) { doc.addPage(); return 28; }
         return y;
       };
 
-      // Cover page
       doc.setFillColor(...BRAND_BLUE);
       doc.rect(0, 0, w, 50, 'F');
       doc.setTextColor(255, 255, 255);
@@ -232,13 +231,10 @@ const Resultado = () => {
       doc.setFont('helvetica', 'normal');
       doc.text('Relatório personalizado — Framework LAB', 14, 38);
       doc.text(new Date().toLocaleDateString('pt-BR'), 14, 45);
-
       let y = 60;
 
-      sections.forEach((section, idx) => {
+      sections.forEach((section) => {
         y = checkBreak(y, 20);
-
-        // Section title
         doc.setFillColor(...BRAND_BLUE);
         doc.rect(14, y, 3, 8, 'F');
         doc.setTextColor(...DARK_GRAY);
@@ -247,31 +243,18 @@ const Resultado = () => {
         doc.text(section.title, 20, y + 6);
         y += 14;
 
-        // Content — strip markdown and render as text
         const plainText = section.content
-          .replace(/#{1,4}\s*/g, '')
-          .replace(/\*\*(.+?)\*\*/g, '$1')
-          .replace(/\*(.+?)\*/g, '$1')
-          .replace(/^\|.*\|$/gm, '')
-          .replace(/^[-]+$/gm, '')
-          .replace(/^- /gm, '• ')
-          .replace(/^\d+\. /gm, '→ ');
+          .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+          .replace(/^\|.*\|$/gm, '').replace(/^[-]+$/gm, '').replace(/^- /gm, '• ').replace(/^\d+\. /gm, '→ ');
 
         doc.setTextColor(80, 80, 80);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         const lines = doc.splitTextToSize(plainText, maxW);
-
-        lines.forEach((line: string) => {
-          y = checkBreak(y, 5);
-          doc.text(line, 14, y);
-          y += 4.2;
-        });
-
+        lines.forEach((line: string) => { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; });
         y += 8;
       });
 
-      // Headers & footers
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
@@ -284,9 +267,9 @@ const Resultado = () => {
           doc.text('Loyalty Academy Brasil — Plano Estratégico', 14, 9);
           doc.text(`${i}/${totalPages}`, w - 14, 9, { align: 'right' });
         }
+        const h = doc.internal.pageSize.getHeight();
         doc.setDrawColor(...BRAND_BLUE);
         doc.setLineWidth(0.3);
-        const h = doc.internal.pageSize.getHeight();
         doc.line(14, h - 12, w - 14, h - 12);
         doc.setFontSize(7);
         doc.setTextColor(120, 120, 120);
@@ -338,7 +321,7 @@ const Resultado = () => {
   const currentSection = sections[activeSection];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -356,74 +339,38 @@ const Resultado = () => {
         </div>
       </div>
 
-      {/* Layout: sidebar navigation + content */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Section navigation */}
-        <div className="space-y-1">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Navegação do Plano</p>
-          {sections.map((section, idx) => {
-            const Icon = sectionIcons[section.id] || FileText;
-            return (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(idx)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
-                  activeSection === idx
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{section.title}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Active section content */}
+      {currentSection && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              {(() => {
+                const Icon = sectionIcons[currentSection.id] || FileText;
+                return <Icon className="h-6 w-6 text-primary" />;
+              })()}
+              <CardTitle className="text-xl">{currentSection.title}</CardTitle>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Seção {activeSection + 1} de {sections.length} — Navegue pelas seções no menu lateral
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-foreground [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_table]:text-sm [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_th]:font-semibold [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground [&_li]:mb-1 [&_ul]:my-3 [&_p]:mb-3 [&_p]:leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(currentSection.content) }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Active section content */}
-        <div>
-          {currentSection && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  {(() => {
-                    const Icon = sectionIcons[currentSection.id] || FileText;
-                    return <Icon className="h-6 w-6 text-primary" />;
-                  })()}
-                  <CardTitle className="text-xl">{currentSection.title}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-foreground [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_table]:text-sm [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_th]:font-semibold [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground [&_li]:mb-1 [&_ul]:my-3 [&_p]:mb-3 [&_p]:leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: markdownToHtml(currentSection.content) }}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Navigation buttons */}
-          <div className="mt-4 flex justify-between">
-            <Button
-              variant="outline"
-              disabled={activeSection === 0}
-              onClick={() => setActiveSection(prev => prev - 1)}
-            >
-              ← Anterior
-            </Button>
-            <span className="text-sm text-muted-foreground self-center">
-              {activeSection + 1} de {sections.length}
-            </span>
-            <Button
-              variant="outline"
-              disabled={activeSection >= sections.length - 1}
-              onClick={() => setActiveSection(prev => prev + 1)}
-            >
-              Próximo →
-            </Button>
-          </div>
-        </div>
+      {/* Bottom navigation */}
+      <div className="mt-4 flex justify-between">
+        <Button variant="outline" disabled={activeSection === 0} onClick={() => setActiveSection(prev => prev - 1)} className="gap-1">
+          <ChevronLeft className="h-4 w-4" /> Anterior
+        </Button>
+        <Button variant="outline" disabled={activeSection >= sections.length - 1} onClick={() => setActiveSection(prev => prev + 1)} className="gap-1">
+          Próximo <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
       {sections.length > 0 && (
