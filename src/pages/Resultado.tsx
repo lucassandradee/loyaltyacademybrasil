@@ -12,6 +12,14 @@ import { generateCXSummary } from '@/lib/cx-logic';
 import type { ClientData } from '@/lib/rfv-logic';
 import type { CXTicket } from '@/lib/cx-logic';
 import { cn } from '@/lib/utils';
+import { parseDiagrams, DiagramRenderer, type ParsedDiagram } from '@/components/plan/DiagramRenderer';
+import { useToast } from '@/hooks/use-toast';
+import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
+import { generateNBOSummary, classifyNBO } from '@/lib/nbo-logic';
+import { generateCXSummary } from '@/lib/cx-logic';
+import type { ClientData } from '@/lib/rfv-logic';
+import type { CXTicket } from '@/lib/cx-logic';
+import { cn } from '@/lib/utils';
 
 interface PlanSection {
   id: string;
