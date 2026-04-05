@@ -45,20 +45,45 @@ Seu plano deve ser EXTENSO e DETALHADO — equivalente a 12-15 páginas de relat
 
 IMPORTANTE: Responda APENAS com JSON válido, sem markdown code fences, sem texto antes ou depois. O JSON deve seguir esta estrutura EXATA:
 
-{"sections":[{"id":"sumario","title":"1. Sumário Executivo","content":"texto em markdown"},{"id":"maturidade","title":"2. Diagnóstico de Maturidade","content":"texto em markdown"},{"id":"objetivos","title":"3. Objetivos do Programa","content":"texto em markdown"},{"id":"estrutura","title":"4. Estrutura do Programa","content":"texto em markdown"},{"id":"estrategia","title":"5. Estratégia","content":"texto em markdown"},{"id":"beneficios","title":"6. Benefícios Tangíveis e Intangíveis","content":"texto em markdown"},{"id":"segmentacao","title":"7. Segmentação e Tierização","content":"texto em markdown"},{"id":"canais","title":"8. Cadastro e Canais de Comunicação","content":"texto em markdown"},{"id":"operacoes","title":"9. Operações","content":"texto em markdown"},{"id":"custos","title":"10. Custo do Programa","content":"texto em markdown"},{"id":"cronograma","title":"11. Cronograma de Implementação","content":"texto em markdown"},{"id":"plano5w2h","title":"12. Plano de Ação 5W2H","content":"texto em markdown com tabela"}]}
+{"sections":[{"id":"sumario","title":"1. Sumário Executivo","content":"..."},{"id":"maturidade","title":"2. Diagnóstico de Maturidade","content":"..."},{"id":"objetivos","title":"3. Objetivos do Programa","content":"..."},{"id":"estrutura","title":"4. Estrutura do Programa","content":"..."},{"id":"estrategia","title":"5. Estratégia","content":"..."},{"id":"beneficios","title":"6. Benefícios Tangíveis e Intangíveis","content":"..."},{"id":"segmentacao","title":"7. Segmentação e Tierização","content":"..."},{"id":"canais","title":"8. Cadastro e Canais de Comunicação","content":"..."},{"id":"operacoes","title":"9. Operações","content":"..."},{"id":"custos","title":"10. Custo do Programa","content":"..."},{"id":"cronograma","title":"11. Cronograma de Implementação","content":"..."},{"id":"plano5w2h","title":"12. Plano de Ação 5W2H","content":"..."}]}
 
-REGRAS:
+REGRAS DE CONTEÚDO:
 1. Cada seção deve ter no mínimo 3-4 parágrafos densos com análises específicas
 2. O Sumário Executivo deve ter pelo menos 5 parágrafos resumindo todo o plano
 3. O Diagnóstico de Maturidade deve analisar os dados reais (RFV, NBO, CX) e classificar o nível da empresa
 4. Cada seção deve referenciar dados específicos dos diagnósticos quando relevante
-5. O Cronograma deve ter fases detalhadas com marcos e prazos realistas
-6. O 5W2H deve ter pelo menos 8-10 ações detalhadas em formato de tabela markdown
-7. Use linguagem profissional de consultoria estratégica
-8. Inclua métricas, KPIs e benchmarks do mercado
-9. Faça recomendações personalizadas com base nas respostas do LAB e nos dados
-10. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)
-11. NÃO use code fences (\`\`\`) na resposta — apenas JSON puro`;
+5. Use linguagem profissional de consultoria estratégica
+6. Inclua métricas, KPIs e benchmarks do mercado
+7. Faça recomendações personalizadas com base nas respostas do LAB e nos dados
+
+REGRAS DE FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
+8. Use **negrito** para destacar KPIs, métricas e números importantes (ex: "**NPS: 45 pontos**", "**Retenção: +15%**")
+9. Use tabelas markdown SEMPRE QUE POSSÍVEL para comparações, métricas, custos — nunca listas quando uma tabela seria mais clara
+10. Cada seção DEVE usar sub-headers com ## para organizar o conteúdo em blocos visuais
+11. Use listas com - apenas para itens curtos; para dados comparativos use TABELAS
+
+REGRAS ESPECÍFICAS PARA CRONOGRAMA (seção "cronograma"):
+12. O cronograma DEVE ser formatado com cada fase como sub-header ##, seguido de "**Período:** X meses" e depois os marcos como lista
+13. Exemplo de formato para cronograma:
+## Fase 1: Planejamento e Setup
+**Período:** Meses 1-3
+- Marco 1: Definição de escopo
+- Marco 2: Seleção de plataforma
+## Fase 2: Desenvolvimento
+**Período:** Meses 4-6
+- Marco 1: MVP do programa
+
+REGRAS ESPECÍFICAS PARA 5W2H (seção "plano5w2h"):
+14. O 5W2H DEVE ser uma tabela markdown com EXATAMENTE estas colunas: | Área | O Quê | Por Quê | Onde | Quando | Quem | Como | Quanto |
+15. A coluna "Área" DEVE conter uma destas categorias: RFV, NBO, CX ou Estratégico
+16. Deve ter no mínimo 10 linhas de ações detalhadas
+17. Exemplo:
+| Área | O Quê | Por Quê | Onde | Quando | Quem | Como | Quanto |
+|------|-------|---------|------|--------|------|------|--------|
+| RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mês 1 | Equipe Analytics | Análise RFV | R$ 5.000 |
+
+18. NÃO use code fences (\`\`\`) na resposta — apenas JSON puro
+19. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)`;
 
     const userPrompt = `Gere um plano estratégico completo de programa de fidelidade com base nos seguintes dados:
 
@@ -115,19 +140,15 @@ Responda APENAS com o JSON válido, sem nenhum texto adicional.`;
     const result = await response.json();
     const content = result.choices?.[0]?.message?.content || '';
 
-    // Try to parse JSON from content — handle code fences, extra text, etc.
     let planData;
     try {
-      // Try direct parse first
       planData = JSON.parse(content.trim());
     } catch {
       try {
-        // Try extracting from code fences
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
           planData = JSON.parse(jsonMatch[1].trim());
         } else {
-          // Try finding first { to last }
           const firstBrace = content.indexOf('{');
           const lastBrace = content.lastIndexOf('}');
           if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -137,7 +158,6 @@ Responda APENAS com o JSON válido, sem nenhum texto adicional.`;
           }
         }
       } catch {
-        // Last resort: wrap as single section
         planData = {
           sections: [{ id: "plano", title: "Plano Estratégico", content }],
         };
