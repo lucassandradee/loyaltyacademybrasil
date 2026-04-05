@@ -111,6 +111,8 @@ const RFVDashboard = () => {
     return list;
   }, [scored, search, selectedCluster]);
 
+  const rfvSummary = useMemo(() => generateRFVSummary(scored), [scored]);
+
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
@@ -185,7 +187,7 @@ const RFVDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateRFVSummary(scored), [scored])}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{rfvSummary}</p>
         </CardContent>
       </Card>
 
