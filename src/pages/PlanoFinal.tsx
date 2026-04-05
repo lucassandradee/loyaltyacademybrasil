@@ -266,7 +266,7 @@ const PlanoFinal = () => {
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm text-foreground">Plano Estratégico</h3>
+                <h3 className="font-semibold text-sm text-foreground">Passo 4 — Plano Estratégico</h3>
               </div>
               <p className="text-xs text-muted-foreground mb-3">Seu plano foi gerado com base nos dados reais da sua empresa.</p>
               <button
