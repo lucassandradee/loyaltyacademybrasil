@@ -1,10 +1,12 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, ChevronDown, LayoutList, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
 import { generateNBOSummary, classifyNBO } from '@/lib/nbo-logic';
 import { generateCXSummary } from '@/lib/cx-logic';
@@ -83,6 +85,8 @@ const Resultado = () => {
   const [sections, setSections] = useState<PlanSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const [hasLab, setHasLab] = useState(false);
+  const [viewMode, setViewMode] = useState<'onepage' | 'detail'>('onepage');
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
   // Notify sidebar when sections are ready
   useEffect(() => {
@@ -320,6 +324,15 @@ const Resultado = () => {
 
   const currentSection = sections[activeSection];
 
+  const toggleOpenSection = (id: string) => {
+    const next = new Set(openSections);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setOpenSections(next);
+  };
+
+  const expandAll = () => setOpenSections(new Set(sections.map(s => s.id)));
+  const collapseAll = () => setOpenSections(new Set());
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
@@ -328,50 +341,103 @@ const Resultado = () => {
           <h1 className="text-3xl font-bold text-foreground">Plano Estratégico de Loyalty</h1>
           <p className="mt-1 text-muted-foreground">Gerado por IA com base nos seus dados e no Framework LAB</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleDownloadPDF} variant="outline" className="gap-2" disabled={sections.length === 0}>
-            <Download className="h-4 w-4" /> Baixar PDF
+        <div className="flex flex-wrap gap-2">
+          <div className="flex rounded-lg border overflow-hidden">
+            <button
+              onClick={() => setViewMode('onepage')}
+              className={cn('flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors', viewMode === 'onepage' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}
+            >
+              <LayoutList className="h-3.5 w-3.5" /> One Page
+            </button>
+            <button
+              onClick={() => setViewMode('detail')}
+              className={cn('flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors', viewMode === 'detail' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')}
+            >
+              <BookOpen className="h-3.5 w-3.5" /> Por Seção
+            </button>
+          </div>
+          <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="gap-2" disabled={sections.length === 0}>
+            <Download className="h-4 w-4" /> PDF
           </Button>
-          <Button onClick={handleRegenerate} disabled={generating} variant="outline" className="gap-2">
+          <Button onClick={handleRegenerate} disabled={generating} variant="outline" size="sm" className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Regenerar
           </Button>
         </div>
       </div>
 
-      {/* Active section content */}
-      {currentSection && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              {(() => {
-                const Icon = sectionIcons[currentSection.id] || FileText;
-                return <Icon className="h-6 w-6 text-primary" />;
-              })()}
-              <CardTitle className="text-xl">{currentSection.title}</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Seção {activeSection + 1} de {sections.length} — Navegue pelas seções no menu lateral
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-foreground [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_table]:text-sm [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_th]:font-semibold [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground [&_li]:mb-1 [&_ul]:my-3 [&_p]:mb-3 [&_p]:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: markdownToHtml(currentSection.content) }}
-            />
-          </CardContent>
-        </Card>
+      {/* One Page Mode */}
+      {viewMode === 'onepage' && (
+        <>
+          <div className="mb-4 flex gap-2">
+            <Button variant="ghost" size="sm" onClick={expandAll} className="text-xs">Expandir tudo</Button>
+            <Button variant="ghost" size="sm" onClick={collapseAll} className="text-xs">Recolher tudo</Button>
+          </div>
+          <div className="space-y-3">
+            {sections.map((section) => {
+              const Icon = sectionIcons[section.id] || FileText;
+              const isOpen = openSections.has(section.id);
+              return (
+                <Collapsible key={section.id} open={isOpen} onOpenChange={() => toggleOpenSection(section.id)}>
+                  <Card>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer flex flex-row items-center justify-between py-4">
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <CardTitle className="text-base">{section.title}</CardTitle>
+                        </div>
+                        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <div
+                          className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-foreground [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_table]:text-sm [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_th]:font-semibold [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground [&_li]:mb-1 [&_ul]:my-3 [&_p]:mb-3 [&_p]:leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content) }}
+                        />
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      {/* Bottom navigation */}
-      <div className="mt-4 flex justify-between">
-        <Button variant="outline" disabled={activeSection === 0} onClick={() => setActiveSection(prev => prev - 1)} className="gap-1">
-          <ChevronLeft className="h-4 w-4" /> Anterior
-        </Button>
-        <Button variant="outline" disabled={activeSection >= sections.length - 1} onClick={() => setActiveSection(prev => prev + 1)} className="gap-1">
-          Próximo <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Detail Mode (single section) */}
+      {viewMode === 'detail' && currentSection && (
+        <>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const Icon = sectionIcons[currentSection.id] || FileText;
+                  return <Icon className="h-6 w-6 text-primary" />;
+                })()}
+                <CardTitle className="text-xl">{currentSection.title}</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Seção {activeSection + 1} de {sections.length} — Navegue pelas seções no menu lateral
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div
+                className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-foreground [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_table]:text-sm [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_th]:font-semibold [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground [&_li]:mb-1 [&_ul]:my-3 [&_p]:mb-3 [&_p]:leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(currentSection.content) }}
+              />
+            </CardContent>
+          </Card>
+          <div className="mt-4 flex justify-between">
+            <Button variant="outline" disabled={activeSection === 0} onClick={() => setActiveSection(prev => prev - 1)} className="gap-1">
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </Button>
+            <Button variant="outline" disabled={activeSection >= sections.length - 1} onClick={() => setActiveSection(prev => prev + 1)} className="gap-1">
+              Próximo <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      )}
 
       {sections.length > 0 && (
         <div className="mt-8 text-center">

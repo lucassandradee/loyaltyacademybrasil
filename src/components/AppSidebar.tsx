@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users } from 'lucide-react';
+import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronDown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -71,6 +71,7 @@ export function AppSidebar() {
   const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
   const [cxUploaded, setCxUploaded] = useState(() => localStorage.getItem('cx_data_uploaded') === 'true');
   const [planSectionsAvailable, setPlanSectionsAvailable] = useState(false);
+  const [planSubOpen, setPlanSubOpen] = useState(true);
 
   const isOnResultado = location.pathname === '/resultado';
   const activeHash = location.hash?.replace('#', '') || '';
@@ -197,31 +198,40 @@ export function AppSidebar() {
 
               {/* Plan section sub-navigation when on /resultado */}
               {isOnResultado && planSectionsAvailable && !collapsed && (
-                <>
-                  {planSectionItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton asChild>
-                        <a
-                          href={`#${item.id}`}
-                          className={cn(
-                            'flex items-center gap-2 pl-6 text-xs hover:bg-muted/50 rounded-md py-1.5 transition-colors',
-                            activeHash === item.id
-                              ? 'bg-muted text-primary font-medium'
-                              : 'text-muted-foreground'
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            window.dispatchEvent(new CustomEvent('plan-navigate', { detail: item.id }));
-                            window.location.hash = item.id;
-                          }}
-                        >
-                          <item.icon className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </>
+                <SidebarMenuItem>
+                  <button
+                    onClick={() => setPlanSubOpen(!planSubOpen)}
+                    className="flex w-full items-center justify-between pl-6 pr-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>Seções do Plano</span>
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', planSubOpen && 'rotate-180')} />
+                  </button>
+                  {planSubOpen && (
+                    <div className="mt-1 space-y-0.5">
+                      {planSectionItems.map((item) => (
+                        <SidebarMenuButton key={item.id} asChild>
+                          <a
+                            href={`#${item.id}`}
+                            className={cn(
+                              'flex items-center gap-2 pl-8 text-xs hover:bg-muted/50 rounded-md py-1.5 transition-colors',
+                              activeHash === item.id
+                                ? 'bg-muted text-primary font-medium'
+                                : 'text-muted-foreground'
+                            )}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.dispatchEvent(new CustomEvent('plan-navigate', { detail: item.id }));
+                              window.location.hash = item.id;
+                            }}
+                          >
+                            <item.icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </a>
+                        </SidebarMenuButton>
+                      ))}
+                    </div>
+                  )}
+                </SidebarMenuItem>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
