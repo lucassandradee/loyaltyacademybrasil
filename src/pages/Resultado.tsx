@@ -12,6 +12,8 @@ import { generateCXSummary } from '@/lib/cx-logic';
 import type { ClientData } from '@/lib/rfv-logic';
 import type { CXTicket } from '@/lib/cx-logic';
 import { cn } from '@/lib/utils';
+import { parseDiagrams, DiagramRenderer, type ParsedDiagram } from '@/components/plan/DiagramRenderer';
+
 
 interface PlanSection {
   id: string;
@@ -279,11 +281,17 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
+  const parts = parseDiagrams(section.content);
+
   return (
-    <div
-      className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground"
-      dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content) }}
-    />
+    <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+      {parts.map((part, i) => {
+        if (typeof part === 'string') {
+          return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+        }
+        return <DiagramRenderer key={i} diagram={part} />;
+      })}
+    </div>
   );
 }
 
@@ -515,8 +523,36 @@ const Resultado = () => {
           continue;
         }
 
-        // Plain text
-        const plainText = section.content
+        // Strip diagram markers and render as table in PDF
+        const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
+        let contentForPdf = section.content;
+        let diagramMatch;
+        while ((diagramMatch = diagramRegex.exec(section.content)) !== null) {
+          const dType = diagramMatch[1];
+          const dItems = diagramMatch[2].split('|').map(s => s.trim()).filter(Boolean);
+          // Remove the diagram marker from text
+          contentForPdf = contentForPdf.replace(diagramMatch[0], '');
+          // Render diagram as autoTable
+          y = checkBreak(y, 20);
+          const typeLabel = dType === 'pyramid' ? 'Nível' : dType === 'funnel' ? 'Etapa' : dType === 'flow' ? 'Processo' : dType === 'gauge' ? 'Medição' : 'Item';
+          autoTable(doc, {
+            startY: y,
+            head: [[typeLabel, 'Descrição']],
+            body: dItems.map(item => {
+              const parts = item.includes(':') ? [item.split(':')[0].trim(), item.split(':').slice(1).join(':').trim()] : [item, ''];
+              return parts;
+            }),
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
+            bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+            alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+            columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
+          });
+          y = (doc as any).lastAutoTable.finalY + 6;
+        }
+
+        // Plain text (without diagram markers)
+        const plainText = contentForPdf
           .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
           .replace(/^\|.*\|$/gm, '').replace(/^[-:]+$/gm, '').replace(/^- /gm, '• ').replace(/^\d+\. /gm, '→ ');
 
