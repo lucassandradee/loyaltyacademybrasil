@@ -121,7 +121,7 @@ const NBODashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateNBOSummary(scored), [scored])}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{nboSummary}</p>
         </CardContent>
       </Card>
 
