@@ -110,6 +110,19 @@ const NBODashboard = () => {
         <p className="text-muted-foreground">Segmentação ponderada por scores RFV (mesma base do Passo 1)</p>
       </div>
 
+      {/* Diagnóstico NBO */}
+      <Card className="mb-8 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Diagnóstico NBO</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateNBOSummary(scored), [scored])}</p>
+        </CardContent>
+      </Card>
+
       {/* Explanatory Card */}
       <Card className="mb-8 border-blue-500/20 bg-blue-500/5">
         <CardContent className="p-5">

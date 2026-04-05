@@ -28,7 +28,7 @@ const step2Items = [
 
 const step3Items = [
   { title: 'Upload Base de Chamados', url: '/cx', icon: Upload, alwaysEnabled: true },
-  { title: 'Dashboard', url: '/cx/dashboard', icon: BarChart3, alwaysEnabled: false },
+  { title: 'Análise CX', url: '/cx/dashboard', icon: BarChart3, alwaysEnabled: false },
 ];
 
 const step4Items = [
