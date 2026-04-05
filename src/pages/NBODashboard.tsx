@@ -175,6 +175,19 @@ const NBODashboard = () => {
         ))}
       </div>
 
+      {/* Diagnóstico NBO */}
+      <Card className="mb-8 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Diagnóstico NBO</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{nboSummary}</p>
+        </CardContent>
+      </Card>
+
       {/* Pyramid + RFV Composition */}
       <Card className="mb-8">
         <CardHeader>
