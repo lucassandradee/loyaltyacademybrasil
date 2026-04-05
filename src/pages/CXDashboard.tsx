@@ -238,22 +238,41 @@ const CXDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Correlação TMA × NPS</CardTitle>
-            <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="text-base">Correlação de Indicadores</CardTitle>
+                <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={corrX} onValueChange={setCorrX}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(corrIndicators).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">×</span>
+                <Select value={corrY} onValueChange={setCorrY}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(corrIndicators).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
               <ScatterChart margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis type="number" dataKey="tma" name="TMA (min)" unit=" min" tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="nps" name="NPS" tick={{ fontSize: 11 }} />
+                <XAxis type="number" dataKey="x" name={corrIndicators[corrX].label} unit={corrIndicators[corrX].unit} tick={{ fontSize: 11 }} />
+                <YAxis type="number" dataKey="y" name={corrIndicators[corrY].label} unit={corrIndicators[corrY].unit} tick={{ fontSize: 11 }} />
                 <ZAxis type="number" dataKey="count" range={[60, 400]} name="Chamados" />
                 <Tooltip content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
                   return (<div className="rounded-lg border bg-background p-2 shadow-md">
                     <p className="text-xs font-bold text-foreground">{d.causa}</p>
-                    <p className="text-xs text-muted-foreground">TMA: {d.tma} min | NPS: {d.nps} | {d.count} chamados</p>
+                    <p className="text-xs text-muted-foreground">{corrIndicators[corrX].label}: {d.x}{corrIndicators[corrX].unit} | {corrIndicators[corrY].label}: {d.y}{corrIndicators[corrY].unit} | {d.count} chamados</p>
                   </div>);
                 }} />
                 <Scatter data={scatterData}>
