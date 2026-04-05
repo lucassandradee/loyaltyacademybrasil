@@ -103,7 +103,15 @@ REGRAS ESPECÍFICAS PARA 5W2H (seção "plano5w2h"):
 | RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mês 1 | Equipe Analytics | Análise RFV | R$ 5.000 |
 
 18. NÃO use code fences (\`\`\`) na resposta — apenas JSON puro
-19. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)`;
+19. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)
+
+REGRA ADICIONAL — 3 PINCELADAS VISUAIS POR SEÇÃO:
+Além de todo o conteúdo rico e detalhado exigido acima, cada seção DEVE incluir estes 3 sub-headers CURTOS (máximo 1 parágrafo cada, 2-3 frases):
+1. "## 📚 Contexto Teórico" — NO INÍCIO da seção. Uma pincelada rápida explicando por que esse tema importa em loyalty. Máximo 3 frases.
+2. "## 📊 Resumo dos Dados" — NO MEIO da seção, entre o conteúdo detalhado. Uma frase-resumo das métricas-chave dos diagnósticos consideradas. Máximo 3 frases.
+3. "## 🎯 Nossa Recomendação" — NO FINAL da seção. Uma síntese direta da sugestão principal com racional. Máximo 3 frases.
+
+Esses blocos são COMPLEMENTARES e CURTOS — o conteúdo principal da seção (tabelas, diagramas, listas, análises profundas com múltiplos parágrafos) deve estar ENTRE eles e ser EXTENSO e DETALHADO como exigido nas regras anteriores.`;
 
     const userPrompt = `Gere um plano estratégico completo de programa de fidelidade com base nos seguintes dados:
 
