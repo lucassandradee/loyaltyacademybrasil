@@ -1,152 +1,142 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 interface DiagramProps {
   items: string[];
 }
 
-const pyramidColors = [
-  { fill: '#7c3aed', text: 'white' },
-  { fill: '#8b5cf6', text: 'white' },
-  { fill: '#a78bfa', text: 'white' },
-  { fill: '#c4b5fd', text: '#4c1d95' },
-  { fill: '#ddd6fe', text: '#4c1d95' },
-];
-
-export function PyramidDiagram({ items }: DiagramProps) {
-  const n = items.length;
-  const h = 220;
-  const rowH = h / n;
-  const minW = 80;
-  const maxW = 360;
-
-  return (
-    <div className="my-6 flex justify-center">
-      <svg viewBox={`0 0 400 ${h + 10}`} className="w-full max-w-md" role="img">
-        {items.map((item, i) => {
-          const topW = minW + ((maxW - minW) * i) / Math.max(n - 1, 1);
-          const botW = i === n - 1 ? maxW : minW + ((maxW - minW) * (i + 1)) / Math.max(n - 1, 1);
-          const cx = 200;
-          const y1 = i * rowH;
-          const y2 = y1 + rowH;
-          const color = pyramidColors[i % pyramidColors.length];
-          const points = `${cx - topW / 2},${y1} ${cx + topW / 2},${y1} ${cx + botW / 2},${y2} ${cx - botW / 2},${y2}`;
-          const label = item.includes(':') ? item.split(':')[0].trim() : item;
-          const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-          return (
-            <g key={i}>
-              <polygon points={points} fill={color.fill} stroke="white" strokeWidth="2" />
-              <text x={cx} y={y1 + rowH / 2 - (desc ? 4 : 0)} textAnchor="middle" dominantBaseline="central" fill={color.text} fontSize="12" fontWeight="bold">
-                {label}
-              </text>
-              {desc && (
-                <text x={cx} y={y1 + rowH / 2 + 12} textAnchor="middle" dominantBaseline="central" fill={color.text} fontSize="9" opacity="0.85">
-                  {desc.length > 40 ? desc.slice(0, 40) + '…' : desc}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-const funnelColors = ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
-
-export function FunnelDiagram({ items }: DiagramProps) {
-  const n = items.length;
-  const rowH = 50;
-  const h = n * rowH;
-  const maxW = 360;
-
-  return (
-    <div className="my-6 flex justify-center">
-      <svg viewBox={`0 0 400 ${h + 10}`} className="w-full max-w-md" role="img">
-        {items.map((item, i) => {
-          const w = maxW - (i * (maxW - 100)) / Math.max(n - 1, 1);
-          const x = (400 - w) / 2;
-          const y = i * rowH;
-          const color = funnelColors[i % funnelColors.length];
-          const label = item.includes(':') ? item.split(':')[0].trim() : item;
-          const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-          return (
-            <g key={i}>
-              <rect x={x} y={y + 2} width={w} height={rowH - 4} rx="6" fill={color} />
-              <text x={200} y={y + rowH / 2 - (desc ? 4 : 0)} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="12" fontWeight="bold">
-                {label}
-              </text>
-              {desc && (
-                <text x={200} y={y + rowH / 2 + 12} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="9" opacity="0.85">
-                  {desc.length > 45 ? desc.slice(0, 45) + '…' : desc}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-const flowColors = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
-
-export function FlowDiagram({ items }: DiagramProps) {
-  const n = items.length;
-  const boxW = 140;
-  const boxH = 56;
-  const gap = 30;
-  const totalW = n * boxW + (n - 1) * gap;
-  const svgW = Math.max(totalW + 20, 400);
-
-  return (
-    <div className="my-6 overflow-x-auto">
-      <svg viewBox={`0 0 ${svgW} ${boxH + 20}`} className="w-full min-w-[500px]" role="img">
-        {items.map((item, i) => {
-          const x = 10 + i * (boxW + gap);
-          const color = flowColors[i % flowColors.length];
-          const label = item.includes(':') ? item.split(':')[0].trim() : item;
-          const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-          return (
-            <g key={i}>
-              <rect x={x} y={10} width={boxW} height={boxH} rx="8" fill={color} />
-              <text x={x + boxW / 2} y={10 + boxH / 2 - (desc ? 5 : 0)} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="11" fontWeight="bold">
-                {label.length > 18 ? label.slice(0, 18) + '…' : label}
-              </text>
-              {desc && (
-                <text x={x + boxW / 2} y={10 + boxH / 2 + 11} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="8" opacity="0.9">
-                  {desc.length > 22 ? desc.slice(0, 22) + '…' : desc}
-                </text>
-              )}
-              {i < n - 1 && (
-                <polygon points={`${x + boxW + 5},${10 + boxH / 2 - 6} ${x + boxW + gap - 5},${10 + boxH / 2} ${x + boxW + 5},${10 + boxH / 2 + 6}`} fill="#6b7280" />
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
+// ─── Comparison: Editorial cards side-by-side ───
 
 export function ComparisonDiagram({ items }: DiagramProps) {
-  const compColors = ['#2563eb', '#7c3aed', '#059669', '#d97706'];
+  const colors = [
+    { border: 'border-blue-200', bg: 'bg-blue-50', accent: 'text-blue-700', dot: 'bg-blue-500' },
+    { border: 'border-violet-200', bg: 'bg-violet-50', accent: 'text-violet-700', dot: 'bg-violet-500' },
+    { border: 'border-emerald-200', bg: 'bg-emerald-50', accent: 'text-emerald-700', dot: 'bg-emerald-500' },
+    { border: 'border-amber-200', bg: 'bg-amber-50', accent: 'text-amber-700', dot: 'bg-amber-500' },
+  ];
   return (
-    <div className="my-6 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
+    <div className="my-5 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
       {items.map((item, i) => {
         const label = item.includes(':') ? item.split(':')[0].trim() : item;
         const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-        const color = compColors[i % compColors.length];
+        const c = colors[i % colors.length];
         return (
-          <div key={i} className="rounded-xl p-4 text-center text-white shadow-lg" style={{ backgroundColor: color }}>
-            <div className="text-sm font-bold mb-1">{label}</div>
-            {desc && <div className="text-xs opacity-90 leading-relaxed">{desc}</div>}
+          <div key={i} className={`rounded-lg border ${c.border} ${c.bg} p-4`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+              <span className={`text-sm font-bold ${c.accent}`}>{label}</span>
+            </div>
+            {desc && <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>}
           </div>
         );
       })}
     </div>
   );
 }
+
+// ─── Pyramid: Clean layered blocks ───
+
+export function PyramidDiagram({ items }: DiagramProps) {
+  const n = items.length;
+  const colors = [
+    { bg: 'bg-violet-100', text: 'text-violet-800', border: 'border-violet-200' },
+    { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
+    { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+    { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' },
+  ];
+
+  return (
+    <div className="my-5 flex flex-col items-center gap-1">
+      {items.map((item, i) => {
+        const label = item.includes(':') ? item.split(':')[0].trim() : item;
+        const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
+        const c = colors[i % colors.length];
+        const widthPct = 40 + (i / Math.max(n - 1, 1)) * 60;
+        return (
+          <div
+            key={i}
+            className={`rounded-md border ${c.border} ${c.bg} px-4 py-2.5 text-center`}
+            style={{ width: `${widthPct}%` }}
+          >
+            <span className={`text-xs font-bold ${c.text}`}>{label}</span>
+            {desc && <p className={`text-[10px] mt-0.5 ${c.text} opacity-75`}>{desc}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Funnel: Decreasing width blocks ───
+
+export function FunnelDiagram({ items }: DiagramProps) {
+  const n = items.length;
+  const colors = [
+    { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' },
+    { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
+    { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' },
+    { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+  ];
+
+  return (
+    <div className="my-5 flex flex-col items-center gap-1">
+      {items.map((item, i) => {
+        const label = item.includes(':') ? item.split(':')[0].trim() : item;
+        const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
+        const c = colors[i % colors.length];
+        const widthPct = 100 - (i / Math.max(n - 1, 1)) * 55;
+        return (
+          <div
+            key={i}
+            className={`rounded-md border ${c.border} ${c.bg} px-4 py-2.5 text-center`}
+            style={{ width: `${widthPct}%` }}
+          >
+            <span className={`text-xs font-bold ${c.text}`}>{label}</span>
+            {desc && <p className={`text-[10px] mt-0.5 ${c.text} opacity-75`}>{desc}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Flow: Horizontal steps with arrows ───
+
+export function FlowDiagram({ items }: DiagramProps) {
+  const colors = [
+    { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    { bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-200' },
+    { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' },
+    { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' },
+  ];
+
+  return (
+    <div className="my-5 flex items-stretch gap-2 overflow-x-auto pb-2">
+      {items.map((item, i) => {
+        const label = item.includes(':') ? item.split(':')[0].trim() : item;
+        const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
+        const c = colors[i % colors.length];
+        return (
+          <React.Fragment key={i}>
+            <div className={`flex-1 min-w-[120px] rounded-lg border ${c.border} ${c.bg} p-3 text-center`}>
+              <div className={`text-xs font-bold ${c.text} mb-1`}>{label}</div>
+              {desc && <p className={`text-[10px] ${c.text} opacity-75 leading-snug`}>{desc}</p>}
+            </div>
+            {i < items.length - 1 && (
+              <div className="flex items-center text-muted-foreground/50 shrink-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Gauge: Clean arc ───
 
 export function GaugeDiagram({ items }: DiagramProps) {
   const raw = items[0] || '5';
@@ -157,25 +147,20 @@ export function GaugeDiagram({ items }: DiagramProps) {
   const gaugeColor = value <= 3 ? '#ef4444' : value <= 6 ? '#f59e0b' : '#10b981';
 
   return (
-    <div className="my-6 flex justify-center">
-      <svg viewBox="0 0 200 130" className="w-full max-w-xs" role="img">
-        {/* Background arc */}
-        <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeLinecap="round" />
-        {/* Value arc */}
-        <path
-          d={`M 20 110 A 80 80 0 0 1 ${100 + 80 * Math.cos((angle * Math.PI) / 180)} ${110 - 80 * Math.abs(Math.sin((angle * Math.PI) / 180))}`}
-          fill="none" stroke={gaugeColor} strokeWidth="16" strokeLinecap="round"
-        />
-        {/* Needle */}
-        <line x1="100" y1="110" x2={100 + 60 * Math.cos((angle * Math.PI) / 180)} y2={110 - 60 * Math.sin((angle * Math.PI) / 180)} stroke="#374151" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="100" cy="110" r="6" fill="#374151" />
-        {/* Value text */}
-        <text x="100" y="95" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#1f2937">{value}</text>
-        <text x="100" y="125" textAnchor="middle" fontSize="10" fill="#6b7280">{label}</text>
-        {/* Min/Max labels */}
-        <text x="20" y="125" textAnchor="middle" fontSize="8" fill="#9ca3af">0</text>
-        <text x="180" y="125" textAnchor="middle" fontSize="8" fill="#9ca3af">10</text>
-      </svg>
+    <div className="my-5 flex justify-center">
+      <div className="bg-muted/20 rounded-xl border border-border/50 px-8 py-4 inline-block">
+        <svg viewBox="0 0 200 120" className="w-48 mx-auto" role="img">
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" strokeWidth="12" strokeLinecap="round" />
+          <path
+            d={`M 20 100 A 80 80 0 0 1 ${100 + 80 * Math.cos((angle * Math.PI) / 180)} ${100 - 80 * Math.abs(Math.sin((angle * Math.PI) / 180))}`}
+            fill="none" stroke={gaugeColor} strokeWidth="12" strokeLinecap="round"
+          />
+          <circle cx="100" cy="100" r="4" fill="#374151" />
+          <line x1="100" y1="100" x2={100 + 55 * Math.cos((angle * Math.PI) / 180)} y2={100 - 55 * Math.sin((angle * Math.PI) / 180)} stroke="#374151" strokeWidth="2" strokeLinecap="round" />
+          <text x="100" y="85" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#1f2937">{value}/10</text>
+          <text x="100" y="115" textAnchor="middle" fontSize="10" fill="#6b7280">{label}</text>
+        </svg>
+      </div>
     </div>
   );
 }
