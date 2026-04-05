@@ -281,7 +281,7 @@ const CXDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis type="number" dataKey="x" name={corrIndicators[corrX].label} unit={corrIndicators[corrX].unit} tick={{ fontSize: 11 }} />
                 <YAxis type="number" dataKey="y" name={corrIndicators[corrY].label} unit={corrIndicators[corrY].unit} tick={{ fontSize: 11 }} />
-                <ZAxis type="number" dataKey="count" range={[60, 400]} name="Chamados" />
+                <ZAxis type="number" dataKey="count" range={[20, 20]} name="Chamados" />
                 <Tooltip content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
