@@ -663,17 +663,36 @@ const Resultado = () => {
           const idx = sections.findIndex(s => s.id === id);
           return idx >= 0 ? { section: sections[idx], idx } : null;
         };
+        const canvasCellColors: Record<string, string> = {
+          // Grupo 1: Azul suave — Objetivos, Maturidade, Estratégia, Custo, Estrutura
+          sumario: 'bg-slate-50 dark:bg-slate-900/40',
+          objetivos: 'bg-blue-50 dark:bg-blue-950/30',
+          maturidade: 'bg-blue-50 dark:bg-blue-950/30',
+          estrategia: 'bg-blue-50 dark:bg-blue-950/30',
+          custos: 'bg-blue-50 dark:bg-blue-950/30',
+          estrutura: 'bg-blue-50 dark:bg-blue-950/30',
+          // Grupo 2: Verde suave — Benefícios, Canais, Segmentação, Operações
+          beneficios: 'bg-emerald-50 dark:bg-emerald-950/30',
+          canais: 'bg-emerald-50 dark:bg-emerald-950/30',
+          segmentacao: 'bg-emerald-50 dark:bg-emerald-950/30',
+          operacoes: 'bg-emerald-50 dark:bg-emerald-950/30',
+          // Grupo 3: Âmbar suave — Cronograma, Plano de Ação
+          cronograma: 'bg-amber-50 dark:bg-amber-950/30',
+          plano5w2h: 'bg-amber-50 dark:bg-amber-950/30',
+        };
         const CanvasCell = ({ id, className: cls }: { id: string; className?: string }) => {
           const found = findSection(id);
           if (!found) return <div className={cn('border border-border/50 bg-muted/20 rounded-lg p-3', cls)} />;
           const { section, idx } = found;
           const Icon = sectionIcons[section.id] || FileText;
           const num = sections.indexOf(section) + 1;
+          const cellBg = canvasCellColors[id] || '';
           return (
             <button
               onClick={() => { setActiveSection(idx); setViewMode('detail'); }}
               className={cn(
-                'group text-left border border-border/60 bg-card rounded-lg p-3 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01] flex flex-col',
+                'group text-left border border-border/60 rounded-lg p-3 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01] flex flex-col',
+                cellBg,
                 cls
               )}
             >
