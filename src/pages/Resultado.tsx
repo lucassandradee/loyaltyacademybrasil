@@ -768,11 +768,6 @@ const Resultado = () => {
         </>
       )}
 
-      {sections.length > 0 && (
-        <div className="mt-8 text-center">
-          <Button size="lg" onClick={() => navigate('/plano-final')} className="h-12 px-8">Ir para Visão Consolidada</Button>
-        </div>
-      )}
     </div>
   );
 };
