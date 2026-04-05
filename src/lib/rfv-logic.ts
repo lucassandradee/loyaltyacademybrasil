@@ -387,3 +387,69 @@ export const clusterEisenhower: Record<string, EisenhowerMatrix> = {
     notUrgentNotImportant: ['Analisar canal de aquisição', 'Mapear perfil para futuras segmentações'],
   },
 };
+
+export function generateRFVSummary(clients: ScoredClient[]): string {
+  if (clients.length === 0) return 'Sem dados para análise.';
+
+  const total = clients.length;
+  const counts: Record<string, number> = {};
+  const valorByCluster: Record<string, number[]> = {};
+  const recenciaByCluster: Record<string, number[]> = {};
+
+  allClusterNames.forEach(n => { counts[n] = 0; valorByCluster[n] = []; recenciaByCluster[n] = []; });
+  clients.forEach(c => {
+    counts[c.cluster] = (counts[c.cluster] || 0) + 1;
+    if (!valorByCluster[c.cluster]) valorByCluster[c.cluster] = [];
+    if (!recenciaByCluster[c.cluster]) recenciaByCluster[c.cluster] = [];
+    valorByCluster[c.cluster].push(c.valor);
+    recenciaByCluster[c.cluster].push(c.recencia);
+  });
+
+  const sorted = allClusterNames
+    .map(n => ({ name: n, count: counts[n], pct: ((counts[n] / total) * 100) }))
+    .filter(c => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  const totalValor = clients.reduce((s, c) => s + c.valor, 0);
+  const avgValor = totalValor / total;
+  const avgRecencia = clients.reduce((s, c) => s + c.recencia, 0) / total;
+  const avgFreq = clients.reduce((s, c) => s + c.frequencia, 0) / total;
+
+  // Top 10% clients by valor
+  const sortedByValor = [...clients].sort((a, b) => b.valor - a.valor);
+  const top10Count = Math.max(1, Math.round(total * 0.1));
+  const top10Valor = sortedByValor.slice(0, top10Count).reduce((s, c) => s + c.valor, 0);
+  const top10Pct = ((top10Valor / totalValor) * 100);
+
+  const campeoes = counts['Campeão'] || 0;
+  const emRisco = counts['Em risco'] || 0;
+  const hibernando = counts['Hibernando'] || 0;
+
+  let summary = `A base contém ${total} clientes com valor médio de R$ ${avgValor.toFixed(2)}, recência média de ${avgRecencia.toFixed(0)} dias e frequência média de ${avgFreq.toFixed(1)} compras. `;
+
+  summary += `A distribuição principal é: ${sorted.slice(0, 4).map(c => `"${c.name}" (${c.pct.toFixed(1)}%)`).join(', ')}. `;
+
+  summary += `Os top 10% de clientes concentram ${top10Pct.toFixed(1)}% do valor total da base. `;
+
+  if (campeoes > 0) {
+    const campValor = valorByCluster['Campeão'].reduce((s, v) => s + v, 0) / campeoes;
+    summary += `Os ${campeoes} Campeões (${((campeoes / total) * 100).toFixed(1)}%) têm ticket médio de R$ ${campValor.toFixed(2)} e devem receber tratamento VIP. `;
+  }
+
+  if (emRisco + hibernando > 0) {
+    const riscoTotal = emRisco + hibernando;
+    summary += `Atenção: ${riscoTotal} clientes (${((riscoTotal / total) * 100).toFixed(1)}%) estão "Em risco" ou "Hibernando", representando oportunidade de reativação. `;
+  }
+
+  // Cluster with best avg valor
+  const clusterAvgValor = sorted.map(c => ({
+    name: c.name,
+    avg: valorByCluster[c.name].reduce((s, v) => s + v, 0) / c.count,
+  })).sort((a, b) => b.avg - a.avg);
+
+  if (clusterAvgValor.length > 1) {
+    summary += `O cluster com maior ticket médio é "${clusterAvgValor[0].name}" (R$ ${clusterAvgValor[0].avg.toFixed(2)}), enquanto o menor é "${clusterAvgValor[clusterAvgValor.length - 1].name}" (R$ ${clusterAvgValor[clusterAvgValor.length - 1].avg.toFixed(2)}).`;
+  }
+
+  return summary;
+}

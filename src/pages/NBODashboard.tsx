@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle, Download } from 'lucide-react';
-import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation } from '@/lib/nbo-logic';
+import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation, generateNBOSummary } from '@/lib/nbo-logic';
+import { FileText } from 'lucide-react';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import type { ClientData } from '@/lib/rfv-logic';
@@ -108,6 +109,19 @@ const NBODashboard = () => {
         <h1 className="text-3xl font-bold text-foreground">Análise Next Best Offer</h1>
         <p className="text-muted-foreground">Segmentação ponderada por scores RFV (mesma base do Passo 1)</p>
       </div>
+
+      {/* Diagnóstico NBO */}
+      <Card className="mb-8 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Diagnóstico NBO</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateNBOSummary(scored), [scored])}</p>
+        </CardContent>
+      </Card>
 
       {/* Explanatory Card */}
       <Card className="mb-8 border-blue-500/20 bg-blue-500/5">

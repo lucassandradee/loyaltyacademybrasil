@@ -1,72 +1,46 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowRight, CheckCircle2, Loader2, Shield, Target, Lightbulb, ListChecks, BarChart3, Calendar, Award, FileText, ChevronDown, Download } from 'lucide-react';
-import { DiagnosticAnswers, DiagnosticResult, generateDiagnostic } from '@/lib/diagnostic-logic';
-import { generatePDF } from '@/lib/generate-pdf';
+import { Loader2, ChevronDown, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, BarChart3, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
+import { generateNBOSummary, classifyNBO } from '@/lib/nbo-logic';
+import { generateCXSummary } from '@/lib/cx-logic';
+import type { ClientData } from '@/lib/rfv-logic';
+import type { CXTicket } from '@/lib/cx-logic';
 
-const DRAFT_KEY = 'diagnostic_draft';
+interface PlanSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+const sectionIcons: Record<string, any> = {
+  sumario: FileText,
+  maturidade: Shield,
+  objetivos: Target,
+  estrutura: Lightbulb,
+  estrategia: Award,
+  beneficios: Award,
+  segmentacao: Users,
+  canais: Megaphone,
+  operacoes: Settings,
+  custos: DollarSign,
+  cronograma: Calendar,
+  plano5w2h: ListChecks,
+};
 
 const Resultado = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<DiagnosticResult | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['sumario', 'maturidade', 'estrutura']));
-
-  const stateAnswers = (location.state as { answers: DiagnosticAnswers })?.answers;
-
-  useEffect(() => {
-    const load = async () => {
-      // 1. Use answers from route state if available
-      if (stateAnswers) {
-        setTimeout(() => {
-          setResult(generateDiagnostic(stateAnswers));
-          setLoading(false);
-        }, 2500);
-        return;
-      }
-
-      // 2. Must be logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate('/login'); return; }
-
-      // 3. Try fetching from database
-      const { data } = await supabase
-        .from('diagnostic_responses')
-        .select('answers')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data?.answers) {
-        setResult(generateDiagnostic(data.answers as unknown as DiagnosticAnswers));
-        setLoading(false);
-        return;
-      }
-
-      // 4. Try localStorage draft as fallback
-      const draft = localStorage.getItem(DRAFT_KEY);
-      if (draft) {
-        try {
-          const parsed = JSON.parse(draft) as DiagnosticAnswers;
-          setResult(generateDiagnostic(parsed));
-          setLoading(false);
-          return;
-        } catch { /* ignore */ }
-      }
-
-      // 5. Nothing found — go to diagnostic
-      navigate('/diagnostico');
-    };
-    load();
-  }, [stateAnswers, navigate]);
+  const [generating, setGenerating] = useState(false);
+  const [sections, setSections] = useState<PlanSection[]>([]);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['sumario', 'maturidade']));
+  const [hasLab, setHasLab] = useState(false);
 
   const toggleSection = (id: string) => {
     const next = new Set(openSections);
@@ -74,206 +48,240 @@ const Resultado = () => {
     setOpenSections(next);
   };
 
+  const loadAndGenerate = async (forceRegenerate = false) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate('/login'); return; }
+
+    // Check for existing plan first
+    if (!forceRegenerate) {
+      const { data: existingPlan } = await supabase
+        .from('generated_plans')
+        .select('plan_content')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPlan?.plan_content) {
+        const planData = existingPlan.plan_content as any;
+        if (planData.sections && Array.isArray(planData.sections)) {
+          setSections(planData.sections);
+          setHasLab(true);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    // Fetch all required data in parallel
+    const [profileRes, diagRes, rfvRes, cxRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
+      supabase.from('diagnostic_responses').select('answers').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('rfv_uploads').select('client_data').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('cx_uploads').select('ticket_data').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    ]);
+
+    const profile = profileRes.data;
+    const diagAnswers = diagRes.data?.answers as Record<string, any> | null;
+    const labAnswers = diagAnswers?.lab || null;
+
+    if (!labAnswers) {
+      setHasLab(false);
+      setLoading(false);
+      return;
+    }
+
+    setHasLab(true);
+
+    // Generate summaries
+    let rfvSummary = '';
+    let nboSummary = '';
+    let cxSummary = '';
+
+    if (rfvRes.data?.client_data) {
+      const clientData = rfvRes.data.client_data as unknown as ClientData[];
+      const scored = scoreClients(clientData, defaultPercentileParams(3));
+      rfvSummary = generateRFVSummary(scored);
+      const nboScored = classifyNBO(clientData);
+      nboSummary = generateNBOSummary(nboScored);
+    }
+
+    if (cxRes.data?.ticket_data) {
+      const tickets = cxRes.data.ticket_data as unknown as CXTicket[];
+      cxSummary = generateCXSummary(tickets);
+    }
+
+    // Generate plan via edge function
+    setGenerating(true);
+    setLoading(false);
+
+    try {
+      const { data: funcData, error: funcError } = await supabase.functions.invoke('generate-plan', {
+        body: { profile, labAnswers, rfvSummary, nboSummary, cxSummary },
+      });
+
+      if (funcError) throw new Error(funcError.message);
+      if (funcData?.error) throw new Error(funcData.error);
+
+      const planSections = funcData?.sections || [];
+      setSections(planSections);
+
+      // Save to DB
+      // Delete old plans first
+      await supabase.from('generated_plans').delete().eq('user_id', user.id);
+      await supabase.from('generated_plans').insert({
+        user_id: user.id,
+        plan_content: JSON.parse(JSON.stringify({ sections: planSections })),
+      });
+
+    } catch (err: any) {
+      console.error('Plan generation error:', err);
+      toast({ title: 'Erro ao gerar plano', description: err.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAndGenerate();
+  }, []);
+
+  const handleRegenerate = () => {
+    setSections([]);
+    setGenerating(true);
+    loadAndGenerate(true);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-lg font-medium text-muted-foreground">Analisando suas respostas...</p>
-        <p className="text-sm text-muted-foreground">Gerando seu plano estratégico de loyalty</p>
+        <p className="text-lg font-medium text-muted-foreground">Carregando plano estratégico...</p>
       </div>
     );
   }
 
-  if (!result) return null;
+  if (!hasLab) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4">
+        <FileText className="h-16 w-16 text-muted-foreground" />
+        <h2 className="text-2xl font-bold text-foreground">Framework LAB não preenchido</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Para gerar seu plano estratégico personalizado, complete primeiro o Formulário LAB com as definições do programa de Loyalty.
+        </p>
+        <Button onClick={() => navigate('/lab-framework')} size="lg" className="mt-4">
+          Ir para Formulário LAB
+        </Button>
+      </div>
+    );
+  }
 
-  const maturidadeColor = result.maturidade.nivel === 'Avançado' ? 'text-green-600' :
-    result.maturidade.nivel === 'Em Desenvolvimento' ? 'text-yellow-600' : 'text-red-500';
-
-  const SectionCard = ({ id, icon: Icon, title, children }: { id: string; icon: any; title: string; children: React.ReactNode }) => (
-    <Collapsible open={openSections.has(id)} onOpenChange={() => toggleSection(id)}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Icon className="h-6 w-6 text-primary" />
-              <CardTitle className="text-lg">{title}</CardTitle>
-            </div>
-            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.has(id) ? 'rotate-180' : ''}`} />
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent>{children}</CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  );
+  if (generating && sections.length === 0) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg font-medium text-muted-foreground">Gerando seu plano estratégico com IA...</p>
+        <p className="text-sm text-muted-foreground">Isso pode levar até 60 segundos</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <CheckCircle2 className="mb-2 h-10 w-10 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Seu Plano Estratégico de Loyalty</h1>
-          <p className="mt-1 text-muted-foreground">Relatório personalizado baseado no seu diagnóstico</p>
+          <h1 className="text-3xl font-bold text-foreground">Plano Estratégico de Loyalty</h1>
+          <p className="mt-1 text-muted-foreground">Gerado por IA com base nos seus dados e no Framework LAB</p>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={() => generatePDF(result)} size="lg" className="gap-2">
-            <Download className="h-5 w-5" /> Baixar PDF
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => {
-              localStorage.removeItem('diagnostic_draft');
-              localStorage.removeItem('diagnostic_step');
-              navigate('/diagnostico?refazer=true');
-            }}
-          >
-            <FileText className="h-4 w-4" /> Refazer Diagnóstico
+          <Button onClick={handleRegenerate} disabled={generating} variant="outline" className="gap-2">
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Regenerar Plano
           </Button>
         </div>
       </div>
 
       <div className="space-y-4">
-        <SectionCard id="sumario" icon={FileText} title="1. Sumário Executivo">
-          <p className="text-sm leading-relaxed text-muted-foreground">{result.sumarioExecutivo}</p>
-        </SectionCard>
-
-        <SectionCard id="maturidade" icon={Shield} title="2. Diagnóstico de Maturidade">
-          <div className="mb-3">
-            <span className="text-sm text-muted-foreground">Nível: </span>
-            <span className={`font-bold ${maturidadeColor}`}>{result.maturidade.nivel}</span>
-            <span className="ml-2 text-xs text-muted-foreground">({result.maturidade.score}/10)</span>
-          </div>
-          <p className="mb-4 text-sm text-muted-foreground">{result.maturidade.descricao}</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <h4 className="mb-2 text-sm font-semibold text-foreground">Pontos Fortes</h4>
-              {result.maturidade.pontosFortes.map((p, i) => (
-                <div key={i} className="mb-1 flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
-                  <span className="text-sm text-muted-foreground">{p}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h4 className="mb-2 text-sm font-semibold text-foreground">Gaps Identificados</h4>
-              {result.maturidade.gaps.map((g, i) => (
-                <div key={i} className="mb-1 flex items-start gap-2">
-                  <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-destructive/20 text-center text-[10px] leading-[14px] text-destructive">!</span>
-                  <span className="text-sm text-muted-foreground">{g}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard id="estrutura" icon={Lightbulb} title="3. Modelo de Programa Recomendado">
-          <p className="mb-2 font-semibold text-foreground">{result.estrutura.tipo}</p>
-          <p className="mb-3 text-sm text-muted-foreground">{result.estrutura.descricao}</p>
-          <h4 className="mb-1 text-sm font-semibold text-foreground">Mecânica de Funcionamento</h4>
-          <p className="mb-3 text-sm text-muted-foreground">{result.estrutura.mecanica}</p>
-          <h4 className="mb-1 text-sm font-semibold text-foreground">Exemplos de Mercado</h4>
-          {result.estrutura.exemplos.map((ex, i) => (
-            <p key={i} className="mb-1 text-sm text-muted-foreground">• {ex}</p>
-          ))}
-        </SectionCard>
-
-        {result.tiers.length > 0 && (
-          <SectionCard id="tiers" icon={Award} title="4. Estrutura de Tiers">
-            <div className="space-y-4">
-              {result.tiers.map((tier, i) => (
-                <div key={i} className="rounded-lg border p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-bold text-primary">{tier.nome}</span>
-                    <span className="text-xs text-muted-foreground">{tier.criterio}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {tier.beneficios.map((b, j) => (
-                      <span key={j} className="rounded-full bg-accent px-3 py-1 text-xs text-accent-foreground">{b}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        <SectionCard id="foco" icon={Target} title={`5. Foco Estratégico: ${result.foco.titulo}`}>
-          <p className="mb-4 text-sm text-muted-foreground">{result.foco.descricao}</p>
-          <div className="space-y-2">
-            {result.foco.acoes.map((item, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-md bg-muted p-3">
-                <span className={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-[10px] font-bold text-primary-foreground ${
-                  item.prioridade === 'Alta' ? 'bg-destructive' : item.prioridade === 'Média' ? 'bg-yellow-500' : 'bg-muted-foreground'
-                }`}>{item.prioridade}</span>
-                <span className="text-sm">{item.acao}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard id="kpis" icon={BarChart3} title="6. KPIs e Métricas de Sucesso">
-          <div className="space-y-3">
-            {result.kpis.map((kpi, i) => (
-              <div key={i} className="rounded-lg border p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground text-sm">{kpi.metrica}</span>
-                  <span className="rounded bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">{kpi.meta}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{kpi.descricao}</p>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard id="cronograma" icon={Calendar} title="7. Cronograma de Implementação">
-          <div className="space-y-4">
-            {result.cronograma.map((fase, i) => (
-              <div key={i}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="font-semibold text-primary">{fase.fase}</span>
-                  <span className="text-xs text-muted-foreground">{fase.periodo}</span>
-                </div>
-                {fase.marcos.map((m, j) => (
-                  <div key={j} className="mb-1 flex items-start gap-2 pl-2">
-                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="text-sm text-muted-foreground">{m}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard id="checklist" icon={ListChecks} title="8. Checklist de Próximos Passos">
-          <div className="space-y-3">
-            {result.checklist.map((item, i) => (
-              <label key={i} className="flex cursor-pointer items-center gap-3">
-                <Checkbox
-                  checked={checkedItems.has(i)}
-                  onCheckedChange={() => {
-                    const next = new Set(checkedItems);
-                    next.has(i) ? next.delete(i) : next.add(i);
-                    setCheckedItems(next);
-                  }}
-                />
-                <span className={`text-sm ${checkedItems.has(i) ? 'text-muted-foreground line-through' : ''}`}>{item}</span>
-              </label>
-            ))}
-          </div>
-        </SectionCard>
+        {sections.map((section) => {
+          const Icon = sectionIcons[section.id] || FileText;
+          return (
+            <Collapsible key={section.id} open={openSections.has(section.id)} onOpenChange={() => toggleSection(section.id)}>
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-lg">{section.title}</CardTitle>
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.has(section.id) ? 'rotate-180' : ''}`} />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <div
+                      className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground [&_table]:w-full [&_th]:border [&_th]:p-2 [&_th]:text-left [&_th]:bg-muted [&_td]:border [&_td]:p-2 [&_li]:text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content) }}
+                    />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          );
+        })}
       </div>
 
-      <div className="mt-8 text-center">
-        <Button size="lg" onClick={() => navigate('/rfv')} className="h-12 px-8">
-          Ir para Análise de Dados RFV (Passo 1)
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
-      </div>
+      {sections.length > 0 && (
+        <div className="mt-8 text-center">
+          <Button size="lg" onClick={() => navigate('/plano-final')} className="h-12 px-8">
+            Ir para Visão Consolidada
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+
+/** Simple markdown to HTML converter */
+function markdownToHtml(md: string): string {
+  if (!md) return '';
+  let html = md
+    // Headers
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Tables
+    .replace(/^\|(.+)\|$/gm, (match) => {
+      const cells = match.split('|').filter(c => c.trim());
+      if (cells.every(c => /^[\s-:]+$/.test(c))) return ''; // separator row
+      const isHeader = false; // simplified
+      const tag = 'td';
+      return '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
+    })
+    // Unordered lists
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^• (.+)$/gm, '<li>$1</li>')
+    // Numbered lists
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Paragraphs (double newlines)
+    .replace(/\n\n/g, '</p><p>')
+    // Single newlines within paragraphs
+    .replace(/\n/g, '<br/>');
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/(<li>.*?<\/li>(?:<br\/>)?)+/g, (match) => {
+    return '<ul>' + match.replace(/<br\/>/g, '') + '</ul>';
+  });
+
+  // Wrap consecutive <tr> in <table>
+  html = html.replace(/(<tr>.*?<\/tr>(?:<br\/>)?)+/g, (match) => {
+    return '<table>' + match.replace(/<br\/>/g, '') + '</table>';
+  });
+
+  return '<p>' + html + '</p>';
+}
 
 export default Resultado;

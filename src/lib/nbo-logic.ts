@@ -186,3 +186,53 @@ export function classifyNBO(clients: ClientData[]): ScoredNBOClient[] {
 
   return result;
 }
+
+export function generateNBOSummary(clients: ScoredNBOClient[]): string {
+  if (clients.length === 0) return 'Sem dados para análise.';
+
+  const total = clients.length;
+  const faixaCounts: Record<string, ScoredNBOClient[]> = {};
+  allFaixaNames.forEach(f => faixaCounts[f] = []);
+  clients.forEach(c => {
+    if (!faixaCounts[c.faixa]) faixaCounts[c.faixa] = [];
+    faixaCounts[c.faixa].push(c);
+  });
+
+  const totalValor = clients.reduce((s, c) => s + c.gasto_total, 0);
+  const avgValor = totalValor / total;
+
+  let summary = `A base NBO contém ${total} clientes distribuídos em 4 faixas por scoring ponderado (V×3 + F×2 + R×1). `;
+
+  // Faixa stats
+  const faixaStats = allFaixaNames.map(f => {
+    const cls = faixaCounts[f];
+    const avg = cls.length > 0 ? cls.reduce((s, c) => s + c.gasto_total, 0) / cls.length : 0;
+    return { name: f, count: cls.length, pct: ((cls.length / total) * 100), avgValor: avg };
+  });
+
+  summary += `Distribuição: ${faixaStats.map(f => `${f.name} ${f.count} (${f.pct.toFixed(1)}%)`).join(', ')}. `;
+
+  // Valor concentration
+  const diamante = faixaCounts['Diamante'];
+  if (diamante.length > 0) {
+    const diamanteValor = diamante.reduce((s, c) => s + c.gasto_total, 0);
+    summary += `Os ${diamante.length} clientes Diamante (${((diamante.length / total) * 100).toFixed(1)}%) concentram ${((diamanteValor / totalValor) * 100).toFixed(1)}% do valor total, com ticket médio de R$ ${(diamanteValor / diamante.length).toFixed(2)}. `;
+  }
+
+  // Offer distribution
+  const offerMap = new Map<string, number>();
+  clients.forEach(c => offerMap.set(c.oferta_curta, (offerMap.get(c.oferta_curta) || 0) + 1));
+  const topOffers = [...offerMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  summary += `As ofertas mais frequentes são: ${topOffers.map(([o, c]) => `"${o}" (${c})`).join(', ')}. `;
+
+  // Migration potential
+  const prata = faixaCounts['Prata'];
+  const bronze = faixaCounts['Bronze'];
+  if (prata.length > 0 && bronze.length > 0) {
+    summary += `Há ${prata.length + bronze.length} clientes em Prata e Bronze com potencial de migração ascendente, representando ${(((prata.length + bronze.length) / total) * 100).toFixed(1)}% da base. `;
+  }
+
+  summary += `O valor médio geral por cliente é R$ ${avgValor.toFixed(2)}.`;
+
+  return summary;
+}

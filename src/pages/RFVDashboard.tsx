@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, Search, Settings2, X, Download } from 'lucide-react';
-import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary } from '@/lib/rfv-logic';
 import { downloadCSV } from '@/lib/export-utils';
+import { FileText } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -175,13 +176,16 @@ const RFVDashboard = () => {
         ))}
       </div>
 
-      {/* Analysis */}
-      <Card className="mb-8">
+      {/* Diagnóstico RFV */}
+      <Card className="mb-8 border-primary/20 bg-primary/5">
         <CardHeader>
-          <CardTitle className="text-base">Análise da Base</CardTitle>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Diagnóstico RFV</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground">{analysisText}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateRFVSummary(scored), [scored])}</p>
         </CardContent>
       </Card>
 
