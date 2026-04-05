@@ -30,6 +30,8 @@ const CXDashboard = () => {
   const [selectedNps, setSelectedNps] = useState<string | null>(null);
   const [selectedTipo, setSelectedTipo] = useState<string | null>(null);
   const [periodoView, setPeriodoView] = useState<'dia' | 'mes' | 'ano'>('mes');
+  const [corrX, setCorrX] = useState('tma');
+  const [corrY, setCorrY] = useState('nps');
   const [dbData, setDbData] = useState<CXTicket[] | null>(null);
   const [loading, setLoading] = useState(!locState);
   const perPage = 10;
