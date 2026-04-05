@@ -281,15 +281,70 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
-  const parts = parseDiagrams(section.content);
+  // Split content into the 3 visual blocks if present
+  const blockRegex = /## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação/g;
+  const hasBlocks = blockRegex.test(section.content);
+
+  if (!hasBlocks) {
+    const parts = parseDiagrams(section.content);
+    return (
+      <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+        {parts.map((part, i) => {
+          if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+          return <DiagramRenderer key={i} diagram={part} />;
+        })}
+      </div>
+    );
+  }
+
+  // Split by the 3 block headers
+  const blocks = section.content.split(/(?=## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação)/g).filter(b => b.trim());
+
+  const blockConfig: Record<string, { border: string; icon: any; label: string; bgClass: string }> = {
+    '📚': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico', bgClass: 'bg-red-50/50 dark:bg-red-950/10' },
+    '📊': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados', bgClass: 'bg-amber-50/50 dark:bg-amber-950/10' },
+    '🎯': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação', bgClass: 'bg-emerald-50/50 dark:bg-emerald-950/10' },
+  };
 
   return (
-    <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-      {parts.map((part, i) => {
-        if (typeof part === 'string') {
-          return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+    <div className="space-y-4">
+      {blocks.map((block, i) => {
+        const emojiMatch = block.match(/## (📚|📊|🎯)/);
+        const emoji = emojiMatch?.[1];
+        const config = emoji ? blockConfig[emoji] : null;
+
+        if (!config) {
+          // Content before the first block header (if any)
+          const parts = parseDiagrams(block);
+          return (
+            <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+              {parts.map((part, j) => {
+                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+                return <DiagramRenderer key={j} diagram={part} />;
+              })}
+            </div>
+          );
         }
-        return <DiagramRenderer key={i} diagram={part} />;
+
+        const Icon = config.icon;
+        // Remove the header line itself from the block content
+        const blockContent = block.replace(/## (📚|📊|🎯)\s*[^\n]*\n?/, '').trim();
+        const parts = parseDiagrams(blockContent);
+
+        return (
+          <div key={i} className={cn('border-l-4 rounded-r-lg p-4', config.border, config.bgClass)}>
+            <div className="flex items-center gap-2 mb-3">
+              <Icon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{config.label}</span>
+            </div>
+            <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+              {parts.map((part, j) => {
+                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+                return <DiagramRenderer key={j} diagram={part} />;
+              })}
+            </div>
+          </div>
+        );
       })}
     </div>
   );
