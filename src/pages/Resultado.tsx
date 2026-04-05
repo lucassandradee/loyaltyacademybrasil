@@ -732,76 +732,87 @@ const Resultado = () => {
           const idx = sections.findIndex(s => s.id === id);
           return idx >= 0 ? { section: sections[idx], idx } : null;
         };
-        const canvasCellColors: Record<string, string> = {
-          // Grupo 1: Azul suave — Objetivos, Maturidade, Estratégia, Custo, Estrutura
-          sumario: 'bg-slate-50 dark:bg-slate-900/40',
-          objetivos: 'bg-blue-50 dark:bg-blue-950/30',
-          maturidade: 'bg-blue-50 dark:bg-blue-950/30',
-          estrategia: 'bg-blue-50 dark:bg-blue-950/30',
-          custos: 'bg-blue-50 dark:bg-blue-950/30',
-          estrutura: 'bg-blue-50 dark:bg-blue-950/30',
-          // Grupo 2: Verde suave — Benefícios, Canais, Segmentação, Operações
-          beneficios: 'bg-emerald-50 dark:bg-emerald-950/30',
-          canais: 'bg-emerald-50 dark:bg-emerald-950/30',
-          segmentacao: 'bg-emerald-50 dark:bg-emerald-950/30',
-          operacoes: 'bg-emerald-50 dark:bg-emerald-950/30',
-          // Grupo 3: Âmbar suave — Cronograma, Plano de Ação
-          cronograma: 'bg-amber-50 dark:bg-amber-950/30',
-          plano5w2h: 'bg-amber-50 dark:bg-amber-950/30',
+        const canvasNumColors: Record<string, string> = {
+          sumario: 'bg-blue-600 text-white',
+          objetivos: 'bg-blue-600 text-white',
+          maturidade: 'bg-blue-600 text-white',
+          estrategia: 'bg-blue-600 text-white',
+          custos: 'bg-blue-600 text-white',
+          estrutura: 'bg-blue-600 text-white',
+          beneficios: 'bg-red-600 text-white',
+          canais: 'bg-red-600 text-white',
+          segmentacao: 'bg-red-600 text-white',
+          operacoes: 'bg-red-600 text-white',
+          cronograma: 'bg-gray-500 text-white',
+          plano5w2h: 'bg-gray-500 text-white',
+        };
+        const canvasDescriptions: Record<string, string> = {
+          sumario: 'Visão geral do plano',
+          maturidade: 'Nível atual da empresa',
+          objetivos: 'Metas do programa',
+          estrutura: 'Mecânicas e regras',
+          estrategia: 'Aquisição e retenção',
+          beneficios: 'Tangíveis e intangíveis',
+          segmentacao: 'Tiers e clusters',
+          canais: 'Cadastro e comunicação',
+          operacoes: 'Processos e equipe',
+          custos: 'Investimento e ROI',
+          cronograma: 'Fases e prazos',
+          plano5w2h: 'Ações detalhadas',
         };
         const CanvasCell = ({ id, className: cls }: { id: string; className?: string }) => {
           const found = findSection(id);
-          if (!found) return <div className={cn('border border-border/50 bg-muted/20 rounded-lg p-3', cls)} />;
+          if (!found) return <div className={cn('border border-border bg-card rounded-lg p-4', cls)} />;
           const { section, idx } = found;
           const Icon = sectionIcons[section.id] || FileText;
           const num = sections.indexOf(section) + 1;
-          const cellBg = canvasCellColors[id] || '';
+          const numColor = canvasNumColors[id] || 'bg-gray-500 text-white';
+          const desc = canvasDescriptions[id] || '';
           return (
             <button
               onClick={() => { setActiveSection(idx); setViewMode('detail'); }}
               className={cn(
-                'group text-left border border-border/60 rounded-lg p-3 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01] flex flex-col',
-                cellBg,
+                'group text-left bg-card rounded-lg p-4 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01] flex flex-col items-start',
                 cls
               )}
             >
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="flex items-center justify-center w-5 h-5 rounded bg-primary/10 text-primary text-[10px] font-bold shrink-0">{num}</span>
-                <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
-                <h3 className="text-[11px] font-semibold text-foreground leading-tight line-clamp-1">{section.title.replace(/^\d+\.\s*/, '')}</h3>
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className={cn('flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold shrink-0', numColor)}>{num}</span>
+                <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <h3 className="text-sm font-bold text-foreground leading-tight">{section.title.replace(/^\d+\.\s*/, '')}</h3>
               </div>
-              <p className="text-[10px] leading-relaxed text-muted-foreground line-clamp-4 flex-1">{extractSummary(section.content, 120)}</p>
-              <span className="mt-1.5 text-[9px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">Abrir →</span>
+              <p className="text-xs text-muted-foreground">{desc}</p>
+              <span className="mt-auto pt-2 text-[9px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">Abrir →</span>
             </button>
           );
         };
 
         return (
-          <div className="border-2 border-border rounded-xl overflow-hidden bg-muted/10">
+          <div className="border-2 border-border/80 rounded-xl overflow-hidden bg-card">
             {/* Row 1: Sumário (full width) */}
             <div className="grid grid-cols-1">
-              <CanvasCell id="sumario" className="rounded-none border-0 border-b-2 border-border min-h-[80px]" />
+              <CanvasCell id="sumario" className="rounded-none border-0 border-b-2 border-border/60 min-h-[80px]" />
             </div>
             {/* Row 2: Objetivos | Diagnóstico de Maturidade */}
             <div className="grid grid-cols-2">
-              <CanvasCell id="objetivos" className="rounded-none border-0 border-r-2 border-b-2 border-border min-h-[90px]" />
-              <CanvasCell id="maturidade" className="rounded-none border-0 border-b-2 border-border min-h-[90px]" />
+              <CanvasCell id="objetivos" className="rounded-none border-0 border-r-2 border-b-2 border-border/60 min-h-[90px]" />
+              <CanvasCell id="maturidade" className="rounded-none border-0 border-b-2 border-border/60 min-h-[90px]" />
             </div>
             {/* Row 3: Estratégia | (Benefícios + Segmentação) | (Canais + Operações) | Estrutura */}
             <div className="grid grid-cols-[1fr_2fr_1fr]" style={{ minHeight: 180 }}>
-              <CanvasCell id="estrategia" className="rounded-none border-0 border-r-2 border-b-2 border-border" />
-              <div className="grid grid-cols-2 grid-rows-2 border-r-2 border-b-2 border-border">
-                <CanvasCell id="beneficios" className="rounded-none border-0 border-r border-b border-border" />
-                <CanvasCell id="canais" className="rounded-none border-0 border-b border-border" />
-                <CanvasCell id="segmentacao" className="rounded-none border-0 border-r border-border" />
+              <CanvasCell id="estrategia" className="rounded-none border-0 border-r-2 border-b-2 border-border/60" />
+              <div className="grid grid-cols-2 grid-rows-2 border-r-2 border-b-2 border-border/60">
+                <CanvasCell id="beneficios" className="rounded-none border-0 border-r border-b border-border/40" />
+                <CanvasCell id="canais" className="rounded-none border-0 border-b border-border/40" />
+                <CanvasCell id="segmentacao" className="rounded-none border-0 border-r border-border/40" />
                 <CanvasCell id="operacoes" className="rounded-none border-0" />
               </div>
-              <CanvasCell id="estrutura" className="rounded-none border-0 border-b-2 border-border" />
+              <CanvasCell id="estrutura" className="rounded-none border-0 border-b-2 border-border/60" />
             </div>
             {/* Row 4: Custos | Cronograma | Plano de Ação */}
             <div className="grid grid-cols-3">
-              <CanvasCell id="custos" className="rounded-none border-0 border-r-2 border-border min-h-[90px]" />
-              <CanvasCell id="cronograma" className="rounded-none border-0 border-r-2 border-border min-h-[90px]" />
+              <CanvasCell id="custos" className="rounded-none border-0 border-r-2 border-border/60 min-h-[90px]" />
+              <CanvasCell id="cronograma" className="rounded-none border-0 border-r-2 border-border/60 min-h-[90px]" />
               <CanvasCell id="plano5w2h" className="rounded-none border-0 min-h-[90px]" />
             </div>
           </div>
