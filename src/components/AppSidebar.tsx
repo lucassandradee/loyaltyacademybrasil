@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FileText, Upload, SlidersHorizontal, BarChart3, Gift, Headphones, Flag, ClipboardList } from 'lucide-react';
+import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +41,22 @@ const planoFinalItems = [
   { title: 'Visão Consolidada', url: '/plano-final', icon: Flag },
 ];
 
+// Plan section sub-items shown when on /resultado
+const planSectionItems = [
+  { id: 'sumario', title: 'Sumário Executivo', icon: FileText },
+  { id: 'maturidade', title: 'Diagnóstico de Maturidade', icon: Shield },
+  { id: 'objetivos', title: 'Objetivos do Programa', icon: Target },
+  { id: 'estrutura', title: 'Estrutura do Programa', icon: Lightbulb },
+  { id: 'estrategia', title: 'Estratégia', icon: Award },
+  { id: 'beneficios', title: 'Benefícios', icon: Award },
+  { id: 'segmentacao', title: 'Segmentação e Tierização', icon: Users },
+  { id: 'canais', title: 'Canais de Comunicação', icon: Megaphone },
+  { id: 'operacoes', title: 'Operações', icon: Settings },
+  { id: 'custos', title: 'Custo do Programa', icon: DollarSign },
+  { id: 'cronograma', title: 'Cronograma', icon: Calendar },
+  { id: 'plano5w2h', title: 'Plano 5W2H', icon: ListChecks },
+];
+
 interface Profile {
   nome: string;
   empresa: string;
@@ -53,15 +70,27 @@ export function AppSidebar() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
   const [cxUploaded, setCxUploaded] = useState(() => localStorage.getItem('cx_data_uploaded') === 'true');
+  const [planSectionsAvailable, setPlanSectionsAvailable] = useState(false);
+
+  const isOnResultado = location.pathname === '/resultado';
+  const activeHash = location.hash?.replace('#', '') || '';
 
   useEffect(() => {
     const handleStorage = () => {
       setRfvUploaded(localStorage.getItem('rfv_data_uploaded') === 'true');
       setCxUploaded(localStorage.getItem('cx_data_uploaded') === 'true');
+      setPlanSectionsAvailable(localStorage.getItem('plan_sections_ready') === 'true');
     };
     window.addEventListener('storage', handleStorage);
     const interval = setInterval(handleStorage, 1000);
     return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
+  }, []);
+
+  useEffect(() => {
+    // Listen for custom event from Resultado page
+    const handler = () => setPlanSectionsAvailable(true);
+    window.addEventListener('plan-sections-ready', handler);
+    return () => window.removeEventListener('plan-sections-ready', handler);
   }, []);
 
   useEffect(() => {
@@ -163,7 +192,38 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Passo 4 — Plano Estratégico</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderSimpleItems(step4Items)}</SidebarMenu>
+            <SidebarMenu>
+              {renderSimpleItems(step4Items)}
+
+              {/* Plan section sub-navigation when on /resultado */}
+              {isOnResultado && planSectionsAvailable && !collapsed && (
+                <>
+                  {planSectionItems.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton asChild>
+                        <a
+                          href={`#${item.id}`}
+                          className={cn(
+                            'flex items-center gap-2 pl-6 text-xs hover:bg-muted/50 rounded-md py-1.5 transition-colors',
+                            activeHash === item.id
+                              ? 'bg-muted text-primary font-medium'
+                              : 'text-muted-foreground'
+                          )}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('plan-navigate', { detail: item.id }));
+                            window.location.hash = item.id;
+                          }}
+                        >
+                          <item.icon className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
