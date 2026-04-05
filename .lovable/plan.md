@@ -1,106 +1,65 @@
 
 
-# Plano Estratégico Completo com IA — Reestruturação
+# Plano Visual do Plano Estratégico — 3 Melhorias
 
-## Contexto
-
-O plano atual (`Resultado.tsx`) usa lógica estática (`diagnostic-logic.ts`) e não segue os pilares do Framework LAB. Precisamos: (1) persistir respostas do LAB corretamente, (2) adicionar diagnósticos automáticos para RFV e NBO, (3) gerar o plano via IA usando todos os inputs, (4) reestruturar a saída nos pilares corretos.
-
-## Sobre o custo da IA
-
-O projeto usa **Lovable AI** — um gateway integrado que já vem com uma chave API pré-configurada (`LOVABLE_API_KEY`). O custo é cobrado no seu workspace Lovable (Settings → Workspace → Usage). Cada workspace recebe um saldo mensal gratuito. Se muitos usuários acessarem, o custo escala com o número de requisições à IA. Para produção em escala, você precisaria monitorar e adicionar créditos conforme necessário.
-
----
+## Problema
+1. O 5W2H não aparece no PDF e na tela é apenas texto corrido — precisa de filtros por área (RFV, NBO, CX, Estratégico) e visualização em tabela
+2. Todo o plano é um bloco de texto — falta tabelas, cards visuais, destaques, ícones
+3. O cronograma é textual — precisa de timeline visual
 
 ## Mudanças
 
-### 1. Corrigir persistência do Formulário LAB
-- O `upsert` com `onConflict: 'user_id'` pode falhar se não houver unique constraint em `user_id` na tabela `diagnostic_responses`
-- Alterar para: buscar registro existente → se existe, fazer `update`; se não, fazer `insert`
-- Ao abrir o formulário, carregar respostas LAB salvas do banco (não só localStorage)
+### 1. Prompt da IA — Forçar estrutura visual no conteúdo
+**Arquivo:** `supabase/functions/generate-plan/index.ts`
+- Alterar o system prompt para que o cronograma venha como JSON estruturado dentro do markdown (fases com nome, período, marcos)
+- Alterar o 5W2H para que venha como tabela markdown com colunas: Área (RFV/NBO/CX/Estratégico), O quê, Por quê, Onde, Quando, Quem, Como, Quanto
+- Pedir que cada seção use sub-headers `##`, listas com bullet, **negrito** para KPIs, e tabelas markdown quando aplicável
+- Adicionar instrução para o cronograma vir com campo `fase`, `periodo`, `marcos[]` em formato parsável
 
-### 2. Criar funções `generateRFVSummary()` e `generateNBOSummary()`
-- **`generateRFVSummary(clients: ScoredClient[]): string`** — Analisa distribuição por cluster, concentração de valor nos top clientes, recência média por segmento, clientes em risco vs campeões, ticket médio por cluster
-- **`generateNBOSummary(clients: ScoredNBOClient[]): string`** — Analisa distribuição por faixa (Bronze/Prata/Ouro/Diamante), tipos de oferta mais frequentes, potencial de migração entre faixas, valor médio por faixa
+### 2. Renderização visual rica no Resultado.tsx
+**Arquivo:** `src/pages/Resultado.tsx`
 
-### 3. Exibir Diagnóstico RFV e Diagnóstico NBO nos respectivos dashboards
-- Adicionar card "Diagnóstico RFV" no topo do `RFVDashboard.tsx`
-- Adicionar card "Diagnóstico NBO" no topo do `NBODashboard.tsx`
-- Mesmo estilo do "Diagnóstico CX" existente
+**a) Melhorar `markdownToHtml`:**
+- Renderizar tabelas markdown com estilo visual (headers coloridos, linhas alternadas, bordas)
+- Renderizar listas com ícones/bullets estilizados
+- Detectar padrões de KPI (ex: "**NPS:** 45") e renderizar como mini-cards inline
 
-### 4. Renomear "Dashboard" para "Análise CX" na sidebar
-- Em `AppSidebar.tsx`, alterar `title: 'Dashboard'` para `title: 'Análise CX'`
+**b) Seção Cronograma — Timeline visual:**
+- Detectar a seção `cronograma` pelo `id`
+- Parsear o conteúdo buscando fases (por headers `##` ou padrões)
+- Renderizar como timeline vertical com linha conectora, circles coloridos por fase, cards laterais com marcos em checklist
+- Fallback: se não conseguir parsear, renderiza o markdown normalmente
 
-### 5. Criar Edge Function `generate-plan` para gerar o plano via IA
-- Recebe: perfil da empresa (cadastro), respostas LAB, diagnóstico RFV, diagnóstico NBO, diagnóstico CX
-- Usa Lovable AI (`LOVABLE_API_KEY`) com model `google/gemini-2.5-flash`
-- Prompt estruturado solicitando exatamente os blocos:
-  1. Sumário Executivo
-  2. Diagnóstico de Maturidade
-  3. Objetivos do Programa
-  4. Estrutura do Programa
-  5. Estratégia
-  6. Benefícios (Tangíveis e Intangíveis)
-  7. Terceirização e Segmentação
-  8. Cadastro e Canais de Comunicação
-  9. Operações
-  10. Custo do Programa
-  11. Cronograma de Implementação
-  12. Plano de Ação 5W2H
-- O prompt pede conteúdo extenso e detalhado (mínimo 12-15 páginas equivalentes), com análises específicas baseadas nos dados reais
-- Retorna JSON estruturado com cada bloco contendo título, conteúdo (markdown), e sub-seções
+**c) Seção 5W2H — Tabela com filtros:**
+- Detectar a seção `plano5w2h` pelo `id`
+- Parsear a tabela markdown em dados estruturados
+- Adicionar filtro por área: botões "Todos", "RFV", "NBO", "CX", "Estratégico"
+- Renderizar como cards ou tabela estilizada com badges por área, cores por prioridade
+- Cada ação mostra: badge da área, descrição, responsável, prazo
 
-### 6. Reescrever `Resultado.tsx` — Plano Estratégico gerado por IA
-- Ao carregar, busca do banco: perfil, respostas LAB, dados RFV/NBO/CX
-- Gera os 3 diagnósticos (RFV, NBO, CX) localmente
-- Chama a edge function `generate-plan` com streaming
-- Renderiza progressivamente cada bloco do plano
-- Cada bloco LAB vira uma seção colapsável com conteúdo rico em markdown
-- Salva o plano gerado no banco para não regenerar toda vez
-- Botão "Regenerar Plano" para forçar nova geração
-- Botão "Baixar PDF" mantido
+**d) Demais seções — Visual styling:**
+- Cards de destaque para KPIs mencionados (detectar padrões numéricos em negrito)
+- Sub-seções com ícone + header colorido
+- Tabelas com estilo zebra e header azul
+- Blocos de "insight" com borda lateral colorida para parágrafos que começam com termos-chave
 
-### 7. Atualizar `PlanoFinal.tsx` (Visão Consolidada)
-- Exibir os 3 diagnósticos textuais (RFV, NBO, CX)
-- Exibir resumo do plano estratégico gerado pela IA
-- Manter métricas consolidadas e export Excel
-
-### 8. Migração de banco
-- Criar tabela `generated_plans` para salvar planos gerados:
-  - `id`, `user_id`, `plan_content` (jsonb), `created_at`
-  - RLS: usuário só vê/edita os próprios
-
----
-
-## Estrutura do plano gerado (blocos)
-
-```text
-1. Sumário Executivo
-2. Diagnóstico de Maturidade
-3. Objetivos do Programa (LAB: objetivos)
-4. Estrutura do Programa (LAB: estruturaPrograma, tipoPrograma, plataforma)
-5. Estratégia (LAB: estrategia, timeEstrategico)
-6. Benefícios (LAB: beneficiosTangiveis, beneficiosIntangiveis)
-7. Terceirização e Segmentação (LAB: tierizacao, segmentacao)
-8. Cadastro e Canais de Comunicação (LAB: cadastro, infosCadastro, canaisComunicacao)
-9. Operações (LAB: operacoes)
-10. Custo do Programa (LAB: custos)
-11. Cronograma de Implementação
-12. Plano de Ação 5W2H
-```
+### 3. PDF Completo com todas as seções
+**Arquivo:** `src/pages/Resultado.tsx` (função `handleDownloadPDF`)
+- Garantir que TODAS as 12 seções são incluídas (incluindo 5W2H)
+- Para o cronograma: renderizar como tabela no PDF (Fase | Período | Marcos)
+- Para o 5W2H: renderizar como tabela autoTable com colunas completas
+- Detectar tabelas no markdown e renderizá-las via `autoTable` no PDF em vez de texto plano
 
 ## Arquivos afetados
 
 | Arquivo | Ação |
 |---------|------|
-| `src/lib/rfv-logic.ts` | Adicionar `generateRFVSummary()` |
-| `src/lib/nbo-logic.ts` | Adicionar `generateNBOSummary()` |
-| `src/pages/RFVDashboard.tsx` | Card Diagnóstico RFV |
-| `src/pages/NBODashboard.tsx` | Card Diagnóstico NBO |
-| `src/pages/FormularioLAB.tsx` | Fix persistência + load do banco |
-| `src/pages/Resultado.tsx` | Rewrite completo com IA |
-| `src/pages/PlanoFinal.tsx` | Adicionar diagnósticos |
-| `src/components/AppSidebar.tsx` | Renomear Dashboard → Análise CX |
-| `supabase/functions/generate-plan/index.ts` | Nova edge function |
-| Migração SQL | Tabela `generated_plans` |
+| `supabase/functions/generate-plan/index.ts` | Refinar prompt para estrutura visual |
+| `src/pages/Resultado.tsx` | Timeline, tabela 5W2H com filtros, styling rico, PDF completo |
+
+## Detalhes técnicos
+- O cronograma visual usa divs com `border-l-2` como linha de timeline e `rounded-full` como nós
+- O filtro do 5W2H é client-side: parseia a tabela markdown, extrai coluna "Área", filtra por state
+- O PDF usa `jspdf-autotable` (já instalado) para renderizar tabelas do 5W2H e cronograma
+- A detecção de tabelas no markdown usa regex para `|col1|col2|` e converte para arrays
 
