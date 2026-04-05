@@ -85,6 +85,8 @@ const Resultado = () => {
   const [sections, setSections] = useState<PlanSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const [hasLab, setHasLab] = useState(false);
+  const [viewMode, setViewMode] = useState<'onepage' | 'detail'>('onepage');
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
   // Notify sidebar when sections are ready
   useEffect(() => {
