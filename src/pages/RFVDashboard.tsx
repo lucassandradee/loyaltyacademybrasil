@@ -111,6 +111,8 @@ const RFVDashboard = () => {
     return list;
   }, [scored, search, selectedCluster]);
 
+  const rfvSummary = useMemo(() => generateRFVSummary(scored), [scored]);
+
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
