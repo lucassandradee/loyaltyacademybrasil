@@ -772,17 +772,19 @@ const Resultado = () => {
             <button
               onClick={() => { setActiveSection(idx); setViewMode('detail'); }}
               className={cn(
-                'group text-left bg-card rounded-lg p-4 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01] flex flex-col items-start',
+                'group text-left bg-card rounded-lg p-4 hover:shadow-lg hover:border-primary/40 transition-all hover:scale-[1.01]',
                 cls
               )}
             >
-              <div className="flex items-center gap-2.5 mb-2">
-                <span className={cn('flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold shrink-0', numColor)}>{num}</span>
-                <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                <h3 className="text-sm font-bold text-foreground leading-tight">{section.title.replace(/^\d+\.\s*/, '')}</h3>
+              <div className="flex items-start gap-2.5">
+                <span className={cn('flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold shrink-0 mt-0.5', numColor)}>{num}</span>
+                <Icon className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                <div className="flex flex-col min-w-0">
+                  <h3 className="text-sm font-bold text-foreground leading-tight">{section.title.replace(/^\d+\.\s*/, '')}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{desc}</p>
-              <span className="mt-auto pt-2 text-[9px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">Abrir →</span>
+              <span className="mt-2 text-[9px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">Abrir →</span>
             </button>
           );
         };
