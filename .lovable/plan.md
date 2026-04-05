@@ -1,65 +1,80 @@
 
 
-# Plano Visual do Plano Estratégico — 3 Melhorias
+# Diagramas, Listas e Tabelas em Todo Bloco
 
 ## Problema
-1. O 5W2H não aparece no PDF e na tela é apenas texto corrido — precisa de filtros por área (RFV, NBO, CX, Estratégico) e visualização em tabela
-2. Todo o plano é um bloco de texto — falta tabelas, cards visuais, destaques, ícones
-3. O cronograma é textual — precisa de timeline visual
+As seções do plano são blocos densos de texto sem elementos visuais estruturados. O usuário quer que CADA seção tenha no minimo: 1 diagrama, 1 lista organizada e 1 tabela.
 
 ## Mudanças
 
-### 1. Prompt da IA — Forçar estrutura visual no conteúdo
+### 1. Prompt da IA — Forçar estrutura visual obrigatória por seção
 **Arquivo:** `supabase/functions/generate-plan/index.ts`
-- Alterar o system prompt para que o cronograma venha como JSON estruturado dentro do markdown (fases com nome, período, marcos)
-- Alterar o 5W2H para que venha como tabela markdown com colunas: Área (RFV/NBO/CX/Estratégico), O quê, Por quê, Onde, Quando, Quem, Como, Quanto
-- Pedir que cada seção use sub-headers `##`, listas com bullet, **negrito** para KPIs, e tabelas markdown quando aplicável
-- Adicionar instrução para o cronograma vir com campo `fase`, `periodo`, `marcos[]` em formato parsável
 
-### 2. Renderização visual rica no Resultado.tsx
+Adicionar regra explícita no system prompt:
+
+> "REGRA OBRIGATÓRIA: Cada seção DEVE conter EXATAMENTE estes 3 elementos visuais:
+> 1. Uma tabela markdown comparativa ou de dados (mínimo 3 linhas)
+> 2. Uma lista numerada com os 3-5 pontos-chave da seção
+> 3. Um bloco de diagrama no formato `<!-- DIAGRAM: tipo | item1 | item2 | item3 -->` onde tipo pode ser: pyramid, funnel, flow, comparison, gauge
+>
+> Tipos de diagrama por seção:
+> - sumario: comparison (Situação Atual vs Proposta)
+> - maturidade: gauge (nível 1-10)
+> - objetivos: pyramid (prioridades)
+> - estrutura: flow (fluxo do programa)
+> - estrategia: funnel (jornada do cliente)
+> - beneficios: comparison (tangíveis vs intangíveis)
+> - segmentacao: pyramid (tiers)
+> - canais: flow (jornada de comunicação)
+> - operacoes: flow (fluxo operacional)
+> - custos: comparison (investimento vs retorno)
+> - cronograma: (já tem timeline visual)
+> - plano5w2h: (já tem tabela filtrada)"
+
+### 2. Componentes SVG de diagramas
+**Novo arquivo:** `src/components/plan/DiagramRenderer.tsx`
+
+Componentes React que renderizam SVG inline:
+
+- **PyramidDiagram**: Trapézios empilhados (mais largo embaixo), cada nível com cor e label. Usado para hierarquias e tiers.
+- **FunnelDiagram**: Retângulos decrescentes de largura. Usado para jornada do cliente e conversões.
+- **FlowDiagram**: Boxes horizontais conectados por setas (→). Usado para processos e fluxos.
+- **ComparisonDiagram**: Duas colunas lado a lado com ícones e métricas. Usado para versus (atual vs proposto).
+- **GaugeDiagram**: Semicírculo com ponteiro indicando nível (1-10). Usado para maturidade.
+
+Todos usam cores do design system (primary, blue, violet, emerald, amber) e são responsivos.
+
+### 3. Parser e integração no Resultado.tsx
 **Arquivo:** `src/pages/Resultado.tsx`
 
-**a) Melhorar `markdownToHtml`:**
-- Renderizar tabelas markdown com estilo visual (headers coloridos, linhas alternadas, bordas)
-- Renderizar listas com ícones/bullets estilizados
-- Detectar padrões de KPI (ex: "**NPS:** 45") e renderizar como mini-cards inline
+- No `SectionContent`, antes de renderizar o markdown, fazer um split no conteúdo buscando `<!-- DIAGRAM: ... -->`
+- Para cada match, extrair tipo e itens, renderizar o componente SVG correspondente
+- O restante do conteúdo continua passando pelo `markdownToHtml` existente
+- Lógica: split o content em partes (texto + diagrama + texto), renderizar cada parte na ordem
 
-**b) Seção Cronograma — Timeline visual:**
-- Detectar a seção `cronograma` pelo `id`
-- Parsear o conteúdo buscando fases (por headers `##` ou padrões)
-- Renderizar como timeline vertical com linha conectora, circles coloridos por fase, cards laterais com marcos em checklist
-- Fallback: se não conseguir parsear, renderiza o markdown normalmente
+Também melhorar `markdownToHtml`:
+- Detectar listas numeradas (`1. ...`) e renderizar com números em círculos coloridos em vez de `<ol>` simples
+- Detectar padrões `**KPI: valor**` e renderizar como mini-cards com fundo colorido
 
-**c) Seção 5W2H — Tabela com filtros:**
-- Detectar a seção `plano5w2h` pelo `id`
-- Parsear a tabela markdown em dados estruturados
-- Adicionar filtro por área: botões "Todos", "RFV", "NBO", "CX", "Estratégico"
-- Renderizar como cards ou tabela estilizada com badges por área, cores por prioridade
-- Cada ação mostra: badge da área, descrição, responsável, prazo
+### 4. Diagramas no PDF
+**Arquivo:** `src/pages/Resultado.tsx` (handleDownloadPDF)
 
-**d) Demais seções — Visual styling:**
-- Cards de destaque para KPIs mencionados (detectar padrões numéricos em negrito)
-- Sub-seções com ícone + header colorido
-- Tabelas com estilo zebra e header azul
-- Blocos de "insight" com borda lateral colorida para parágrafos que começam com termos-chave
-
-### 3. PDF Completo com todas as seções
-**Arquivo:** `src/pages/Resultado.tsx` (função `handleDownloadPDF`)
-- Garantir que TODAS as 12 seções são incluídas (incluindo 5W2H)
-- Para o cronograma: renderizar como tabela no PDF (Fase | Período | Marcos)
-- Para o 5W2H: renderizar como tabela autoTable com colunas completas
-- Detectar tabelas no markdown e renderizá-las via `autoTable` no PDF em vez de texto plano
+- Para diagramas no PDF: converter em representação tabular simples (ex: pirâmide vira tabela "Nível | Descrição", flow vira tabela "Etapa | Descrição")
+- Usar autoTable para cada diagrama detectado
 
 ## Arquivos afetados
 
 | Arquivo | Ação |
 |---------|------|
-| `supabase/functions/generate-plan/index.ts` | Refinar prompt para estrutura visual |
-| `src/pages/Resultado.tsx` | Timeline, tabela 5W2H com filtros, styling rico, PDF completo |
+| `supabase/functions/generate-plan/index.ts` | Regra obrigatória de 3 elementos visuais por seção |
+| `src/components/plan/DiagramRenderer.tsx` | Novo — 5 componentes SVG (Pyramid, Funnel, Flow, Comparison, Gauge) |
+| `src/pages/Resultado.tsx` | Parser de diagramas, listas estilizadas, KPI cards, PDF com diagramas |
 
 ## Detalhes técnicos
-- O cronograma visual usa divs com `border-l-2` como linha de timeline e `rounded-full` como nós
-- O filtro do 5W2H é client-side: parseia a tabela markdown, extrai coluna "Área", filtra por state
-- O PDF usa `jspdf-autotable` (já instalado) para renderizar tabelas do 5W2H e cronograma
-- A detecção de tabelas no markdown usa regex para `|col1|col2|` e converte para arrays
+- Diagramas são SVG puro em React, sem dependências externas
+- Parser usa regex: `/<!-- DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g`
+- Cada SVG é ~50-80 linhas, responsivo via viewBox
+- Cores mapeadas: pyramid (violet gradient), funnel (blue gradient), flow (emerald), comparison (amber/blue), gauge (primary)
+- No PDF, diagramas viram tabelas autoTable com coluna "Elemento" e "Descrição"
+- Fallback: se diagrama não for parseável, renderiza markdown normalmente
 
