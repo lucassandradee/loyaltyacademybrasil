@@ -2,19 +2,18 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, AlertTriangle, Users, DollarSign, Star, Clock, TrendingUp, Target } from 'lucide-react';
+import { Download, CheckCircle2, AlertTriangle, Users, DollarSign, Star, Clock, TrendingUp, Target, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { scoreClients, defaultParams, allClusterNames, clusterColors } from '@/lib/rfv-logic';
-import { classifyNBO, allFaixaNames, faixaColors, type ScoredNBOClient } from '@/lib/nbo-logic';
-import { calculateCXKPIs, analyzeCausasRaiz } from '@/lib/cx-logic';
+import { scoreClients, defaultPercentileParams, allClusterNames, clusterColors, generateRFVSummary } from '@/lib/rfv-logic';
+import { classifyNBO, allFaixaNames, faixaColors, generateNBOSummary, type ScoredNBOClient } from '@/lib/nbo-logic';
+import { calculateCXKPIs, analyzeCausasRaiz, generateCXSummary } from '@/lib/cx-logic';
 import * as XLSX from 'xlsx';
 
 import type { ClientData } from '@/lib/rfv-logic';
-
 import type { CXTicket } from '@/lib/cx-logic';
 
 interface DiagnosticData {
-  answers: Record<string, number>;
+  answers: Record<string, any>;
 }
 
 const PlanoFinal = () => {
@@ -46,7 +45,7 @@ const PlanoFinal = () => {
     fetchAll();
   }, []);
 
-  const rfvScored = rfvData ? scoreClients(rfvData, defaultParams) : null;
+  const rfvScored = rfvData ? scoreClients(rfvData, defaultPercentileParams(3)) : null;
   const rfvClusters = rfvScored ? (() => {
     const counts: Record<string, number> = {};
     allClusterNames.forEach(n => counts[n] = 0);
@@ -65,12 +64,16 @@ const PlanoFinal = () => {
   const cxKpis = cxData ? calculateCXKPIs(cxData) : null;
   const cxCausas = cxData ? analyzeCausasRaiz(cxData) : null;
 
+  // Generate diagnostic summaries
+  const rfvSummary = rfvScored ? generateRFVSummary(rfvScored) : null;
+  const nboSummary = nboScored ? generateNBOSummary(nboScored) : null;
+  const cxSummaryText = cxData ? generateCXSummary(cxData) : null;
+
   const stepsCompleted = [!!diagnostic, !!rfvData, !!nboData, !!cxData].filter(Boolean).length;
 
   const handleDownloadExcel = () => {
     const wb = XLSX.utils.book_new();
 
-    // Summary sheet
     const summary: any[] = [
       { Passo: 'Diagnóstico Estratégico', Status: diagnostic ? 'Concluído' : 'Pendente' },
       { Passo: 'Segmentação RFV', Status: rfvData ? `Concluído (${rfvData.length} clientes)` : 'Pendente' },
@@ -93,7 +96,7 @@ const PlanoFinal = () => {
         { Métrica: '% Promotores', Valor: `${cxKpis.pct_promotores.toFixed(1)}%` },
         { Métrica: '% Detratores', Valor: `${cxKpis.pct_detratores.toFixed(1)}%` },
         { Métrica: '', Valor: '' },
-        ...cxCausas.map(c => ({ Métrica: `Causa: ${c.causa}`, Valor: `${c.count} chamados (${c.pct.toFixed(1)}%) — Impacto NPS: ${c.impacto_nps.toFixed(2)}` })),
+        ...cxCausas.map(c => ({ Métrica: `Causa: ${c.causa}`, Valor: `${c.count} chamados (${c.pct.toFixed(1)}%)` })),
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cxSheet), 'CX');
     }
@@ -135,6 +138,51 @@ const PlanoFinal = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Diagnóstico RFV */}
+      {rfvSummary && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Diagnóstico RFV</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">{rfvSummary}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Diagnóstico NBO */}
+      {nboSummary && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Diagnóstico NBO</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">{nboSummary}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Diagnóstico CX */}
+      {cxSummaryText && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Diagnóstico CX</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">{cxSummaryText}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Step 1 - RFV */}
       <Card className="mb-6">
@@ -217,7 +265,7 @@ const PlanoFinal = () => {
         </CardContent>
       </Card>
 
-      {/* Step 4 - Diagnostic / Plano Estratégico */}
+      {/* Step 4 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5" /> Passo 4 — Plano Estratégico</CardTitle>
@@ -266,7 +314,7 @@ const PlanoFinal = () => {
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-foreground">Execute as ofertas por faixa de gasto</p>
-                  <p className="text-xs text-muted-foreground">Comece com campanhas para mover clientes Bronze → Prata e Prata → Ouro, que representam o maior potencial de crescimento.</p>
+                  <p className="text-xs text-muted-foreground">Comece com campanhas para mover clientes Bronze → Prata e Prata → Ouro.</p>
                 </div>
               </div>
             )}
@@ -276,7 +324,7 @@ const PlanoFinal = () => {
                 <div>
                   <p className="text-sm font-medium text-foreground">Resolva as principais causas raiz de CX</p>
                   <p className="text-xs text-muted-foreground">
-                    A causa "{cxCausas[0].causa}" representa {cxCausas[0].pct.toFixed(1)}% dos chamados. Resolver pode melhorar o NPS em até {Math.abs(cxCausas[0].impacto_nps).toFixed(2)} pontos.
+                    A causa "{cxCausas[0].causa}" representa {cxCausas[0].pct.toFixed(1)}% dos chamados.
                   </p>
                 </div>
               </div>
@@ -285,7 +333,7 @@ const PlanoFinal = () => {
               <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-foreground">Implemente um ciclo de melhoria contínua</p>
-                <p className="text-xs text-muted-foreground">Reavalie os indicadores a cada 30 dias, atualize as bases de dados e acompanhe a evolução dos KPIs.</p>
+                <p className="text-xs text-muted-foreground">Reavalie os indicadores a cada 30 dias.</p>
               </div>
             </div>
           </div>
