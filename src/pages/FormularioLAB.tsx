@@ -19,96 +19,21 @@ interface LABStep {
 }
 
 const labSteps: LABStep[] = [
-  {
-    id: 'objetivos',
-    question: 'Quais são os principais objetivos do programa de Loyalty?',
-    type: 'multi',
-    options: ['Expansão', 'Ganho de Share', 'Segmentar e premiar por valor', 'Adquirir clientes', 'Reter clientes', 'Combater concorrência', 'Reduzir custos', 'Diversificação', 'Serviços financeiros', 'Aumentar NPS'],
-  },
-  {
-    id: 'estruturaPrograma',
-    question: 'Qual estrutura de programa de Loyalty você prefere?',
-    type: 'single',
-    options: ['Programa Próprio', 'Coalizão', 'Parceiro', 'Híbrido'],
-  },
-  {
-    id: 'tipoPrograma',
-    question: 'Que tipos de mecânica você quer utilizar?',
-    type: 'multi',
-    options: ['Ganhar & Trocar', 'Tierização Interna', 'Tierização Pública', 'Brindes', 'Gamificação', 'Comunidades', 'Comportamento e Estilo', 'Recomendação', 'Assinatura'],
-  },
-  {
-    id: 'plataforma',
-    question: 'Qual modelo de plataforma (LMS)?',
-    type: 'single',
-    options: ['Própria', 'Terceirizada'],
-  },
-  {
-    id: 'estrategia',
-    question: 'Quais estratégias você pretende adotar?',
-    type: 'multi',
-    options: ['Apoio C-Level', 'Lançamento Piloto', 'Roll-out', 'Lançamento Big-Bang', 'Anuidade para todos', 'Tiers', 'Marketplace', 'Clube de Descontos', 'Gamificação', 'Pilares ESG', 'OPM', 'Estratégia de saída', 'Calendário de comunicação', 'Capacitação força de vendas'],
-  },
-  {
-    id: 'timeEstrategico',
-    question: 'Como será o time estratégico do programa?',
-    type: 'single',
-    options: ['Próprio', 'Terceirizado', 'Híbrido'],
-  },
-  {
-    id: 'beneficiosTangiveis',
-    question: 'Quais benefícios tangíveis serão oferecidos?',
-    type: 'multi',
-    options: ['Descontos', 'Pontos que expiram', 'Pontos que não expiram', 'Cashback/Gift back', 'Pontos/troca'],
-  },
-  {
-    id: 'beneficiosIntangiveis',
-    question: 'Quais benefícios intangíveis serão oferecidos?',
-    type: 'multi',
-    options: ['Privilégios', 'Serviços exclusivos', 'Experiências VIP', 'Acesso antecipado'],
-  },
-  {
-    id: 'tierizacao',
-    question: 'Como será a tierização/segmentação do programa?',
-    type: 'single',
-    options: ['Pública', 'Interna', 'Não aplicar'],
-  },
-  {
-    id: 'segmentacao',
-    question: 'Que tipo de segmentação será utilizada?',
-    type: 'multi',
-    options: ['Existente (Valor/RFV)', 'Básico + Jornada', 'Completo', 'Tipo de benefício', 'Geolocalização'],
-  },
-  {
-    id: 'cadastro',
-    question: 'Por quais canais será feito o cadastro no programa?',
-    type: 'multi',
-    options: ['Loja física/digital', 'App', 'Site'],
-  },
-  {
-    id: 'infosCadastro',
-    question: 'Qual nível de informações no cadastro?',
-    type: 'single',
-    options: ['Básico + Jornada', 'Completo'],
-  },
-  {
-    id: 'canaisComunicacao',
-    question: 'Quais canais de comunicação serão utilizados?',
-    type: 'multi',
-    options: ['App/Push', 'E-mail', 'WhatsApp/SMS', 'PDV', 'Recibo no caixa', 'Mala impressa', 'Mídia massa', 'Mídias sociais'],
-  },
-  {
-    id: 'operacoes',
-    question: 'Quais operações são relevantes para o programa?',
-    type: 'multi',
-    options: ['Unificação Database', 'CRM', 'Uso de dados/Hiperpersonalização', 'Call center próprio vs terceirizado', 'Atendimento humano vs bot vs híbrido', 'IA'],
-  },
-  {
-    id: 'custos',
-    question: 'Como você pensa sobre os custos do programa?',
-    type: 'multi',
-    options: ['Impacta ROI do programa', 'Não impacta ROI', 'Custos adicionais previstos', 'Absorvido pelas lojas', 'Absorvido pela matriz', 'Modelo híbrido de custo'],
-  },
+  { id: 'objetivos', question: 'Quais são os principais objetivos do programa de Loyalty?', type: 'multi', options: ['Expansão', 'Ganho de Share', 'Segmentar e premiar por valor', 'Adquirir clientes', 'Reter clientes', 'Combater concorrência', 'Reduzir custos', 'Diversificação', 'Serviços financeiros', 'Aumentar NPS'] },
+  { id: 'estruturaPrograma', question: 'Qual estrutura de programa de Loyalty você prefere?', type: 'single', options: ['Programa Próprio', 'Coalizão', 'Parceiro', 'Híbrido'] },
+  { id: 'tipoPrograma', question: 'Que tipos de mecânica você quer utilizar?', type: 'multi', options: ['Ganhar & Trocar', 'Tierização Interna', 'Tierização Pública', 'Brindes', 'Gamificação', 'Comunidades', 'Comportamento e Estilo', 'Recomendação', 'Assinatura'] },
+  { id: 'plataforma', question: 'Qual modelo de plataforma (LMS)?', type: 'single', options: ['Própria', 'Terceirizada'] },
+  { id: 'estrategia', question: 'Quais estratégias você pretende adotar?', type: 'multi', options: ['Apoio C-Level', 'Lançamento Piloto', 'Roll-out', 'Lançamento Big-Bang', 'Anuidade para todos', 'Tiers', 'Marketplace', 'Clube de Descontos', 'Gamificação', 'Pilares ESG', 'OPM', 'Estratégia de saída', 'Calendário de comunicação', 'Capacitação força de vendas'] },
+  { id: 'timeEstrategico', question: 'Como será o time estratégico do programa?', type: 'single', options: ['Próprio', 'Terceirizado', 'Híbrido'] },
+  { id: 'beneficiosTangiveis', question: 'Quais benefícios tangíveis serão oferecidos?', type: 'multi', options: ['Descontos', 'Pontos que expiram', 'Pontos que não expiram', 'Cashback/Gift back', 'Pontos/troca'] },
+  { id: 'beneficiosIntangiveis', question: 'Quais benefícios intangíveis serão oferecidos?', type: 'multi', options: ['Privilégios', 'Serviços exclusivos', 'Experiências VIP', 'Acesso antecipado'] },
+  { id: 'tierizacao', question: 'Como será a tierização/segmentação do programa?', type: 'single', options: ['Pública', 'Interna', 'Não aplicar'] },
+  { id: 'segmentacao', question: 'Que tipo de segmentação será utilizada?', type: 'multi', options: ['Existente (Valor/RFV)', 'Básico + Jornada', 'Completo', 'Tipo de benefício', 'Geolocalização'] },
+  { id: 'cadastro', question: 'Por quais canais será feito o cadastro no programa?', type: 'multi', options: ['Loja física/digital', 'App', 'Site'] },
+  { id: 'infosCadastro', question: 'Qual nível de informações no cadastro?', type: 'single', options: ['Básico + Jornada', 'Completo'] },
+  { id: 'canaisComunicacao', question: 'Quais canais de comunicação serão utilizados?', type: 'multi', options: ['App/Push', 'E-mail', 'WhatsApp/SMS', 'PDV', 'Recibo no caixa', 'Mala impressa', 'Mídia massa', 'Mídias sociais'] },
+  { id: 'operacoes', question: 'Quais operações são relevantes para o programa?', type: 'multi', options: ['Unificação Database', 'CRM', 'Uso de dados/Hiperpersonalização', 'Call center próprio vs terceirizado', 'Atendimento humano vs bot vs híbrido', 'IA'] },
+  { id: 'custos', question: 'Como você pensa sobre os custos do programa?', type: 'multi', options: ['Impacta ROI do programa', 'Não impacta ROI', 'Custos adicionais previstos', 'Absorvido pelas lojas', 'Absorvido pela matriz', 'Modelo híbrido de custo'] },
 ];
 
 const FormularioLAB = () => {
@@ -123,6 +48,36 @@ const FormularioLAB = () => {
     return saved ? JSON.parse(saved) : {};
   });
   const [saving, setSaving] = useState(false);
+  const [loadingFromDB, setLoadingFromDB] = useState(true);
+
+  // Load saved LAB answers from DB on mount
+  useEffect(() => {
+    const loadFromDB = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingFromDB(false); return; }
+
+      const { data } = await supabase
+        .from('diagnostic_responses')
+        .select('answers')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data?.answers) {
+        const allAnswers = data.answers as Record<string, any>;
+        if (allAnswers.lab && typeof allAnswers.lab === 'object') {
+          // Only load from DB if localStorage is empty
+          const localDraft = localStorage.getItem(LAB_DRAFT_KEY);
+          if (!localDraft || Object.keys(JSON.parse(localDraft)).length === 0) {
+            setAnswers(allAnswers.lab);
+          }
+        }
+      }
+      setLoadingFromDB(false);
+    };
+    loadFromDB();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(LAB_DRAFT_KEY, JSON.stringify(answers));
@@ -164,21 +119,30 @@ const FormularioLAB = () => {
       return;
     }
 
-    // Save LAB answers - update the diagnostic_responses with lab_answers field
+    // Check if record exists
     const { data: existing } = await supabase
       .from('diagnostic_responses')
-      .select('answers')
+      .select('id, answers')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const existingAnswers = (existing?.answers as Record<string, any>) || {};
-    const merged = { ...existingAnswers, lab: answers };
-
-    const { error } = await supabase
-      .from('diagnostic_responses')
-      .upsert({ user_id: user.id, answers: JSON.parse(JSON.stringify(merged)) }, { onConflict: 'user_id' });
+    let error;
+    if (existing) {
+      const existingAnswers = (existing.answers as Record<string, any>) || {};
+      const merged = { ...existingAnswers, lab: answers };
+      const res = await supabase
+        .from('diagnostic_responses')
+        .update({ answers: JSON.parse(JSON.stringify(merged)) })
+        .eq('id', existing.id);
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from('diagnostic_responses')
+        .insert({ user_id: user.id, answers: JSON.parse(JSON.stringify({ lab: answers })) });
+      error = res.error;
+    }
 
     setSaving(false);
 
@@ -192,6 +156,10 @@ const FormularioLAB = () => {
     toast({ title: 'Framework LAB salvo!', description: 'Gerando seu Plano Estratégico...' });
     navigate('/resultado');
   };
+
+  if (loadingFromDB) {
+    return <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">Carregando...</div>;
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
