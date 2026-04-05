@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, CartesianGrid, ZAxis, LineChart, Line } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, Star, Users, Search, X, Download, Timer, CheckCircle, FileText } from 'lucide-react';
 import { CXTicket, calculateCXKPIs, analyzeCausasRaiz, getNPSDistribution, generateCXSummary } from '@/lib/cx-logic';
 import { downloadCSV } from '@/lib/export-utils';
@@ -29,6 +30,8 @@ const CXDashboard = () => {
   const [selectedNps, setSelectedNps] = useState<string | null>(null);
   const [selectedTipo, setSelectedTipo] = useState<string | null>(null);
   const [periodoView, setPeriodoView] = useState<'dia' | 'mes' | 'ano'>('mes');
+  const [corrX, setCorrX] = useState('tma');
+  const [corrY, setCorrY] = useState('nps');
   const [dbData, setDbData] = useState<CXTicket[] | null>(null);
   const [loading, setLoading] = useState(!locState);
   const perPage = 10;
@@ -111,7 +114,20 @@ const CXDashboard = () => {
     });
   }, [ticketData, periodoView]);
 
-  const scatterData = useMemo(() => causas.map(c => ({ causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), nps: Number(c.nps_real.toFixed(1)), count: c.count, color: 'hsl(215, 45%, 45%)' })), [causas]);
+  const corrIndicators: Record<string, { label: string; unit: string; getValue: (c: typeof causas[0]) => number }> = {
+    tma: { label: 'TMA (min)', unit: ' min', getValue: c => Number(c.tma_medio.toFixed(1)) },
+    nps: { label: 'NPS', unit: '', getValue: c => Number(c.nps_real.toFixed(1)) },
+    tme: { label: 'TME (min)', unit: ' min', getValue: c => Number(c.tme_medio.toFixed(1)) },
+    fcr: { label: 'FCR (%)', unit: '%', getValue: c => Number(c.fcr_rate.toFixed(1)) },
+  };
+
+  const scatterData = useMemo(() => causas.map(c => ({
+    causa: c.causa,
+    x: corrIndicators[corrX].getValue(c),
+    y: corrIndicators[corrY].getValue(c),
+    count: c.count,
+    color: 'hsl(215, 45%, 45%)',
+  })), [causas, corrX, corrY]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -222,22 +238,41 @@ const CXDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Correlação TMA × NPS</CardTitle>
-            <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="text-base">Correlação de Indicadores</CardTitle>
+                <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={corrX} onValueChange={setCorrX}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(corrIndicators).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">×</span>
+                <Select value={corrY} onValueChange={setCorrY}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(corrIndicators).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
               <ScatterChart margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis type="number" dataKey="tma" name="TMA (min)" unit=" min" tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="nps" name="NPS" tick={{ fontSize: 11 }} />
+                <XAxis type="number" dataKey="x" name={corrIndicators[corrX].label} unit={corrIndicators[corrX].unit} tick={{ fontSize: 11 }} />
+                <YAxis type="number" dataKey="y" name={corrIndicators[corrY].label} unit={corrIndicators[corrY].unit} tick={{ fontSize: 11 }} />
                 <ZAxis type="number" dataKey="count" range={[60, 400]} name="Chamados" />
                 <Tooltip content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
                   return (<div className="rounded-lg border bg-background p-2 shadow-md">
                     <p className="text-xs font-bold text-foreground">{d.causa}</p>
-                    <p className="text-xs text-muted-foreground">TMA: {d.tma} min | NPS: {d.nps} | {d.count} chamados</p>
+                    <p className="text-xs text-muted-foreground">{corrIndicators[corrX].label}: {d.x}{corrIndicators[corrX].unit} | {corrIndicators[corrY].label}: {d.y}{corrIndicators[corrY].unit} | {d.count} chamados</p>
                   </div>);
                 }} />
                 <Scatter data={scatterData}>
@@ -281,7 +316,7 @@ const CXDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Row 2: Ranking + NPS por Causa (2x2 grid) */}
+      {/* Row 2: Ranking + Chamados por Tipo */}
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Ranking de Causas Raiz</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
@@ -299,6 +334,25 @@ const CXDashboard = () => {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader><CardTitle className="text-base">Chamados por Tipo</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={tipoData} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="tipo" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {tipoData.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedTipo && selectedTipo !== entry.tipo ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleTipo(entry.tipo)} />))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 3: NPS + TMA + TME + FCR por Causa */}
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">NPS por Causa Raiz</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
           <CardContent>
@@ -346,10 +400,7 @@ const CXDashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Row 3: FCR + Tipo de Chamado */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Taxa de FCR por Causa Raiz</CardTitle><p className="text-xs text-muted-foreground">% resolução no primeiro contato</p></CardHeader>
           <CardContent>
@@ -360,22 +411,6 @@ const CXDashboard = () => {
                 <Tooltip formatter={(v: number) => [`${v}%`, 'FCR']} />
                 <Bar dataKey="fcr" radius={[0, 4, 4, 0]}>
                   {fcrByCausa.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Chamados por Tipo</CardTitle><p className="text-xs text-muted-foreground">Clique para filtrar</p></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={tipoData} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="tipo" width={120} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {tipoData.map((entry, i) => (<Cell key={i} fill={entry.color} opacity={selectedTipo && selectedTipo !== entry.tipo ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleTipo(entry.tipo)} />))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -395,9 +430,10 @@ const CXDashboard = () => {
               </div>
               <Button variant="outline" size="sm" className="gap-1" onClick={() => {
                 downloadCSV(filtered.map(t => ({
-                  ID: t.id_chamado, Cliente: t.cliente, Tipo: t.tipo_chamado, 'TMA (min)': t.tma_minutos,
-                  'TME (min)': t.tme_minutos, NPS: t.nps_score, FCR: t.fcr ? 'Sim' : 'Não',
-                  'Causa Raiz': t.causa_raiz, Data: t.data_chamado, 'Comentário NPS': t.comentario_nps,
+                  Data: t.data_chamado, ID: t.id_chamado, Cliente: t.cliente, 'TME (min)': t.tme_minutos,
+                  'TMA (min)': t.tma_minutos, Tipo: t.tipo_chamado, 'Causa Raiz': t.causa_raiz,
+                  Transcrição: t.transcricao, FCR: t.fcr ? 'Sim' : 'Não', NPS: t.nps_score,
+                  'Comentário NPS': t.comentario_nps,
                 })), 'cx-chamados.csv');
               }}>
                 <Download className="h-4 w-4" /> Exportar
@@ -409,39 +445,44 @@ const CXDashboard = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead><TableHead>Cliente</TableHead><TableHead>Tipo</TableHead>
-                <TableHead className="text-center">TMA</TableHead><TableHead className="text-center">TME</TableHead>
-                <TableHead className="text-center">NPS</TableHead><TableHead className="text-center">FCR</TableHead>
-                <TableHead>Causa Raiz</TableHead><TableHead>Data</TableHead><TableHead>Comentário</TableHead>
+                <TableHead>Data</TableHead><TableHead>ID</TableHead><TableHead>Cliente</TableHead>
+                <TableHead className="text-center">TME</TableHead><TableHead className="text-center">TMA</TableHead>
+                <TableHead>Tipo</TableHead><TableHead>Causa Raiz</TableHead>
+                <TableHead>Transcrição</TableHead><TableHead className="text-center">FCR</TableHead>
+                <TableHead className="text-center">NPS</TableHead><TableHead>Comentário NPS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TooltipProvider>
                 {pageData.map((t) => (
                   <TableRow key={t.id_chamado}>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{t.data_chamado}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{t.id_chamado}</TableCell>
                     <TableCell className="font-medium text-sm">{t.cliente}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.tipo_chamado}</Badge></TableCell>
-                    <TableCell className="text-center text-sm">{t.tma_minutos}</TableCell>
                     <TableCell className="text-center text-sm">{t.tme_minutos}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={t.nps_score >= 9 ? 'default' : t.nps_score >= 7 ? 'secondary' : 'destructive'} className="text-xs">{t.nps_score}</Badge>
+                    <TableCell className="text-center text-sm">{t.tma_minutos}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.tipo_chamado}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.causa_raiz}</Badge></TableCell>
+                    <TableCell>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-muted-foreground cursor-help truncate block max-w-[150px]">{t.transcricao}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs"><p className="text-xs">{t.transcricao}</p></TooltipContent>
+                      </UITooltip>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={t.fcr === 1 ? 'default' : 'secondary'} className="text-xs">{t.fcr === 1 ? 'Sim' : 'Não'}</Badge>
                     </TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.causa_raiz}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{t.data_chamado}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={t.nps_score >= 9 ? 'default' : t.nps_score >= 7 ? 'secondary' : 'destructive'} className="text-xs">{t.nps_score}</Badge>
+                    </TableCell>
                     <TableCell>
                       <UITooltip>
                         <TooltipTrigger asChild>
                           <span className="text-xs text-muted-foreground cursor-help truncate block max-w-[150px]">{t.comentario_nps}</span>
                         </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-xs">
-                          <p className="text-xs mb-1 font-semibold">Comentário NPS:</p>
-                          <p className="text-xs">{t.comentario_nps}</p>
-                          {t.transcricao && (<><p className="text-xs mt-2 mb-1 font-semibold">Transcrição:</p><p className="text-xs">{t.transcricao}</p></>)}
-                        </TooltipContent>
+                        <TooltipContent side="left" className="max-w-xs"><p className="text-xs">{t.comentario_nps}</p></TooltipContent>
                       </UITooltip>
                     </TableCell>
                   </TableRow>
