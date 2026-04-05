@@ -71,6 +71,7 @@ export function AppSidebar() {
   const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
   const [cxUploaded, setCxUploaded] = useState(() => localStorage.getItem('cx_data_uploaded') === 'true');
   const [planSectionsAvailable, setPlanSectionsAvailable] = useState(false);
+  const [planSubOpen, setPlanSubOpen] = useState(true);
 
   const isOnResultado = location.pathname === '/resultado';
   const activeHash = location.hash?.replace('#', '') || '';
