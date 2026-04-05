@@ -5,11 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, CartesianGrid, Legend, ZAxis } from 'recharts';
-import { Clock, Star, AlertTriangle, Users, Search, X, Download, TrendingUp, BarChart3 } from 'lucide-react';
-import { CXTicket, calculateCXKPIs, analyzeCausasRaiz, getNPSDistribution, getCausaColor } from '@/lib/cx-logic';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, CartesianGrid, ZAxis } from 'recharts';
+import { Clock, Star, AlertTriangle, Users, Search, X, Download } from 'lucide-react';
+import { CXTicket, calculateCXKPIs, analyzeCausasRaiz, getNPSDistribution } from '@/lib/cx-logic';
 import { downloadCSV } from '@/lib/export-utils';
 import { supabase } from '@/integrations/supabase/client';
+
+/** Gray gradient from dark to light based on index */
+function getGrayShade(index: number, total: number): string {
+  const minL = 30;
+  const maxL = 75;
+  const l = minL + ((maxL - minL) * index) / Math.max(total - 1, 1);
+  return `hsl(0, 0%, ${l}%)`;
+}
 
 const CXDashboard = () => {
   const location = useLocation();
@@ -51,28 +59,28 @@ const CXDashboard = () => {
     return list;
   }, [ticketData, search, selectedCausa]);
 
-  // NPS by cause (sorted by NPS ascending = worst first)
+  // Ranking sorted by count desc (gray dark=most to light=least)
+  const rankingData = useMemo(() =>
+    [...causas].map((c, i) => ({
+      causa: c.causa, count: c.count, color: getGrayShade(i, causas.length),
+    })), [causas]);
+
+  // NPS by cause sorted by NPS asc (worst first = darkest)
   const npsByCausa = useMemo(() =>
-    [...causas].sort((a, b) => a.nps_real - b.nps_real).map(c => ({
-      causa: c.causa, nps: Number(c.nps_real.toFixed(1)), count: c.count, color: getCausaColor(c.causa),
+    [...causas].sort((a, b) => a.nps_real - b.nps_real).map((c, i, arr) => ({
+      causa: c.causa, nps: Number(c.nps_real.toFixed(1)), color: getGrayShade(i, arr.length),
     })), [causas]);
 
-  // TMA by cause (sorted by TMA descending)
+  // TMA by cause sorted desc (highest = darkest)
   const tmaByCausa = useMemo(() =>
-    [...causas].sort((a, b) => b.tma_medio - a.tma_medio).map(c => ({
-      causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), count: c.count, color: getCausaColor(c.causa),
+    [...causas].sort((a, b) => b.tma_medio - a.tma_medio).map((c, i, arr) => ({
+      causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), color: getGrayShade(i, arr.length),
     })), [causas]);
 
-  // Detractor rate by cause
-  const detractorByCausa = useMemo(() =>
-    [...causas].sort((a, b) => b.pct_detratores - a.pct_detratores).map(c => ({
-      causa: c.causa, pct_detratores: Number(c.pct_detratores.toFixed(1)), count: c.count, color: getCausaColor(c.causa),
-    })), [causas]);
-
-  // TMA x NPS scatter data
+  // Scatter data
   const scatterData = useMemo(() =>
     causas.map(c => ({
-      causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), nps: Number(c.nps_real.toFixed(1)), count: c.count, color: getCausaColor(c.causa),
+      causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), nps: Number(c.nps_real.toFixed(1)), count: c.count, color: 'hsl(0, 0%, 45%)',
     })), [causas]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
@@ -93,7 +101,7 @@ const CXDashboard = () => {
       {selectedCausa && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Filtro ativo:</span>
-          <Badge className="cursor-pointer gap-1 text-sm" style={{ backgroundColor: getCausaColor(selectedCausa), color: '#fff' }} onClick={() => setSelectedCausa(null)}>
+          <Badge className="cursor-pointer gap-1 text-sm bg-muted-foreground text-white" onClick={() => setSelectedCausa(null)}>
             {selectedCausa} <X className="h-3 w-3" />
           </Badge>
         </div>
@@ -139,7 +147,7 @@ const CXDashboard = () => {
         </Card>
       </div>
 
-      {/* NPS Distribution + Ranking Causas */}
+      {/* Row 1: Distribuição NPS + Correlação TMA × NPS */}
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -148,15 +156,22 @@ const CXDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
-              <div className="h-[200px] w-[200px]">
+              <div className="h-[220px] w-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={npsDistribution} dataKey="count" nameKey="categoria" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                    <Pie data={npsDistribution} dataKey="count" nameKey="categoria" cx="50%" cy="50%" innerRadius={65} outerRadius={100} paddingAngle={2}>
                       {npsDistribution.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number, name: string) => [`${value} chamados`, name]} />
+                    {/* NPS value in center */}
+                    <text x="50%" y="46%" textAnchor="middle" dominantBaseline="central" className="fill-foreground" style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                      {kpis.nps_real.toFixed(1)}
+                    </text>
+                    <text x="50%" y="58%" textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground" style={{ fontSize: '11px' }}>
+                      NPS
+                    </text>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -168,107 +183,13 @@ const CXDashboard = () => {
                       <span className="text-sm text-foreground">{d.categoria}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-foreground">{d.count}</span>
-                      <span className="ml-1 text-xs text-muted-foreground">({d.pct.toFixed(1)}%)</span>
+                      <span className="text-sm font-bold text-foreground">{d.pct.toFixed(1).replace('.', ',')}%</span>
+                      <span className="ml-1 text-xs text-muted-foreground">({d.count})</span>
                     </div>
                   </div>
                 ))}
-                <div className="mt-2 rounded-lg bg-muted p-2 text-center">
-                  <p className="text-xs text-muted-foreground">NPS = % Promotores - % Detratores</p>
-                  <p className={`text-lg font-bold ${npsColor}`}>{kpis.nps_real.toFixed(1)}</p>
-                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ranking de Causas Raiz</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma barra para filtrar</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={causas} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="causa" width={140} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {causas.map((entry, i) => (
-                    <Cell key={i} fill={getCausaColor(entry.causa)} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* NPS by Cause + TMA by Cause */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">NPS por Causa Raiz</CardTitle>
-            <p className="text-xs text-muted-foreground">Causas com menor NPS precisam de atenção prioritária</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={npsByCausa} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" domain={['dataMin', 'dataMax']} />
-                <YAxis type="category" dataKey="causa" width={140} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => [`${v}`, 'NPS']} />
-                <Bar dataKey="nps" radius={[0, 4, 4, 0]}>
-                  {npsByCausa.map((entry, i) => (
-                    <Cell key={i} fill={entry.nps < 0 ? 'hsl(0, 70%, 50%)' : entry.nps < 50 ? 'hsl(45, 80%, 50%)' : 'hsl(145, 60%, 45%)'} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">TMA por Causa Raiz</CardTitle>
-            <p className="text-xs text-muted-foreground">Tempo médio de atendimento por tipo de problema</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={tmaByCausa} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="causa" width={140} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => [`${v} min`, 'TMA']} />
-                <Bar dataKey="tma" radius={[0, 4, 4, 0]}>
-                  {tmaByCausa.map((entry, i) => (
-                    <Cell key={i} fill={getCausaColor(entry.causa)} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detractor Rate + TMA x NPS Scatter */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Taxa de Detratores por Causa</CardTitle>
-            <p className="text-xs text-muted-foreground">% de clientes detratores (0-6) em cada causa raiz</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={detractorByCausa} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" unit="%" />
-                <YAxis type="category" dataKey="causa" width={140} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => [`${v}%`, '% Detratores']} />
-                <Bar dataKey="pct_detratores" radius={[0, 4, 4, 0]}>
-                  {detractorByCausa.map((entry, i) => (
-                    <Cell key={i} fill={entry.pct_detratores > 50 ? 'hsl(0, 70%, 50%)' : entry.pct_detratores > 30 ? 'hsl(45, 80%, 50%)' : 'hsl(145, 60%, 45%)'} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -278,15 +199,13 @@ const CXDashboard = () => {
             <p className="text-xs text-muted-foreground">Cada bolha é uma causa raiz — tamanho = volume de chamados</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <ScatterChart margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis type="number" dataKey="tma" name="TMA (min)" unit=" min" tick={{ fontSize: 11 }} />
                 <YAxis type="number" dataKey="nps" name="NPS" tick={{ fontSize: 11 }} />
                 <ZAxis type="number" dataKey="count" range={[60, 400]} name="Chamados" />
                 <Tooltip
-                  formatter={(value: number, name: string) => [name === 'TMA (min)' ? `${value} min` : name === 'NPS' ? value : `${value} chamados`, name]}
-                  labelFormatter={() => ''}
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload;
@@ -311,41 +230,71 @@ const CXDashboard = () => {
         </Card>
       </div>
 
-      {/* Impacto NPS */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4" /> Impacto no NPS por Causa
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Melhoria potencial no NPS ao resolver cada causa (baseado no NPS real: % promotores - % detratores)</p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[...causas].sort((a, b) => b.impacto_nps - a.impacto_nps).slice(0, 8).map((c) => (
-              <div key={c.causa} className="flex items-center gap-3 cursor-pointer" onClick={() => toggleCausa(c.causa)}>
-                <div className="w-32 truncate text-sm font-medium" title={c.causa}>{c.causa}</div>
-                <div className="flex-1">
-                  <div className="h-6 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(Math.abs(c.impacto_nps) * 10, 100)}%`,
-                        backgroundColor: getCausaColor(c.causa),
-                        opacity: selectedCausa && selectedCausa !== c.causa ? 0.3 : 1,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="w-20 text-right">
-                  <Badge variant={c.impacto_nps > 2 ? 'destructive' : 'secondary'} className="text-xs">
-                    {c.impacto_nps > 0 ? '+' : ''}{c.impacto_nps.toFixed(1)} pts
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Row 2: Ranking + NPS por Causa + TMA por Causa (3 side by side) */}
+      <div className="mb-8 grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ranking de Causas Raiz</CardTitle>
+            <p className="text-xs text-muted-foreground">Clique para filtrar</p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={rankingData} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="causa" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => [`${v} chamados`, 'Volume']} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {rankingData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">NPS por Causa Raiz</CardTitle>
+            <p className="text-xs text-muted-foreground">Clique para filtrar</p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={npsByCausa} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" domain={['dataMin', 'dataMax']} />
+                <YAxis type="category" dataKey="causa" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => [`${v}`, 'NPS']} />
+                <Bar dataKey="nps" radius={[0, 4, 4, 0]}>
+                  {npsByCausa.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">TMA por Causa Raiz</CardTitle>
+            <p className="text-xs text-muted-foreground">Clique para filtrar</p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={tmaByCausa} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="causa" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => [`${v} min`, 'TMA']} />
+                <Bar dataKey="tma" radius={[0, 4, 4, 0]}>
+                  {tmaByCausa.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} opacity={selectedCausa && selectedCausa !== entry.causa ? 0.3 : 1} className="cursor-pointer" onClick={() => toggleCausa(entry.causa)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Table */}
       <Card>
@@ -390,7 +339,7 @@ const CXDashboard = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ borderColor: getCausaColor(t.causa_raiz), color: getCausaColor(t.causa_raiz) }}>
+                    <Badge variant="outline" className="text-xs whitespace-nowrap">
                       {t.causa_raiz}
                     </Badge>
                   </TableCell>
