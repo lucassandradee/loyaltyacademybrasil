@@ -62,6 +62,25 @@ REGRAS DE FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
 10. Cada seção DEVE usar sub-headers com ## para organizar o conteúdo em blocos visuais
 11. Use listas com - apenas para itens curtos; para dados comparativos use TABELAS
 
+REGRA OBRIGATÓRIA — CADA SEÇÃO DEVE TER EXATAMENTE ESTES 3 ELEMENTOS VISUAIS:
+A) Uma tabela markdown comparativa ou de dados (mínimo 3 linhas de dados)
+B) Uma lista numerada com os 3-5 pontos-chave da seção
+C) Um bloco de diagrama no formato EXATO: <!-- DIAGRAM: tipo | item1 | item2 | item3 -->
+
+Tipos de diagrama obrigatórios por seção:
+- sumario: <!-- DIAGRAM: comparison | Situação Atual: descrição | Proposta: descrição | Impacto Esperado: descrição -->
+- maturidade: <!-- DIAGRAM: gauge | nível numérico de 1-10 | label do nível -->
+- objetivos: <!-- DIAGRAM: pyramid | Objetivo Primário | Objetivo Secundário | Objetivo Terciário -->
+- estrutura: <!-- DIAGRAM: flow | Etapa 1 | Etapa 2 | Etapa 3 | Etapa 4 -->
+- estrategia: <!-- DIAGRAM: funnel | Topo: Aquisição | Meio: Engajamento | Base: Retenção | Fundo: Advocacy -->
+- beneficios: <!-- DIAGRAM: comparison | Tangíveis: lista | Intangíveis: lista | ROI Esperado: valor -->
+- segmentacao: <!-- DIAGRAM: pyramid | Tier Premium | Tier Intermediário | Tier Base -->
+- canais: <!-- DIAGRAM: flow | Canal 1 | Canal 2 | Canal 3 | Canal 4 -->
+- operacoes: <!-- DIAGRAM: flow | Processo 1 | Processo 2 | Processo 3 | Processo 4 -->
+- custos: <!-- DIAGRAM: comparison | Investimento: valor | Retorno: valor | Payback: período -->
+
+NUNCA escreva mais de 3 parágrafos seguidos sem quebrar com uma lista, tabela, sub-header ou diagrama.
+
 REGRAS ESPECÍFICAS PARA CRONOGRAMA (seção "cronograma"):
 12. O cronograma DEVE ser formatado com cada fase como sub-header ##, seguido de "**Período:** X meses" e depois os marcos como lista
 13. Exemplo de formato para cronograma:
