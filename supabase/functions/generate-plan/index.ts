@@ -17,11 +17,7 @@ serve(async (req) => {
       ? `PERFIL DA EMPRESA:
 - Nome: ${profile.nome || 'N/A'}
 - Empresa: ${profile.empresa || 'N/A'}
-- Cargo: ${profile.cargo || 'N/A'}
-- Ano de fundação: ${profile.ano_fundacao || 'N/A'}
-- Tamanho da base de clientes: ${profile.tamanho_base || 'N/A'}
-- Faturamento anual: ${profile.faturamento || 'N/A'}
-- Produtos/Serviços: ${profile.produtos ? JSON.stringify(profile.produtos) : 'N/A'}`
+- Cargo: ${profile.cargo || 'N/A'}`
       : 'Perfil da empresa não disponível.';
 
     const labContext = labAnswers
@@ -47,25 +43,11 @@ serve(async (req) => {
 
 Seu plano deve ser EXTENSO e DETALHADO — equivalente a 12-15 páginas de relatório. Cada seção deve ter parágrafos completos com análises profundas, não apenas tópicos superficiais. Inclua exemplos reais do mercado brasileiro quando relevante.
 
-Você deve gerar o plano em formato JSON com a seguinte estrutura:
-{
-  "sections": [
-    {"id": "sumario", "title": "1. Sumário Executivo", "content": "markdown completo"},
-    {"id": "maturidade", "title": "2. Diagnóstico de Maturidade", "content": "markdown completo"},
-    {"id": "objetivos", "title": "3. Objetivos do Programa", "content": "markdown completo"},
-    {"id": "estrutura", "title": "4. Estrutura do Programa", "content": "markdown completo"},
-    {"id": "estrategia", "title": "5. Estratégia", "content": "markdown completo"},
-    {"id": "beneficios", "title": "6. Benefícios Tangíveis e Intangíveis", "content": "markdown completo"},
-    {"id": "segmentacao", "title": "7. Segmentação e Tierização", "content": "markdown completo"},
-    {"id": "canais", "title": "8. Cadastro e Canais de Comunicação", "content": "markdown completo"},
-    {"id": "operacoes", "title": "9. Operações", "content": "markdown completo"},
-    {"id": "custos", "title": "10. Custo do Programa", "content": "markdown completo"},
-    {"id": "cronograma", "title": "11. Cronograma de Implementação", "content": "markdown completo"},
-    {"id": "plano5w2h", "title": "12. Plano de Ação 5W2H", "content": "markdown completo com tabela"}
-  ]
-}
+IMPORTANTE: Responda APENAS com JSON válido, sem markdown code fences, sem texto antes ou depois. O JSON deve seguir esta estrutura EXATA:
 
-REGRAS IMPORTANTES:
+{"sections":[{"id":"sumario","title":"1. Sumário Executivo","content":"texto em markdown"},{"id":"maturidade","title":"2. Diagnóstico de Maturidade","content":"texto em markdown"},{"id":"objetivos","title":"3. Objetivos do Programa","content":"texto em markdown"},{"id":"estrutura","title":"4. Estrutura do Programa","content":"texto em markdown"},{"id":"estrategia","title":"5. Estratégia","content":"texto em markdown"},{"id":"beneficios","title":"6. Benefícios Tangíveis e Intangíveis","content":"texto em markdown"},{"id":"segmentacao","title":"7. Segmentação e Tierização","content":"texto em markdown"},{"id":"canais","title":"8. Cadastro e Canais de Comunicação","content":"texto em markdown"},{"id":"operacoes","title":"9. Operações","content":"texto em markdown"},{"id":"custos","title":"10. Custo do Programa","content":"texto em markdown"},{"id":"cronograma","title":"11. Cronograma de Implementação","content":"texto em markdown"},{"id":"plano5w2h","title":"12. Plano de Ação 5W2H","content":"texto em markdown com tabela"}]}
+
+REGRAS:
 1. Cada seção deve ter no mínimo 3-4 parágrafos densos com análises específicas
 2. O Sumário Executivo deve ter pelo menos 5 parágrafos resumindo todo o plano
 3. O Diagnóstico de Maturidade deve analisar os dados reais (RFV, NBO, CX) e classificar o nível da empresa
@@ -75,7 +57,8 @@ REGRAS IMPORTANTES:
 7. Use linguagem profissional de consultoria estratégica
 8. Inclua métricas, KPIs e benchmarks do mercado
 9. Faça recomendações personalizadas com base nas respostas do LAB e nos dados
-10. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)`;
+10. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)
+11. NÃO use code fences (\`\`\`) na resposta — apenas JSON puro`;
 
     const userPrompt = `Gere um plano estratégico completo de programa de fidelidade com base nos seguintes dados:
 
@@ -92,7 +75,7 @@ ${nboSummary || 'Dados NBO não disponíveis.'}
 DIAGNÓSTICO CX (Customer Experience):
 ${cxSummary || 'Dados CX não disponíveis.'}
 
-Gere o plano completo em JSON conforme a estrutura especificada. Cada seção deve ser extremamente detalhada e personalizada para esta empresa. O plano inteiro deve equivaler a pelo menos 12-15 páginas de conteúdo.`;
+Responda APENAS com o JSON válido, sem nenhum texto adicional.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -107,6 +90,7 @@ Gere o plano completo em JSON conforme a estrutura especificada. Cada seção de
           { role: "user", content: userPrompt },
         ],
         stream: false,
+        temperature: 0.7,
       }),
     });
 
@@ -131,17 +115,33 @@ Gere o plano completo em JSON conforme a estrutura especificada. Cada seção de
     const result = await response.json();
     const content = result.choices?.[0]?.message?.content || '';
 
-    // Try to parse JSON from content (it might have markdown code fences)
+    // Try to parse JSON from content — handle code fences, extra text, etc.
     let planData;
     try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/```\s*([\s\S]*?)```/);
-      const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
-      planData = JSON.parse(jsonStr);
+      // Try direct parse first
+      planData = JSON.parse(content.trim());
     } catch {
-      // If JSON parse fails, wrap raw content as single section
-      planData = {
-        sections: [{ id: "plano", title: "Plano Estratégico", content }],
-      };
+      try {
+        // Try extracting from code fences
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          planData = JSON.parse(jsonMatch[1].trim());
+        } else {
+          // Try finding first { to last }
+          const firstBrace = content.indexOf('{');
+          const lastBrace = content.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace > firstBrace) {
+            planData = JSON.parse(content.substring(firstBrace, lastBrace + 1));
+          } else {
+            throw new Error("No JSON found");
+          }
+        }
+      } catch {
+        // Last resort: wrap as single section
+        planData = {
+          sections: [{ id: "plano", title: "Plano Estratégico", content }],
+        };
+      }
     }
 
     return new Response(JSON.stringify(planData), {
