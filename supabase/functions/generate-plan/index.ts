@@ -62,12 +62,6 @@ REGRAS DE FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
 10. Cada seção DEVE usar sub-headers com ## para organizar o conteúdo em blocos visuais
 11. Use listas com - apenas para itens curtos; para dados comparativos use TABELAS
 
-ESTRUTURA OBRIGATÓRIA DE CADA SEÇÃO — O content de cada seção DEVE seguir esta ordem:
-1. Começar com "## 📚 Contexto Teórico" — explicação didática sobre por que essa seção é importante para um programa de loyalty bem-sucedido. Inclua conceitos do mercado, boas práticas e referências teóricas. Mínimo 2 parágrafos.
-2. No meio, incluir "## 📊 Resumo dos Dados" — resumo das análises prévias (RFV, NBO, CX, respostas LAB) que foram consideradas para essa seção específica. Cite métricas e dados reais fornecidos. Mínimo 2 parágrafos.
-3. Terminar com "## 🎯 Nossa Recomendação" — output claro e direto com as sugestões estratégicas, incluindo racional baseado nos dados. Explique POR QUE cada sugestão foi escolhida com base nos dados. Mínimo 3 parágrafos.
-
-Entre esses 3 blocos, continue incluindo todo o conteúdo detalhado com tabelas, diagramas, listas e análises como já instruído abaixo.
 
 REGRA OBRIGATÓRIA — CADA SEÇÃO DEVE TER EXATAMENTE ESTES 3 ELEMENTOS VISUAIS:
 A) Uma tabela markdown comparativa ou de dados (mínimo 3 linhas de dados)
