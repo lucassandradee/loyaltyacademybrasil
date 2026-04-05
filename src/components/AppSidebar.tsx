@@ -198,31 +198,40 @@ export function AppSidebar() {
 
               {/* Plan section sub-navigation when on /resultado */}
               {isOnResultado && planSectionsAvailable && !collapsed && (
-                <>
-                  {planSectionItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton asChild>
-                        <a
-                          href={`#${item.id}`}
-                          className={cn(
-                            'flex items-center gap-2 pl-6 text-xs hover:bg-muted/50 rounded-md py-1.5 transition-colors',
-                            activeHash === item.id
-                              ? 'bg-muted text-primary font-medium'
-                              : 'text-muted-foreground'
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            window.dispatchEvent(new CustomEvent('plan-navigate', { detail: item.id }));
-                            window.location.hash = item.id;
-                          }}
-                        >
-                          <item.icon className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </>
+                <SidebarMenuItem>
+                  <button
+                    onClick={() => setPlanSubOpen(!planSubOpen)}
+                    className="flex w-full items-center justify-between pl-6 pr-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>Seções do Plano</span>
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', planSubOpen && 'rotate-180')} />
+                  </button>
+                  {planSubOpen && (
+                    <div className="mt-1 space-y-0.5">
+                      {planSectionItems.map((item) => (
+                        <SidebarMenuButton key={item.id} asChild>
+                          <a
+                            href={`#${item.id}`}
+                            className={cn(
+                              'flex items-center gap-2 pl-8 text-xs hover:bg-muted/50 rounded-md py-1.5 transition-colors',
+                              activeHash === item.id
+                                ? 'bg-muted text-primary font-medium'
+                                : 'text-muted-foreground'
+                            )}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.dispatchEvent(new CustomEvent('plan-navigate', { detail: item.id }));
+                              window.location.hash = item.id;
+                            }}
+                          >
+                            <item.icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </a>
+                        </SidebarMenuButton>
+                      ))}
+                    </div>
+                  )}
+                </SidebarMenuItem>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
