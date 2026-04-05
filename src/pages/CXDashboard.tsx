@@ -121,13 +121,28 @@ const CXDashboard = () => {
     fcr: { label: 'FCR (%)', unit: '%', getValue: c => Number(c.fcr_rate.toFixed(1)) },
   };
 
-  const scatterData = useMemo(() => causas.map(c => ({
-    causa: c.causa,
-    x: corrIndicators[corrX].getValue(c),
-    y: corrIndicators[corrY].getValue(c),
-    count: c.count,
-    color: 'hsl(215, 45%, 45%)',
-  })), [causas, corrX, corrY]);
+  // Use individual tickets for scatter (much better correlation visibility)
+  const corrTicketAccessors: Record<string, (t: CXTicket) => number> = {
+    tma: t => t.tma_minutos,
+    nps: t => t.nps_score,
+    tme: t => t.tme_minutos,
+    fcr: t => t.fcr,
+  };
+
+  const scatterData = useMemo(() => {
+    if (!ticketData) return [];
+    // Sample up to 200 tickets for performance
+    const sample = ticketData.length > 200
+      ? ticketData.filter((_, i) => i % Math.ceil(ticketData.length / 200) === 0)
+      : ticketData;
+    return sample.map(t => ({
+      causa: t.causa_raiz,
+      x: corrTicketAccessors[corrX](t),
+      y: corrTicketAccessors[corrY](t),
+      count: 1,
+      color: 'hsl(215, 45%, 45%)',
+    }));
+  }, [ticketData, corrX, corrY]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
