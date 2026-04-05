@@ -37,8 +37,8 @@ const step4Items = [
   { title: 'Plano Estratégico', url: '/resultado', icon: FileText },
 ];
 
-const planoFinalItems = [
-  { title: 'Visão Consolidada', url: '/plano-final', icon: Flag },
+const homeItem = [
+  { title: 'Loyalty Management', url: '/plano-final', icon: Flag },
 ];
 
 // Plan section sub-items shown when on /resultado
@@ -165,6 +165,13 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {/* Home - Loyalty Management */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderSimpleItems(homeItem)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Step 1 - RFV */}
         <SidebarGroup>
           <SidebarGroupLabel>Passo 1 — RFV</SidebarGroupLabel>
@@ -237,13 +244,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Plano Final */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Plano Final</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderSimpleItems(planoFinalItems)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );
