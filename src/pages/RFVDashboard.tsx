@@ -187,7 +187,7 @@ const RFVDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{useMemo(() => generateRFVSummary(scored), [scored])}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{rfvSummary}</p>
         </CardContent>
       </Card>
 
