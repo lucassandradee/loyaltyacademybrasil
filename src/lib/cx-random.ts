@@ -124,41 +124,53 @@ export function generateRandomCXTickets(count: number): CXTicket[] {
     const causasDisponiveis = causasPorTipo[tipo] || defaultCausas;
     const causa = pickRandom(causasDisponiveis);
 
-    // TME: 0-15 min, reclamações e cancelamentos tendem a ter TME mais alto
+    // TME: realistic wait times, complaints/cancellations wait longer
     let tme: number;
     if (tipo === 'Reclamação' || tipo === 'Cancelamento') {
-      tme = randFloat(2, 15);
+      tme = randFloat(1, 12);
     } else {
-      tme = randFloat(0, 8);
+      tme = randFloat(0.5, 6);
     }
     tme = Math.round(tme * 10) / 10;
 
-    // TMA: 1-8 minutos (realista)
-    const tma = Math.round(randFloat(1, 8) * 10) / 10;
+    // TMA: 1-8 minutes (realistic)
+    const tma = Math.round(randFloat(1, 6) * 10) / 10;
 
-    // NPS influenciado por TME e tipo
-    let npsBase: number;
-    if (tipo === 'Reclamação') {
-      npsBase = randFloat(1, 7);
-    } else if (tipo === 'Cancelamento') {
-      npsBase = randFloat(2, 7);
-    } else if (tipo === 'Informação' || tipo === 'Compra') {
-      npsBase = randFloat(5, 10);
-    } else {
-      npsBase = randFloat(3, 9);
-    }
-    // TME alto penaliza NPS
-    if (tme > 8) npsBase = Math.max(0, npsBase - randFloat(1, 3));
-    else if (tme > 5) npsBase = Math.max(0, npsBase - randFloat(0.5, 1.5));
-    const nps = Math.min(10, Math.max(0, Math.round(npsBase)));
-
-    // FCR: maior para informação/compra, menor para reclamação
+    // FCR: higher for simple calls, lower for complaints
     let fcrChance: number;
-    if (tipo === 'Informação' || tipo === 'Compra') fcrChance = 0.85;
+    if (tipo === 'Informação' || tipo === 'Compra') fcrChance = 0.88;
     else if (tipo === 'Suporte Técnico') fcrChance = 0.65;
     else if (tipo === 'Reclamação') fcrChance = 0.45;
     else fcrChance = 0.50;
     const fcr = Math.random() < fcrChance ? 1 : 0;
+
+    // NPS: base by type, then modulated by TME and FCR for realistic correlations
+    let npsBase: number;
+    if (tipo === 'Reclamação') {
+      npsBase = randFloat(3, 8);  // not always terrible
+    } else if (tipo === 'Cancelamento') {
+      npsBase = randFloat(3, 8);
+    } else if (tipo === 'Informação') {
+      npsBase = randFloat(6, 10);  // usually positive
+    } else if (tipo === 'Compra') {
+      npsBase = randFloat(7, 10);  // buyers tend to be happy
+    } else {
+      npsBase = randFloat(4, 9);
+    }
+
+    // TME correlation: high wait = lower NPS (visible in scatter)
+    if (tme > 8) npsBase -= randFloat(2, 4);
+    else if (tme > 5) npsBase -= randFloat(1, 2.5);
+    else if (tme > 3) npsBase -= randFloat(0, 1);
+
+    // TMA correlation: slightly negative impact
+    if (tma > 5) npsBase -= randFloat(0.3, 1);
+
+    // FCR correlation: not resolving = worse NPS
+    if (fcr === 0) npsBase -= randFloat(1, 3);
+    else npsBase += randFloat(0, 0.5);  // slight boost for resolution
+
+    const nps = Math.min(10, Math.max(0, Math.round(npsBase)));
 
     const transcricao = pickRandom(transcricoes[tipo] || transcricoes['Informação']);
     const comentario = gerarComentarioNPS(nps, tipo, tme);

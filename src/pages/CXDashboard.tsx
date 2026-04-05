@@ -121,13 +121,28 @@ const CXDashboard = () => {
     fcr: { label: 'FCR (%)', unit: '%', getValue: c => Number(c.fcr_rate.toFixed(1)) },
   };
 
-  const scatterData = useMemo(() => causas.map(c => ({
-    causa: c.causa,
-    x: corrIndicators[corrX].getValue(c),
-    y: corrIndicators[corrY].getValue(c),
-    count: c.count,
-    color: 'hsl(215, 45%, 45%)',
-  })), [causas, corrX, corrY]);
+  // Use individual tickets for scatter (much better correlation visibility)
+  const corrTicketAccessors: Record<string, (t: CXTicket) => number> = {
+    tma: t => t.tma_minutos,
+    nps: t => t.nps_score,
+    tme: t => t.tme_minutos,
+    fcr: t => t.fcr,
+  };
+
+  const scatterData = useMemo(() => {
+    if (!ticketData) return [];
+    // Sample up to 200 tickets for performance
+    const sample = ticketData.length > 200
+      ? ticketData.filter((_, i) => i % Math.ceil(ticketData.length / 200) === 0)
+      : ticketData;
+    return sample.map(t => ({
+      causa: t.causa_raiz,
+      x: corrTicketAccessors[corrX](t),
+      y: corrTicketAccessors[corrY](t),
+      count: 1,
+      color: 'hsl(215, 45%, 45%)',
+    }));
+  }, [ticketData, corrX, corrY]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -241,7 +256,7 @@ const CXDashboard = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle className="text-base">Correlação de Indicadores</CardTitle>
-                <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+                <p className="text-xs text-muted-foreground">Cada ponto = chamado individual</p>
               </div>
               <div className="flex items-center gap-2">
                 <Select value={corrX} onValueChange={setCorrX}>
@@ -266,7 +281,7 @@ const CXDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis type="number" dataKey="x" name={corrIndicators[corrX].label} unit={corrIndicators[corrX].unit} tick={{ fontSize: 11 }} />
                 <YAxis type="number" dataKey="y" name={corrIndicators[corrY].label} unit={corrIndicators[corrY].unit} tick={{ fontSize: 11 }} />
-                <ZAxis type="number" dataKey="count" range={[60, 400]} name="Chamados" />
+                <ZAxis type="number" dataKey="count" range={[20, 20]} name="Chamados" />
                 <Tooltip content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
