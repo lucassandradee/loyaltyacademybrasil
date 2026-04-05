@@ -430,9 +430,10 @@ const CXDashboard = () => {
               </div>
               <Button variant="outline" size="sm" className="gap-1" onClick={() => {
                 downloadCSV(filtered.map(t => ({
-                  ID: t.id_chamado, Cliente: t.cliente, Tipo: t.tipo_chamado, 'TMA (min)': t.tma_minutos,
-                  'TME (min)': t.tme_minutos, NPS: t.nps_score, FCR: t.fcr ? 'Sim' : 'Não',
-                  'Causa Raiz': t.causa_raiz, Data: t.data_chamado, 'Comentário NPS': t.comentario_nps,
+                  Data: t.data_chamado, ID: t.id_chamado, Cliente: t.cliente, 'TME (min)': t.tme_minutos,
+                  'TMA (min)': t.tma_minutos, Tipo: t.tipo_chamado, 'Causa Raiz': t.causa_raiz,
+                  Transcrição: t.transcricao, FCR: t.fcr ? 'Sim' : 'Não', NPS: t.nps_score,
+                  'Comentário NPS': t.comentario_nps,
                 })), 'cx-chamados.csv');
               }}>
                 <Download className="h-4 w-4" /> Exportar
@@ -444,39 +445,44 @@ const CXDashboard = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead><TableHead>Cliente</TableHead><TableHead>Tipo</TableHead>
-                <TableHead className="text-center">TMA</TableHead><TableHead className="text-center">TME</TableHead>
-                <TableHead className="text-center">NPS</TableHead><TableHead className="text-center">FCR</TableHead>
-                <TableHead>Causa Raiz</TableHead><TableHead>Data</TableHead><TableHead>Comentário</TableHead>
+                <TableHead>Data</TableHead><TableHead>ID</TableHead><TableHead>Cliente</TableHead>
+                <TableHead className="text-center">TME</TableHead><TableHead className="text-center">TMA</TableHead>
+                <TableHead>Tipo</TableHead><TableHead>Causa Raiz</TableHead>
+                <TableHead>Transcrição</TableHead><TableHead className="text-center">FCR</TableHead>
+                <TableHead className="text-center">NPS</TableHead><TableHead>Comentário NPS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TooltipProvider>
                 {pageData.map((t) => (
                   <TableRow key={t.id_chamado}>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{t.data_chamado}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{t.id_chamado}</TableCell>
                     <TableCell className="font-medium text-sm">{t.cliente}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.tipo_chamado}</Badge></TableCell>
-                    <TableCell className="text-center text-sm">{t.tma_minutos}</TableCell>
                     <TableCell className="text-center text-sm">{t.tme_minutos}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={t.nps_score >= 9 ? 'default' : t.nps_score >= 7 ? 'secondary' : 'destructive'} className="text-xs">{t.nps_score}</Badge>
+                    <TableCell className="text-center text-sm">{t.tma_minutos}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.tipo_chamado}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.causa_raiz}</Badge></TableCell>
+                    <TableCell>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-muted-foreground cursor-help truncate block max-w-[150px]">{t.transcricao}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs"><p className="text-xs">{t.transcricao}</p></TooltipContent>
+                      </UITooltip>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant={t.fcr === 1 ? 'default' : 'secondary'} className="text-xs">{t.fcr === 1 ? 'Sim' : 'Não'}</Badge>
                     </TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs whitespace-nowrap">{t.causa_raiz}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{t.data_chamado}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={t.nps_score >= 9 ? 'default' : t.nps_score >= 7 ? 'secondary' : 'destructive'} className="text-xs">{t.nps_score}</Badge>
+                    </TableCell>
                     <TableCell>
                       <UITooltip>
                         <TooltipTrigger asChild>
                           <span className="text-xs text-muted-foreground cursor-help truncate block max-w-[150px]">{t.comentario_nps}</span>
                         </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-xs">
-                          <p className="text-xs mb-1 font-semibold">Comentário NPS:</p>
-                          <p className="text-xs">{t.comentario_nps}</p>
-                          {t.transcricao && (<><p className="text-xs mt-2 mb-1 font-semibold">Transcrição:</p><p className="text-xs">{t.transcricao}</p></>)}
-                        </TooltipContent>
+                        <TooltipContent side="left" className="max-w-xs"><p className="text-xs">{t.comentario_nps}</p></TooltipContent>
                       </UITooltip>
                     </TableCell>
                   </TableRow>
