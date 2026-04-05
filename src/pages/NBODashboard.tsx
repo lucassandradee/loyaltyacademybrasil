@@ -97,6 +97,8 @@ const NBODashboard = () => {
       .sort((a, b) => b.count - a.count);
   }, [scored, totalClients]);
 
+  const nboSummary = useMemo(() => generateNBOSummary(scored), [scored]);
+
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
