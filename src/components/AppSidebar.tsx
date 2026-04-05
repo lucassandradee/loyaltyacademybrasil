@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users } from 'lucide-react';
+import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronDown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
