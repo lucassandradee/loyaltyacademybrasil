@@ -141,7 +141,9 @@ const CXUpload = () => {
     if (!generatedData) return;
     const ws = XLSX.utils.json_to_sheet(generatedData.map(c => ({
       ID_Chamado: c.id_chamado, Cliente: c.cliente, TMA_Minutos: c.tma_minutos,
-      NPS_Score: c.nps_score, Causa_Raiz: c.causa_raiz, Data: c.data_chamado,
+      TME_Minutos: c.tme_minutos, NPS_Score: c.nps_score, FCR: c.fcr,
+      Causa_Raiz: c.causa_raiz, Tipo_Chamado: c.tipo_chamado, Data: c.data_chamado,
+      Transcricao: c.transcricao, Comentario_NPS: c.comentario_nps,
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Chamados');
