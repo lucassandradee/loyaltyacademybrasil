@@ -19,20 +19,28 @@ const BLOCO3_CONTEUDO = `Para o campo "content" de CADA UMA das 12 seções, voc
 1. Volume: Cada seção deve conter conteúdo suficiente para preencher pelo menos 1 página inteira (cerca de 4 a 6 parágrafos densos de desenvolvimento).
 2. Personalização: Você DEVE justificar suas recomendações citando explicitamente os dados fornecidos. Ex: "Como observado na análise RFV, onde 40% da base está 'Hibernando', recomendamos..."
 3. Profundidade: Não faça listas rasas. Explique o "porquê" e o "como" de cada recomendação. Cada sugestão precisa vir com uma explicação do racional.
-4. Ritmo visual: Nunca escreva mais de 3 parágrafos seguidos sem quebrar com um elemento visual (sub-header ##, tabela, lista ou diagrama).
-5. Use **negrito** para destacar KPIs, métricas e números importantes.
-6. Use tabelas markdown SEMPRE QUE POSSÍVEL para comparações, métricas, custos — nunca listas quando uma tabela seria mais clara.
-7. Use linguagem profissional de consultoria estratégica.
-8. Inclua métricas, KPIs e benchmarks do mercado brasileiro.
+4. Use **negrito** para destacar KPIs, métricas e números importantes.
+5. Use tabelas markdown SEMPRE QUE POSSÍVEL para comparações, métricas, custos — nunca listas quando uma tabela seria mais clara.
+6. Use linguagem profissional de consultoria estratégica.
+7. Inclua métricas, KPIs e benchmarks do mercado brasileiro.
 
-REGRA DE ESTRUTURAÇÃO VISUAL DO TEXTO:
-- Quebre o desenvolvimento em blocos temáticos com sub-headers ## descritivos (ex: "## Pilares da Mecânica", "## Análise de Segmentos", "## Estrutura de Custos").
-- Dentro de cada bloco temático, use listas numeradas ou com bullets para detalhar pontos-chave. Cada item da lista deve ter um título em negrito seguido de explicação.
-- Exemplo de estrutura ideal para um bloco:
+REGRA DE ESTRUTURAÇÃO VISUAL — ORDEM OBRIGATÓRIA DENTRO DE CADA SEÇÃO:
+
+1. Parágrafos de análise (desenvolvimento do texto com sub-headers ## descritivos)
+2. Diagrama(s) de apoio LOGO APÓS o texto analítico — use diagramas para ilustrar conceitos, não para substituir texto
+3. Lista numerada com pontos-chave (cada item com título em **negrito** seguido de explicação)
+4. Tabela comparativa ou de métricas
+5. O marcador ## Nossa Recomendacao como fechamento (curto, 1 parágrafo)
+
+Exemplo de estrutura ideal para o desenvolvimento de uma seção:
 
 ## Pilares da Mecânica do Programa
 
 O programa se sustenta em três pilares complementares:
+
+(parágrafos de análise aqui)
+
+<!-- DIAGRAM: comparison | Ganhar & Trocar: Core econômico, acúmulo e resgate | Gamificação: Desafios, metas e rankings | Comunidades: Troca, feedback e pertencimento -->
 
 1. **Ganhar & Trocar (Core econômico)** — Base do programa e principal driver de comportamento. Acúmulo de pontos via compras, resgate em descontos, produtos e experiências.
 
@@ -46,14 +54,15 @@ O programa se sustenta em três pilares complementares:
 | Gamificação | Comportamental | ↑ Engajamento e recorrência |
 | Comunidades | Relacional | ↓ Churn, ↑ NPS |
 
-<!-- DIAGRAM: comparison | Ganhar & Trocar: Core econômico, acúmulo e resgate | Gamificação: Desafios, metas e rankings | Comunidades: Troca, feedback e pertencimento -->
+## Nossa Recomendacao
+(1 parágrafo curto de fechamento)
 
-Siga este padrão em TODAS as seções: sub-headers descritivos → desenvolvimento com listas estruturadas → tabela de apoio → diagrama quando aplicável.`;
+Siga este padrão em TODAS as seções: sub-headers descritivos → parágrafos de análise → diagrama(s) → lista numerada → tabela → recomendação.`;
 
 // ─── Bloco 4: Blocos Visuais Obrigatórios (pinceladas curtas) ───
-const BLOCO4_VISUAL = `Além do conteúdo extenso de desenvolvimento, cada seção DEVE conter EXATAMENTE 3 marcadores visuais que são PINCELADAS CURTAS de apoio. Eles NÃO são o conteúdo principal — são destaques complementares.
+const BLOCO4_VISUAL = `Cada seção DEVE conter EXATAMENTE 2 marcadores visuais que são PINCELADAS CURTAS. Eles NÃO são o conteúdo principal — são destaques complementares de apoio.
 
-REGRA CRÍTICA: Cada marcador visual deve ter EXATAMENTE 1 parágrafo curto de 2-3 frases. NUNCA coloque conteúdo de desenvolvimento dentro deles. O desenvolvimento extenso vem ENTRE eles.
+REGRA CRÍTICA: Cada marcador visual deve ter EXATAMENTE 1 parágrafo curto de 2-3 frases. NUNCA coloque conteúdo de desenvolvimento dentro deles.
 
 Ordem obrigatória dentro de cada seção:
 
@@ -61,20 +70,15 @@ Ordem obrigatória dentro de cada seção:
 ## Contexto Teorico
 (2-3 frases explicando por que esse tema importa para loyalty. PARE após o parágrafo.)
 
-2. [DESENVOLVIMENTO EXTENSO AQUI — sub-headers, parágrafos, tabelas, listas, diagramas]
+2. [DESENVOLVIMENTO EXTENSO — sub-headers, parágrafos, diagramas, listas numeradas, tabelas]
 
-3. SEGUNDO marcador (no meio, após parte do desenvolvimento):
-## Resumo dos Dados
-(2-3 frases resumindo as métricas-chave que embasam esta seção. PARE após o parágrafo.)
-
-4. [MAIS DESENVOLVIMENTO — análises, tabelas, diagramas]
-
-5. TERCEIRO marcador (no final da seção):
+3. ÚLTIMO marcador (no final da seção, após todo o desenvolvimento):
 ## Nossa Recomendacao
 (2-3 frases sintetizando a ação principal. PARE após o parágrafo.)
 
 PROIBIDO: Colocar tabelas, listas, sub-headers ou parágrafos adicionais dentro dos marcadores visuais. Eles são APENAS 1 parágrafo cada.
-IMPORTANTE: Use exatamente esses headers sem emoji e sem acento: "## Contexto Teorico", "## Resumo dos Dados", "## Nossa Recomendacao".`;
+IMPORTANTE: Use exatamente esses headers sem emoji e sem acento: "## Contexto Teorico", "## Nossa Recomendacao".
+NÃO USE o marcador "## Resumo dos Dados" — ele foi removido.`;
 
 // ─── Bloco 5: Regras Específicas por Seção ───
 const BLOCO5_EXCECOES = `Siga estas regras estritas para seções específicas:
