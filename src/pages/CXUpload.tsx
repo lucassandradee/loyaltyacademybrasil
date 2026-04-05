@@ -109,13 +109,23 @@ const CXUpload = () => {
     const causaCol = findCol(sample, ['causa', 'motivo', 'reason', 'root_cause']);
     const dataCol = findCol(sample, ['data', 'date', 'created']);
     if (!tmaCol || !npsCol || !causaCol) throw new Error('Colunas obrigatórias não encontradas. Verifique: TMA, NPS, Causa Raiz.');
+    const tmeCol = findCol(sample, ['tme', 'espera', 'wait']);
+    const fcrCol = findCol(sample, ['fcr', 'first_call', 'resolucao']);
+    const tipoCol = findCol(sample, ['tipo', 'type', 'categoria']);
+    const transcricaoCol = findCol(sample, ['transcricao', 'transcript']);
+    const comentarioCol = findCol(sample, ['comentario', 'comment', 'feedback']);
     return rows.map((r, i) => ({
       id_chamado: r[idCol || ''] || `CHM-${String(i + 1).padStart(5, '0')}`,
       cliente: r[clienteCol || ''] || `Cliente ${i + 1}`,
       tma_minutos: Number(r[tmaCol]) || 0,
+      tme_minutos: Number(r[tmeCol || ''] || 0),
       nps_score: Number(r[npsCol]) || 0,
+      fcr: Number(r[fcrCol || ''] || 0) as 0 | 1,
       causa_raiz: r[causaCol] || 'Outros',
+      tipo_chamado: r[tipoCol || ''] || 'Informação',
       data_chamado: r[dataCol || ''] || new Date().toISOString().split('T')[0],
+      transcricao: r[transcricaoCol || ''] || '',
+      comentario_nps: r[comentarioCol || ''] || '',
     }));
   };
 
@@ -131,7 +141,9 @@ const CXUpload = () => {
     if (!generatedData) return;
     const ws = XLSX.utils.json_to_sheet(generatedData.map(c => ({
       ID_Chamado: c.id_chamado, Cliente: c.cliente, TMA_Minutos: c.tma_minutos,
-      NPS_Score: c.nps_score, Causa_Raiz: c.causa_raiz, Data: c.data_chamado,
+      TME_Minutos: c.tme_minutos, NPS_Score: c.nps_score, FCR: c.fcr,
+      Causa_Raiz: c.causa_raiz, Tipo_Chamado: c.tipo_chamado, Data: c.data_chamado,
+      Transcricao: c.transcricao, Comentario_NPS: c.comentario_nps,
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Chamados');
@@ -177,8 +189,8 @@ const CXUpload = () => {
           <div>
             <p className="mb-1 text-sm font-semibold">Formato da Planilha</p>
             <p className="text-xs text-muted-foreground">
-              A planilha deve conter: <strong>ID Chamado, Cliente, TMA</strong> (minutos),
-              <strong> NPS Score</strong> (0-10), <strong>Causa Raiz</strong>, <strong>Data do Chamado</strong>.
+              Colunas obrigatórias: <strong>TMA</strong> (minutos), <strong>NPS Score</strong> (0-10), <strong>Causa Raiz</strong>.
+              Opcionais: <strong>ID, Cliente, TME</strong> (espera), <strong>FCR</strong> (0/1), <strong>Tipo, Data, Transcrição, Comentário NPS</strong>.
             </p>
           </div>
         </div>
