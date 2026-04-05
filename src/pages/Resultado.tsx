@@ -281,11 +281,17 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
+  const parts = parseDiagrams(section.content);
+
   return (
-    <div
-      className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground"
-      dangerouslySetInnerHTML={{ __html: markdownToHtml(section.content) }}
-    />
+    <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+      {parts.map((part, i) => {
+        if (typeof part === 'string') {
+          return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+        }
+        return <DiagramRenderer key={i} diagram={part} />;
+      })}
+    </div>
   );
 }
 
