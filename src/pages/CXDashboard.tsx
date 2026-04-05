@@ -114,7 +114,20 @@ const CXDashboard = () => {
     });
   }, [ticketData, periodoView]);
 
-  const scatterData = useMemo(() => causas.map(c => ({ causa: c.causa, tma: Number(c.tma_medio.toFixed(1)), nps: Number(c.nps_real.toFixed(1)), count: c.count, color: 'hsl(215, 45%, 45%)' })), [causas]);
+  const corrIndicators: Record<string, { label: string; unit: string; getValue: (c: typeof causas[0]) => number }> = {
+    tma: { label: 'TMA (min)', unit: ' min', getValue: c => Number(c.tma_medio.toFixed(1)) },
+    nps: { label: 'NPS', unit: '', getValue: c => Number(c.nps_real.toFixed(1)) },
+    tme: { label: 'TME (min)', unit: ' min', getValue: c => Number(c.tme_medio.toFixed(1)) },
+    fcr: { label: 'FCR (%)', unit: '%', getValue: c => Number(c.fcr_rate.toFixed(1)) },
+  };
+
+  const scatterData = useMemo(() => causas.map(c => ({
+    causa: c.causa,
+    x: corrIndicators[corrX].getValue(c),
+    y: corrIndicators[corrY].getValue(c),
+    count: c.count,
+    color: 'hsl(215, 45%, 45%)',
+  })), [causas, corrX, corrY]);
 
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
