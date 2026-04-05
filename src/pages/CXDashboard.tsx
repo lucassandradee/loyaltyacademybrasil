@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, CartesianGrid, ZAxis, LineChart, Line } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, Star, Users, Search, X, Download, Timer, CheckCircle, FileText } from 'lucide-react';
 import { CXTicket, calculateCXKPIs, analyzeCausasRaiz, getNPSDistribution, generateCXSummary } from '@/lib/cx-logic';
 import { downloadCSV } from '@/lib/export-utils';
