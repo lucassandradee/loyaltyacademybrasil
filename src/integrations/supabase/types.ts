@@ -62,6 +62,27 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan_content: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_content?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_content?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       nbo_uploads: {
         Row: {
           client_count: number
