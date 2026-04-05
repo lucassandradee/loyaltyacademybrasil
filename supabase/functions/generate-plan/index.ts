@@ -62,12 +62,6 @@ REGRAS DE FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
 10. Cada seção DEVE usar sub-headers com ## para organizar o conteúdo em blocos visuais
 11. Use listas com - apenas para itens curtos; para dados comparativos use TABELAS
 
-ESTRUTURA OBRIGATÓRIA DE CADA SEÇÃO — O content de cada seção DEVE seguir esta ordem:
-1. Começar com "## 📚 Contexto Teórico" — explicação didática sobre por que essa seção é importante para um programa de loyalty bem-sucedido. Inclua conceitos do mercado, boas práticas e referências teóricas. Mínimo 2 parágrafos.
-2. No meio, incluir "## 📊 Resumo dos Dados" — resumo das análises prévias (RFV, NBO, CX, respostas LAB) que foram consideradas para essa seção específica. Cite métricas e dados reais fornecidos. Mínimo 2 parágrafos.
-3. Terminar com "## 🎯 Nossa Recomendação" — output claro e direto com as sugestões estratégicas, incluindo racional baseado nos dados. Explique POR QUE cada sugestão foi escolhida com base nos dados. Mínimo 3 parágrafos.
-
-Entre esses 3 blocos, continue incluindo todo o conteúdo detalhado com tabelas, diagramas, listas e análises como já instruído abaixo.
 
 REGRA OBRIGATÓRIA — CADA SEÇÃO DEVE TER EXATAMENTE ESTES 3 ELEMENTOS VISUAIS:
 A) Uma tabela markdown comparativa ou de dados (mínimo 3 linhas de dados)
@@ -109,7 +103,15 @@ REGRAS ESPECÍFICAS PARA 5W2H (seção "plano5w2h"):
 | RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mês 1 | Equipe Analytics | Análise RFV | R$ 5.000 |
 
 18. NÃO use code fences (\`\`\`) na resposta — apenas JSON puro
-19. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)`;
+19. O content de cada seção deve ser markdown válido e rico (com headers ##, listas, **bold**, tabelas quando relevante)
+
+REGRA ADICIONAL — 3 PINCELADAS VISUAIS POR SEÇÃO:
+Além de todo o conteúdo rico e detalhado exigido acima, cada seção DEVE incluir estes 3 sub-headers CURTOS (máximo 1 parágrafo cada, 2-3 frases):
+1. "## 📚 Contexto Teórico" — NO INÍCIO da seção. Uma pincelada rápida explicando por que esse tema importa em loyalty. Máximo 3 frases.
+2. "## 📊 Resumo dos Dados" — NO MEIO da seção, entre o conteúdo detalhado. Uma frase-resumo das métricas-chave dos diagnósticos consideradas. Máximo 3 frases.
+3. "## 🎯 Nossa Recomendação" — NO FINAL da seção. Uma síntese direta da sugestão principal com racional. Máximo 3 frases.
+
+Esses blocos são COMPLEMENTARES e CURTOS — o conteúdo principal da seção (tabelas, diagramas, listas, análises profundas com múltiplos parágrafos) deve estar ENTRE eles e ser EXTENSO e DETALHADO como exigido nas regras anteriores.`;
 
     const userPrompt = `Gere um plano estratégico completo de programa de fidelidade com base nos seguintes dados:
 
