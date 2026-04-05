@@ -189,8 +189,8 @@ const CXUpload = () => {
           <div>
             <p className="mb-1 text-sm font-semibold">Formato da Planilha</p>
             <p className="text-xs text-muted-foreground">
-              A planilha deve conter: <strong>ID Chamado, Cliente, TMA</strong> (minutos),
-              <strong> NPS Score</strong> (0-10), <strong>Causa Raiz</strong>, <strong>Data do Chamado</strong>.
+              Colunas obrigatórias: <strong>TMA</strong> (minutos), <strong>NPS Score</strong> (0-10), <strong>Causa Raiz</strong>.
+              Opcionais: <strong>ID, Cliente, TME</strong> (espera), <strong>FCR</strong> (0/1), <strong>Tipo, Data, Transcrição, Comentário NPS</strong>.
             </p>
           </div>
         </div>
