@@ -281,12 +281,59 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
-  // Split content into the 3 visual blocks if present
-  const blockRegex = /## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação/g;
-  const hasBlocks = blockRegex.test(section.content);
+  const blockConfig: Record<string, { border: string; icon: any; label: string }> = {
+    'contexto teorico': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico' },
+    'resumo dos dados': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados' },
+    'nossa recomendacao': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação' },
+  };
 
-  if (!hasBlocks) {
-    const parts = parseDiagrams(section.content);
+  // Split by any of the 3 marker headers (with or without emoji, accent-insensitive)
+  const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:📊\s*)?Resumo dos Dados|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
+
+  const content = section.content;
+  const markers: { index: number; key: string; fullMatch: string }[] = [];
+  let m;
+  while ((m = markerRegex.exec(content)) !== null) {
+    const lower = m[0].replace(/## (?:📚|📊|🎯)?\s*/i, '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    let key = '';
+    if (lower.includes('contexto')) key = 'contexto teorico';
+    else if (lower.includes('resumo')) key = 'resumo dos dados';
+    else if (lower.includes('recomenda')) key = 'nossa recomendacao';
+    if (key) markers.push({ index: m.index, key, fullMatch: m[0] });
+  }
+
+  // Build segments: each segment is either a marker block or free content
+  const segments: { type: 'marker' | 'content'; key?: string; text: string }[] = [];
+  let cursor = 0;
+  for (const mk of markers) {
+    if (mk.index > cursor) {
+      segments.push({ type: 'content', text: content.slice(cursor, mk.index) });
+    }
+    // Find end of marker block: next ## header or next marker
+    const afterHeader = mk.index + mk.fullMatch.length;
+    const nextHeaderMatch = content.slice(afterHeader).match(/\n## /);
+    const endIdx = nextHeaderMatch ? afterHeader + nextHeaderMatch.index! : content.length;
+    // The marker block is only the text until the next ## header
+    const blockText = content.slice(afterHeader, endIdx).replace(/^\n+/, '');
+    // But take only the first paragraph as the marker content
+    const firstParaEnd = blockText.indexOf('\n\n');
+    const markerText = firstParaEnd > 0 ? blockText.slice(0, firstParaEnd).trim() : blockText.trim();
+    segments.push({ type: 'marker', key: mk.key, text: markerText });
+    // Everything after the first paragraph goes back as content
+    if (firstParaEnd > 0) {
+      const remaining = blockText.slice(firstParaEnd).trim();
+      if (remaining) segments.push({ type: 'content', text: remaining });
+    }
+    cursor = endIdx;
+  }
+  if (cursor < content.length) {
+    segments.push({ type: 'content', text: content.slice(cursor) });
+  }
+
+  // If no markers found, render everything as plain content
+  if (markers.length === 0) {
+    const parts = parseDiagrams(content);
     return (
       <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
         {parts.map((part, i) => {
@@ -297,52 +344,32 @@ function SectionContent({ section }: { section: PlanSection }) {
     );
   }
 
-  // Split by the 3 block headers
-  const blocks = section.content.split(/(?=## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação)/g).filter(b => b.trim());
-
-  const blockConfig: Record<string, { border: string; icon: any; label: string; bgClass: string }> = {
-    '📚': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico', bgClass: 'bg-red-50/50 dark:bg-red-950/10' },
-    '📊': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados', bgClass: 'bg-amber-50/50 dark:bg-amber-950/10' },
-    '🎯': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação', bgClass: 'bg-emerald-50/50 dark:bg-emerald-950/10' },
-  };
-
   return (
     <div className="space-y-4">
-      {blocks.map((block, i) => {
-        const emojiMatch = block.match(/## (📚|📊|🎯)/);
-        const emoji = emojiMatch?.[1];
-        const config = emoji ? blockConfig[emoji] : null;
-
-        if (!config) {
-          // Content before the first block header (if any)
-          const parts = parseDiagrams(block);
+      {segments.map((seg, i) => {
+        if (seg.type === 'marker' && seg.key) {
+          const cfg = blockConfig[seg.key];
+          if (!cfg) return null;
+          const Icon = cfg.icon;
           return (
-            <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-              {parts.map((part, j) => {
-                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-                return <DiagramRenderer key={j} diagram={part} />;
-              })}
+            <div key={i} className={cn('border-l-4 rounded-r-lg px-4 py-3 bg-muted/20', cfg.border)}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{cfg.label}</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">{seg.text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')}</p>
             </div>
           );
         }
 
-        const Icon = config.icon;
-        // Remove the header line itself from the block content
-        const blockContent = block.replace(/## (📚|📊|🎯)\s*[^\n]*\n?/, '').trim();
-        const parts = parseDiagrams(blockContent);
-
+        // Regular content
+        const parts = parseDiagrams(seg.text);
         return (
-          <div key={i} className={cn('border-l-4 rounded-r-lg p-4', config.border, config.bgClass)}>
-            <div className="flex items-center gap-2 mb-3">
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{config.label}</span>
-            </div>
-            <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-              {parts.map((part, j) => {
-                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-                return <DiagramRenderer key={j} diagram={part} />;
-              })}
-            </div>
+          <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+            {parts.map((part, j) => {
+              if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+              return <DiagramRenderer key={j} diagram={part} />;
+            })}
           </div>
         );
       })}
