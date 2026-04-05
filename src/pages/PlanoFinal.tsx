@@ -179,7 +179,7 @@ const PlanoFinal = () => {
       </Card>
 
       {/* Contextual Message */}
-      <Card className={cn('mb-8', allDone ? 'border-emerald-200 dark:border-emerald-800' : '')}>
+      <Card className="mb-8">
         <CardContent className="p-5">
           <div className="flex items-start gap-3">
             {allDone ? <Trophy className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" /> : <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />}
