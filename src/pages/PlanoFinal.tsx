@@ -138,14 +138,14 @@ const PlanoFinal = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant={allDone ? 'default' : 'secondary'}>{Math.round(progressPct)}%</Badge>
+            <Badge variant="secondary" className={allDone ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400' : ''}>{Math.round(progressPct)}%</Badge>
             <ChevronDown className={cn('h-5 w-5 text-muted-foreground transition-transform', diagOpen && 'rotate-180')} />
           </div>
         </button>
 
         {diagOpen && (
           <CardContent className="pt-0 px-5 pb-5">
-            <Progress value={progressPct} className="h-2.5 mb-5" />
+            <Progress value={progressPct} className={cn("h-2.5 mb-5", allDone && "[&>div]:bg-emerald-500")} />
 
             {/* 4 steps in a row */}
             <div className="grid grid-cols-4 gap-3">
@@ -199,7 +199,7 @@ const PlanoFinal = () => {
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Users className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm text-foreground">Resumo RFV</h3>
+                <h3 className="font-semibold text-sm text-foreground">Passo 1 — Resumo RFV</h3>
                 <Badge variant="outline" className="ml-auto text-xs">{rfvScored!.length} clientes</Badge>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -219,7 +219,7 @@ const PlanoFinal = () => {
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm text-foreground">Resumo NBO</h3>
+                <h3 className="font-semibold text-sm text-foreground">Passo 2 — Resumo NBO</h3>
                 <Badge variant="outline" className="ml-auto text-xs">{nboScored!.length} clientes</Badge>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -239,7 +239,7 @@ const PlanoFinal = () => {
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Star className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm text-foreground">Resumo CX</h3>
+                <h3 className="font-semibold text-sm text-foreground">Passo 3 — Resumo CX</h3>
                 <Badge variant="outline" className="ml-auto text-xs">{cxKpis.total_chamados} chamados</Badge>
               </div>
               <div className="grid grid-cols-3 gap-3">
