@@ -414,6 +414,20 @@ const Resultado = () => {
     }
     setHasLab(true);
 
+    // Extract company data from diagnostic answers
+    const companyData = diagAnswers ? {
+      modelo: diagAnswers.modelo,
+      segmento: diagAnswers.segmento,
+      anoFundacao: diagAnswers.anoFundacao,
+      tamanhoBase: diagAnswers.tamanhoBase,
+      faturamento: diagAnswers.faturamento,
+      produtos: diagAnswers.produtos,
+      frequencia: diagAnswers.frequencia,
+      dados: diagAnswers.dados,
+      infos: diagAnswers.infos,
+      desafio: diagAnswers.desafio,
+    } : null;
+
     let rfvSummary = '', nboSummary = '', cxSummary = '';
     if (rfvRes.data?.client_data) {
       const cd = rfvRes.data.client_data as unknown as ClientData[];
@@ -425,7 +439,7 @@ const Resultado = () => {
     setGenerating(true); setLoading(false);
     try {
       const { data: funcData, error: funcError } = await supabase.functions.invoke('generate-plan', {
-        body: { profile, labAnswers, rfvSummary, nboSummary, cxSummary },
+        body: { profile, labAnswers, companyData, rfvSummary, nboSummary, cxSummary },
       });
       if (funcError) throw new Error(funcError.message);
       if (funcData?.error) throw new Error(funcData.error);
