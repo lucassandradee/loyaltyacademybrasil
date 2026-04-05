@@ -183,7 +183,7 @@ const RFVDashboard = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Diagnóstico RFV</CardTitle>
+            <CardTitle className="text-base">Diagnóstico RFV com IA</CardTitle>
           </div>
         </CardHeader>
         <CardContent>

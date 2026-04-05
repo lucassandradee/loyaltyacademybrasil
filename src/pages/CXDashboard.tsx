@@ -196,9 +196,9 @@ const CXDashboard = () => {
       </div>
 
       {/* Diagnóstico CX */}
-      <Card className="mb-8">
+      <Card className="mb-8 border-primary/20 bg-primary/5">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-5 w-5" /> Diagnóstico CX</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-5 w-5 text-primary" /> Diagnóstico CX com IA</CardTitle>
           <p className="text-xs text-muted-foreground">Resumo analítico gerado automaticamente a partir dos dados</p>
         </CardHeader>
         <CardContent>

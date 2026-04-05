@@ -180,7 +180,7 @@ const NBODashboard = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Diagnóstico NBO</CardTitle>
+            <CardTitle className="text-base">Diagnóstico NBO com IA</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
