@@ -159,7 +159,7 @@ const PlanoFinal = () => {
                     className={cn(
                       'text-left rounded-lg border p-3 transition-all hover:shadow-sm hover:scale-[1.01]',
                       done
-                        ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800'
+                        ? 'border-emerald-300 bg-card dark:border-emerald-800'
                         : 'border-border bg-card hover:border-primary/30'
                     )}
                   >
