@@ -256,7 +256,7 @@ const CXDashboard = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle className="text-base">Correlação de Indicadores</CardTitle>
-                <p className="text-xs text-muted-foreground">Cada bolha = causa raiz, tamanho = volume</p>
+                <p className="text-xs text-muted-foreground">Cada ponto = chamado individual</p>
               </div>
               <div className="flex items-center gap-2">
                 <Select value={corrX} onValueChange={setCorrX}>
