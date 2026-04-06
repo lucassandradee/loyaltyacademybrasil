@@ -483,12 +483,15 @@ const Resultado = () => {
     if (sections[activeSection]) window.location.hash = sections[activeSection].id;
   }, [activeSection, sections]);
 
+  const [missingSteps, setMissingSteps] = useState<string[]>([]);
+
   const loadAndGenerate = async (forceRegenerate = false) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/login'); return; }
 
     setGenError(null);
     setGenStep(0);
+    setMissingSteps([]);
 
     if (!forceRegenerate) {
       const { data: existingPlan } = await supabase.from('generated_plans').select('plan_content').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -510,9 +513,19 @@ const Resultado = () => {
 
     const profile = profileRes.data;
     const diagAnswers = diagRes.data?.answers as Record<string, any> | null;
-    const labAnswers = diagAnswers?.lab || diagAnswers || null;
-    if (!labAnswers || (typeof labAnswers === 'object' && Object.keys(labAnswers).length === 0)) {
-      setHasLab(false); setLoading(false); return;
+    const labAnswers = diagAnswers?.lab || null;
+
+    // Check prerequisites: RFV + CX + LAB must all exist
+    const missing: string[] = [];
+    if (!rfvRes.data) missing.push('Análise RFV (Passo 1)');
+    if (!cxRes.data) missing.push('Análise CX (Passo 3)');
+    if (!labAnswers || (typeof labAnswers === 'object' && Object.keys(labAnswers).length === 0)) missing.push('Formulário LAB (Passo 4)');
+
+    if (missing.length > 0) {
+      setMissingSteps(missing);
+      setHasLab(false);
+      setLoading(false);
+      return;
     }
     setHasLab(true);
 
@@ -767,13 +780,25 @@ const Resultado = () => {
     </div>
   );
 
-  // No LAB filled
+  // Missing prerequisites
   if (!hasLab) return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4">
-      <FileText className="h-16 w-16 text-muted-foreground" />
-      <h2 className="text-2xl font-bold text-foreground">Framework LAB não preenchido</h2>
-      <p className="text-muted-foreground text-center max-w-md">Complete primeiro o Formulário LAB.</p>
-      <Button onClick={() => navigate('/lab-framework')} size="lg" className="mt-4">Ir para Formulário LAB</Button>
+      <AlertTriangle className="h-16 w-16 text-amber-500" />
+      <h2 className="text-2xl font-bold text-foreground">Etapas anteriores pendentes</h2>
+      <p className="text-muted-foreground text-center max-w-md">
+        Para gerar o Plano Estratégico, complete as seguintes etapas:
+      </p>
+      {missingSteps.length > 0 && (
+        <ul className="text-sm text-muted-foreground space-y-1">
+          {missingSteps.map(s => (
+            <li key={s} className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Button onClick={() => navigate('/plano-final')} size="lg" className="mt-4">Voltar ao Painel</Button>
     </div>
   );
 
