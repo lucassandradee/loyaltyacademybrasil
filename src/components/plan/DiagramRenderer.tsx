@@ -4,13 +4,13 @@ interface DiagramProps {
   items: string[];
 }
 
-// Sober, professional color palettes
+// Red/burgundy brand palette
 const pyramidColors = [
-  { fill: '#1e40af', text: 'white', border: '#1e3a8a' },
-  { fill: '#2563eb', text: 'white', border: '#1d4ed8' },
-  { fill: '#3b82f6', text: 'white', border: '#2563eb' },
-  { fill: '#60a5fa', text: '#1e3a8a', border: '#3b82f6' },
-  { fill: '#93c5fd', text: '#1e3a8a', border: '#60a5fa' },
+  { fill: '#7f1d1d', text: 'white', border: '#991b1b' },
+  { fill: '#991b1b', text: 'white', border: '#b91c1c' },
+  { fill: '#b91c1c', text: 'white', border: '#dc2626' },
+  { fill: '#dc2626', text: 'white', border: '#ef4444' },
+  { fill: '#fca5a5', text: '#7f1d1d', border: '#f87171' },
 ];
 
 export function PyramidDiagram({ items }: DiagramProps) {
@@ -52,7 +52,7 @@ export function PyramidDiagram({ items }: DiagramProps) {
   );
 }
 
-const funnelColors = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'];
+const funnelColors = ['#7f1d1d', '#991b1b', '#b91c1c', '#dc2626', '#f87171'];
 
 export function FunnelDiagram({ items }: DiagramProps) {
   const n = items.length;
@@ -92,7 +92,6 @@ export function FunnelDiagram({ items }: DiagramProps) {
 export function FlowDiagram({ items }: DiagramProps) {
   const n = items.length;
 
-  // Vertical layout for better readability
   return (
     <div className="my-8 flex justify-center">
       <div className="flex flex-col gap-0 w-full max-w-lg">
@@ -101,14 +100,14 @@ export function FlowDiagram({ items }: DiagramProps) {
           const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
           return (
             <div key={i} className="flex flex-col items-center">
-              <div className="w-full rounded-lg border-2 border-blue-200 bg-white p-4 text-center shadow-sm">
+              <div className="w-full rounded-lg border-2 border-red-200 bg-white p-4 text-center shadow-sm">
                 <div className="text-sm font-bold text-foreground">{label}</div>
                 {desc && <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{desc}</div>}
               </div>
               {i < n - 1 && (
                 <div className="flex flex-col items-center py-1">
-                  <div className="w-0.5 h-4 bg-blue-300" />
-                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-blue-300" />
+                  <div className="w-0.5 h-4 bg-red-300" />
+                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-300" />
                 </div>
               )}
             </div>
@@ -120,9 +119,9 @@ export function FlowDiagram({ items }: DiagramProps) {
 }
 
 export function ComparisonDiagram({ items }: DiagramProps) {
-  const compColors = ['border-blue-500', 'border-violet-500', 'border-emerald-500', 'border-amber-500'];
-  const compBg = ['bg-blue-50', 'bg-violet-50', 'bg-emerald-50', 'bg-amber-50'];
-  const compText = ['text-blue-700', 'text-violet-700', 'text-emerald-700', 'text-amber-700'];
+  const compColors = ['border-red-500', 'border-rose-500', 'border-amber-500', 'border-orange-500'];
+  const compBg = ['bg-red-50', 'bg-rose-50', 'bg-amber-50', 'bg-orange-50'];
+  const compText = ['text-red-700', 'text-rose-700', 'text-amber-700', 'text-orange-700'];
 
   return (
     <div className="my-8 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
