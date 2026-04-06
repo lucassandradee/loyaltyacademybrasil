@@ -281,59 +281,12 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
-  const blockConfig: Record<string, { border: string; icon: any; label: string }> = {
-    'contexto teorico': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico' },
-    'resumo dos dados': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados' },
-    'nossa recomendacao': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação' },
-  };
+  // Split content into the 3 visual blocks if present
+  const blockRegex = /## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação/g;
+  const hasBlocks = blockRegex.test(section.content);
 
-  // Split by any of the 3 marker headers (with or without emoji, accent-insensitive)
-  const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:📊\s*)?Resumo dos Dados|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
-
-  const content = section.content;
-  const markers: { index: number; key: string; fullMatch: string }[] = [];
-  let m;
-  while ((m = markerRegex.exec(content)) !== null) {
-    const lower = m[0].replace(/## (?:📚|📊|🎯)?\s*/i, '').toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    let key = '';
-    if (lower.includes('contexto')) key = 'contexto teorico';
-    else if (lower.includes('resumo')) key = 'resumo dos dados';
-    else if (lower.includes('recomenda')) key = 'nossa recomendacao';
-    if (key) markers.push({ index: m.index, key, fullMatch: m[0] });
-  }
-
-  // Build segments: each segment is either a marker block or free content
-  const segments: { type: 'marker' | 'content'; key?: string; text: string }[] = [];
-  let cursor = 0;
-  for (const mk of markers) {
-    if (mk.index > cursor) {
-      segments.push({ type: 'content', text: content.slice(cursor, mk.index) });
-    }
-    // Find end of marker block: next ## header or next marker
-    const afterHeader = mk.index + mk.fullMatch.length;
-    const nextHeaderMatch = content.slice(afterHeader).match(/\n## /);
-    const endIdx = nextHeaderMatch ? afterHeader + nextHeaderMatch.index! : content.length;
-    // The marker block is only the text until the next ## header
-    const blockText = content.slice(afterHeader, endIdx).replace(/^\n+/, '');
-    // But take only the first paragraph as the marker content
-    const firstParaEnd = blockText.indexOf('\n\n');
-    const markerText = firstParaEnd > 0 ? blockText.slice(0, firstParaEnd).trim() : blockText.trim();
-    segments.push({ type: 'marker', key: mk.key, text: markerText });
-    // Everything after the first paragraph goes back as content
-    if (firstParaEnd > 0) {
-      const remaining = blockText.slice(firstParaEnd).trim();
-      if (remaining) segments.push({ type: 'content', text: remaining });
-    }
-    cursor = endIdx;
-  }
-  if (cursor < content.length) {
-    segments.push({ type: 'content', text: content.slice(cursor) });
-  }
-
-  // If no markers found, render everything as plain content
-  if (markers.length === 0) {
-    const parts = parseDiagrams(content);
+  if (!hasBlocks) {
+    const parts = parseDiagrams(section.content);
     return (
       <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
         {parts.map((part, i) => {
@@ -344,32 +297,52 @@ function SectionContent({ section }: { section: PlanSection }) {
     );
   }
 
+  // Split by the 3 block headers
+  const blocks = section.content.split(/(?=## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação)/g).filter(b => b.trim());
+
+  const blockConfig: Record<string, { border: string; icon: any; label: string; bgClass: string }> = {
+    '📚': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico', bgClass: 'bg-red-50/50 dark:bg-red-950/10' },
+    '📊': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados', bgClass: 'bg-amber-50/50 dark:bg-amber-950/10' },
+    '🎯': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação', bgClass: 'bg-emerald-50/50 dark:bg-emerald-950/10' },
+  };
+
   return (
     <div className="space-y-4">
-      {segments.map((seg, i) => {
-        if (seg.type === 'marker' && seg.key) {
-          const cfg = blockConfig[seg.key];
-          if (!cfg) return null;
-          const Icon = cfg.icon;
+      {blocks.map((block, i) => {
+        const emojiMatch = block.match(/## (📚|📊|🎯)/);
+        const emoji = emojiMatch?.[1];
+        const config = emoji ? blockConfig[emoji] : null;
+
+        if (!config) {
+          // Content before the first block header (if any)
+          const parts = parseDiagrams(block);
           return (
-            <div key={i} className={cn('border-l-4 rounded-r-lg px-4 py-3 bg-muted/20', cfg.border)}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{cfg.label}</span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">{seg.text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')}</p>
+            <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+              {parts.map((part, j) => {
+                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+                return <DiagramRenderer key={j} diagram={part} />;
+              })}
             </div>
           );
         }
 
-        // Regular content
-        const parts = parseDiagrams(seg.text);
+        const Icon = config.icon;
+        // Remove the header line itself from the block content
+        const blockContent = block.replace(/## (📚|📊|🎯)\s*[^\n]*\n?/, '').trim();
+        const parts = parseDiagrams(blockContent);
+
         return (
-          <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-            {parts.map((part, j) => {
-              if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-              return <DiagramRenderer key={j} diagram={part} />;
-            })}
+          <div key={i} className={cn('border-l-4 rounded-r-lg p-4', config.border, config.bgClass)}>
+            <div className="flex items-center gap-2 mb-3">
+              <Icon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{config.label}</span>
+            </div>
+            <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+              {parts.map((part, j) => {
+                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+                return <DiagramRenderer key={j} diagram={part} />;
+              })}
+            </div>
           </div>
         );
       })}
@@ -501,101 +474,16 @@ const Resultado = () => {
         return yy;
       };
 
-      const stripEmojis = (text: string) => text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{200D}\u{20E3}]/gu, '').trim();
-
-      const renderTextBlock = (text: string, startY: number): number => {
-        let y = startY;
-        const clean = stripEmojis(text)
-          .replace(/^#{1,4}\s*/gm, '')
-          .replace(/\*\*(.+?)\*\*/g, '$1')
-          .replace(/\*(.+?)\*/g, '$1')
-          .replace(/^\|.*\|$/gm, '')
-          .replace(/^[-:| ]+$/gm, '')
-          .replace(/<!--.*?-->/g, '')
-          .replace(/^- /gm, '• ')
-          .replace(/^\d+\. /gm, '→ ')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim();
-        if (!clean) return y;
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(clean, maxW);
-        for (const line of lines) {
-          y = checkBreak(y, 5);
-          doc.text(line, 14, y);
-          y += 4.2;
-        }
-        return y;
-      };
-
-      const renderMarkerBlock = (label: string, text: string, color: [number, number, number], startY: number): number => {
-        let y = checkBreak(startY, 18);
-        doc.setFillColor(...color);
-        doc.rect(14, y - 1, 2.5, 10, 'F');
-        doc.setTextColor(...color);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(label.toUpperCase(), 19, y + 3);
-        y += 8;
-        doc.setTextColor(100, 100, 100);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        const clean = stripEmojis(text).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').trim();
-        const lines = doc.splitTextToSize(clean, maxW - 5);
-        for (const line of lines) { y = checkBreak(y, 5); doc.text(line, 19, y); y += 4; }
-        return y + 3;
-      };
-
-      const renderTable = (tableBlock: string, startY: number): number => {
-        let y = startY;
-        const tRows = tableBlock.trim().split('\n').filter(r => r.trim().startsWith('|'));
-        const isSepar = (r: string) => /^\|[\s-:]+\|$/.test(r.trim().replace(/\|/g, '|'));
-        const dRows = tRows.filter(r => !isSepar(r));
-        if (dRows.length < 2) return y;
-        const parse = (r: string) => r.split('|').slice(1, -1).map(c => c.trim());
-        y = checkBreak(y, 20);
-        autoTable(doc, {
-          startY: y,
-          head: [parse(dRows[0])],
-          body: dRows.slice(1).map(r => parse(r)),
-          margin: { left: 14, right: 14 },
-          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-        });
-        return (doc as any).lastAutoTable.finalY + 6;
-      };
-
-      const renderDiagram = (type: string, items: string[], startY: number): number => {
-        let y = checkBreak(startY, 20);
-        const typeLabel = type === 'pyramid' ? 'Hierarquia' : type === 'funnel' ? 'Funil' : type === 'flow' ? 'Fluxo' : type === 'gauge' ? 'Indicador' : 'Comparativo';
-        autoTable(doc, {
-          startY: y,
-          head: [[typeLabel, 'Detalhe']],
-          body: items.map(item => {
-            const parts = item.includes(':') ? [item.split(':')[0].trim(), item.split(':').slice(1).join(':').trim()] : [item, ''];
-            return parts;
-          }),
-          margin: { left: 14, right: 14 },
-          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-          columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
-        });
-        return (doc as any).lastAutoTable.finalY + 6;
-      };
-
       // Cover
       doc.setFillColor(...BRAND_BLUE);
       doc.rect(0, 0, w, 50, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Plano Estrategico de Loyalty', 14, 28);
+      doc.text('Plano Estratégico de Loyalty', 14, 28);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text('Relatorio personalizado - Framework LAB', 14, 38);
+      doc.text('Relatório personalizado — Framework LAB', 14, 38);
       doc.text(new Date().toLocaleDateString('pt-BR'), 14, 45);
       let y = 60;
 
@@ -607,18 +495,17 @@ const Resultado = () => {
         doc.setTextColor(...DARK_GRAY);
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        const cleanTitle = stripEmojis(section.title);
-        const titleLines = doc.splitTextToSize(cleanTitle, maxW - 10);
+        const titleLines = doc.splitTextToSize(section.title, maxW - 10);
         titleLines.forEach((line: string) => { doc.text(line, 20, y + 6); y += 6; });
         y += 8;
 
-        // 5W2H
+        // 5W2H as autoTable
         if (section.id === 'plano5w2h') {
           const actions = parse5W2H(section.content);
           if (actions.length > 0) {
             autoTable(doc, {
               startY: y,
-              head: [['Area', 'O Que', 'Por Que', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto']],
+              head: [['Área', 'O Quê', 'Por Quê', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto']],
               body: actions.map(a => [a.area, a.oQue, a.porQue, a.onde, a.quando, a.quem, a.como, a.quanto]),
               margin: { left: 14, right: 14 },
               headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 7, cellPadding: 2 },
@@ -632,7 +519,7 @@ const Resultado = () => {
           }
         }
 
-        // Cronograma
+        // Cronograma as autoTable
         if (section.id === 'cronograma') {
           const phases = parseTimeline(section.content);
           if (phases.length > 0) {
@@ -645,7 +532,7 @@ const Resultado = () => {
             });
             autoTable(doc, {
               startY: y,
-              head: [['Fase', 'Periodo', 'Marco']],
+              head: [['Fase', 'Período', 'Marco']],
               body: rows,
               margin: { left: 14, right: 14 },
               headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
@@ -658,87 +545,96 @@ const Resultado = () => {
           }
         }
 
-        // Process content sequentially: split into text, tables, diagrams, markers
-        const rawContent = section.content;
-        const chunks: { type: 'text' | 'table' | 'diagram' | 'marker'; data: string; items?: string[]; dType?: string; label?: string }[] = [];
-
-        // Find all tables
-        const tableRegex2 = /(\|.+\|(?:\r?\n)?){3,}/g;
-        // Find all diagrams
-        const diagramRegex2 = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
-        // Find all markers
-        const markerRegex2 = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:📊\s*)?Resumo dos Dados|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
-
-        interface ContentSlice { start: number; end: number; type: 'table' | 'diagram' | 'marker'; raw: string; dType?: string; items?: string[]; label?: string }
-        const slices: ContentSlice[] = [];
-
-        let tm;
-        while ((tm = tableRegex2.exec(rawContent)) !== null) {
-          slices.push({ start: tm.index, end: tm.index + tm[0].length, type: 'table', raw: tm[0] });
-        }
-        while ((tm = diagramRegex2.exec(rawContent)) !== null) {
-          const dItems = tm[2].split('|').map(s => s.trim()).filter(Boolean);
-          slices.push({ start: tm.index, end: tm.index + tm[0].length, type: 'diagram', raw: tm[0], dType: tm[1], items: dItems });
-        }
-        while ((tm = markerRegex2.exec(rawContent)) !== null) {
-          const lower = tm[0].replace(/## (?:📚|📊|🎯)?\s*/i, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          let lbl = '';
-          if (lower.includes('contexto')) lbl = 'Contexto Teorico';
-          else if (lower.includes('resumo')) lbl = 'Resumo dos Dados';
-          else if (lower.includes('recomenda')) lbl = 'Nossa Recomendacao';
-          // Find end: next line break then next ## or end
-          const afterH = tm.index + tm[0].length;
-          const nextH = rawContent.slice(afterH).match(/\n## /);
-          const endIdx = nextH ? afterH + nextH.index! : rawContent.length;
-          // Take only first paragraph
-          const blockText = rawContent.slice(afterH, endIdx).replace(/^\n+/, '');
-          const fpEnd = blockText.indexOf('\n\n');
-          const markerContent = fpEnd > 0 ? blockText.slice(0, fpEnd).trim() : blockText.trim();
-          if (lbl) slices.push({ start: tm.index, end: fpEnd > 0 ? afterH + fpEnd : endIdx, type: 'marker', raw: markerContent, label: lbl });
-        }
-
-        // Sort by position
-        slices.sort((a, b) => a.start - b.start);
-
-        // Remove overlapping slices
-        const cleanSlices: ContentSlice[] = [];
-        let lastEnd = 0;
-        for (const s of slices) {
-          if (s.start >= lastEnd) { cleanSlices.push(s); lastEnd = s.end; }
-        }
-
-        // Build chunks
-        let cursor2 = 0;
-        for (const s of cleanSlices) {
-          if (s.start > cursor2) chunks.push({ type: 'text', data: rawContent.slice(cursor2, s.start) });
-          if (s.type === 'table') chunks.push({ type: 'table', data: s.raw });
-          else if (s.type === 'diagram') chunks.push({ type: 'diagram', data: '', dType: s.dType, items: s.items });
-          else if (s.type === 'marker') chunks.push({ type: 'marker', data: s.raw, label: s.label });
-          cursor2 = s.end;
-        }
-        if (cursor2 < rawContent.length) chunks.push({ type: 'text', data: rawContent.slice(cursor2) });
-
-        // Render chunks sequentially
-        const MARKER_COLORS: Record<string, [number, number, number]> = {
-          'Contexto Teorico': [220, 38, 38],
-          'Resumo dos Dados': [217, 119, 6],
-          'Nossa Recomendacao': [5, 150, 105],
-        };
-
-        for (const chunk of chunks) {
-          if (chunk.type === 'text') {
-            y = renderTextBlock(chunk.data, y);
-            y += 2;
-          } else if (chunk.type === 'table') {
-            y = renderTable(chunk.data, y);
-          } else if (chunk.type === 'diagram' && chunk.dType && chunk.items) {
-            y = renderDiagram(chunk.dType, chunk.items, y);
-          } else if (chunk.type === 'marker' && chunk.label) {
-            const color = MARKER_COLORS[chunk.label] || DARK_GRAY;
-            y = renderMarkerBlock(chunk.label, chunk.data, color, y);
+        // Detect markdown tables and render with autoTable
+        const tableMatch = section.content.match(/(\|.+\|(?:\r?\n)?){3,}/g);
+        if (tableMatch) {
+          // text before table
+          const beforeTable = section.content.split(tableMatch[0])[0];
+          if (beforeTable.trim()) {
+            const pt = beforeTable.replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/^- /gm, '• ');
+            doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+            const tl = doc.splitTextToSize(pt, maxW);
+            for (const line of tl) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
+            y += 4;
           }
+
+          // render each table
+          for (const tb of tableMatch) {
+            const tRows = tb.trim().split('\n').filter(r => r.trim().startsWith('|'));
+            const isSepar = (r: string) => /^\|[\s-:]+\|$/.test(r.trim().replace(/\|/g, '|'));
+            const dRows = tRows.filter(r => !isSepar(r));
+            if (dRows.length >= 2) {
+              const parse = (r: string) => r.split('|').slice(1, -1).map(c => c.trim());
+              const head = [parse(dRows[0])];
+              const body = dRows.slice(1).map(r => parse(r));
+              y = checkBreak(y, 20);
+              autoTable(doc, {
+                startY: y,
+                head, body,
+                margin: { left: 14, right: 14 },
+                headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
+                bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+                alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+              });
+              y = (doc as any).lastAutoTable.finalY + 6;
+            }
+          }
+
+          // text after last table
+          const afterTable = section.content.split(tableMatch[tableMatch.length - 1])[1];
+          if (afterTable?.trim()) {
+            const pt = afterTable.replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/^- /gm, '• ');
+            doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+            const tl = doc.splitTextToSize(pt, maxW);
+            for (const line of tl) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
+          }
+          y += 10;
+          continue;
         }
-        y += 8;
+
+        // Strip diagram markers and render as table in PDF
+        const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
+        let contentForPdf = section.content;
+        let diagramMatch;
+        while ((diagramMatch = diagramRegex.exec(section.content)) !== null) {
+          const dType = diagramMatch[1];
+          const dItems = diagramMatch[2].split('|').map(s => s.trim()).filter(Boolean);
+          // Remove the diagram marker from text
+          contentForPdf = contentForPdf.replace(diagramMatch[0], '');
+          // Render diagram as autoTable
+          y = checkBreak(y, 20);
+          const typeLabel = dType === 'pyramid' ? 'Nível' : dType === 'funnel' ? 'Etapa' : dType === 'flow' ? 'Processo' : dType === 'gauge' ? 'Medição' : 'Item';
+          autoTable(doc, {
+            startY: y,
+            head: [[typeLabel, 'Descrição']],
+            body: dItems.map(item => {
+              const parts = item.includes(':') ? [item.split(':')[0].trim(), item.split(':').slice(1).join(':').trim()] : [item, ''];
+              return parts;
+            }),
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
+            bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+            alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+            columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
+          });
+          y = (doc as any).lastAutoTable.finalY + 6;
+        }
+
+        // Plain text (without diagram markers)
+        const plainText = contentForPdf
+          .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+          .replace(/^\|.*\|$/gm, '').replace(/^[-:]+$/gm, '').replace(/^- /gm, '• ').replace(/^\d+\. /gm, '→ ');
+
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(plainText, maxW);
+        for (const line of lines) {
+          y = checkBreak(y, 5);
+          doc.text(line, 14, y);
+          y += 4.2;
+        }
+        y += 10;
       }
 
       // Headers & footers
@@ -751,7 +647,7 @@ const Resultado = () => {
           doc.setTextColor(255, 255, 255);
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
-          doc.text('Loyalty Academy Brasil - Plano Estrategico', 14, 9);
+          doc.text('Loyalty Academy Brasil — Plano Estratégico', 14, 9);
           doc.text(`${i}/${totalPages}`, w - 14, 9, { align: 'right' });
         }
         const h = doc.internal.pageSize.getHeight();
@@ -764,7 +660,7 @@ const Resultado = () => {
       }
 
       doc.save('Plano_Estrategico_Loyalty_LAB.pdf');
-      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} paginas exportadas.` });
+      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
     } catch (err) {
       console.error('PDF error:', err);
       toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });

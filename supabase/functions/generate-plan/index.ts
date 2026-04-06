@@ -16,87 +16,56 @@ const BLOCO2_JSON = `Você deve responder ÚNICA E EXCLUSIVAMENTE com um objeto 
 // ─── Bloco 3: Regras de Conteúdo e Profundidade ───
 const BLOCO3_CONTEUDO = `Para o campo "content" de CADA UMA das 12 seções, você deve gerar um texto longo e rico em Markdown, seguindo estas regras de profundidade:
 
-1. Volume: Cada seção deve conter conteúdo suficiente para preencher pelo menos 1 página inteira (cerca de 4 a 6 parágrafos densos de desenvolvimento).
+1. Volume: Cada seção deve conter conteúdo suficiente para preencher pelo menos 1 página inteira (cerca de 4 a 6 parágrafos densos).
 2. Personalização: Você DEVE justificar suas recomendações citando explicitamente os dados fornecidos. Ex: "Como observado na análise RFV, onde 40% da base está 'Hibernando', recomendamos..."
 3. Profundidade: Não faça listas rasas. Explique o "porquê" e o "como" de cada recomendação. Cada sugestão precisa vir com uma explicação do racional.
-4. Ritmo visual: Nunca escreva mais de 3 parágrafos seguidos sem quebrar com um elemento visual (sub-header ##, tabela, lista ou diagrama).
-5. Use **negrito** para destacar KPIs, métricas e números importantes.
+4. Ritmo: Nunca escreva mais de 3 parágrafos seguidos sem quebrar a leitura com um elemento visual (sub-header ##, tabela, lista ou diagrama).
+5. Use **negrito** para destacar KPIs, métricas e números importantes (ex: "**NPS: 45 pontos**", "**Retenção: +15%**").
 6. Use tabelas markdown SEMPRE QUE POSSÍVEL para comparações, métricas, custos — nunca listas quando uma tabela seria mais clara.
 7. Use linguagem profissional de consultoria estratégica.
-8. Inclua métricas, KPIs e benchmarks do mercado brasileiro.
+8. Inclua métricas, KPIs e benchmarks do mercado brasileiro.`;
 
-REGRA DE ESTRUTURAÇÃO VISUAL DO TEXTO:
-- Quebre o desenvolvimento em blocos temáticos com sub-headers ## descritivos (ex: "## Pilares da Mecânica", "## Análise de Segmentos", "## Estrutura de Custos").
-- Dentro de cada bloco temático, use listas numeradas ou com bullets para detalhar pontos-chave. Cada item da lista deve ter um título em negrito seguido de explicação.
-- Exemplo de estrutura ideal para um bloco:
+// ─── Bloco 4: Formatação Visual por Seção ───
+const BLOCO4_VISUAL = `Dentro do campo "content" de cada seção, você DEVE aplicar a seguinte estrutura visual na ordem exata:
 
-## Pilares da Mecânica do Programa
+[INÍCIO DA SEÇÃO]
 
-O programa se sustenta em três pilares complementares:
+## 📚 Contexto Teórico
+(1 parágrafo curto: 2-3 frases explicando por que esse tema importa para loyalty. Pincelada rápida, NÃO extenso.)
 
-1. **Ganhar & Trocar (Core econômico)** — Base do programa e principal driver de comportamento. Acúmulo de pontos via compras, resgate em descontos, produtos e experiências.
+[DESENVOLVIMENTO PARTE 1]
+(Parágrafos analíticos densos, sub-headers ##, justificativas com dados reais do cliente.)
 
-2. **Gamificação (Engajamento comportamental)** — Mecânicas de desafios, metas, badges e rankings. Estrutura de tiers baseada em comportamento.
+## 📊 Resumo dos Dados
+(1 parágrafo curto: 2-3 frases resumindo as métricas-chave do RFV, NBO, CX ou Formulário que embasam esta seção. Pincelada rápida, NÃO extenso.)
 
-3. **Comunidades (Engajamento relacional)** — Espaço para troca de conhecimento entre clientes, feedback contínuo, senso de pertencimento.
+[DESENVOLVIMENTO PARTE 2]
+(Mais parágrafos analíticos. Aqui DEVEM aparecer os 3 elementos obrigatórios:)
+1. Uma tabela Markdown comparativa ou de dados (mínimo 3 linhas de dados).
+2. Uma lista numerada (3 a 5 pontos-chave explicados).
+3. O diagrama obrigatório específico da seção (veja Bloco 5).
 
-| Pilar | Tipo de Valor | Impacto Esperado |
-|-------|---------------|------------------|
-| Ganhar & Trocar | Transacional | ↑ Frequência e ticket médio |
-| Gamificação | Comportamental | ↑ Engajamento e recorrência |
-| Comunidades | Relacional | ↓ Churn, ↑ NPS |
+## 🎯 Nossa Recomendação
+(1 parágrafo curto: 2-3 frases sintetizando a ação principal a ser tomada com racional direto. Pincelada rápida, NÃO extenso.)
 
-<!-- DIAGRAM: comparison | Ganhar & Trocar: Core econômico, acúmulo e resgate | Gamificação: Desafios, metas e rankings | Comunidades: Troca, feedback e pertencimento -->
+[FIM DA SEÇÃO]
 
-Siga este padrão em TODAS as seções: sub-headers descritivos → desenvolvimento com listas estruturadas → tabela de apoio → diagrama quando aplicável.`;
-
-// ─── Bloco 4: Blocos Visuais Obrigatórios (pinceladas curtas) ───
-const BLOCO4_VISUAL = `Além do conteúdo extenso de desenvolvimento, cada seção DEVE conter EXATAMENTE 3 marcadores visuais que são PINCELADAS CURTAS de apoio. Eles NÃO são o conteúdo principal — são destaques complementares.
-
-REGRA CRÍTICA: Cada marcador visual deve ter EXATAMENTE 1 parágrafo curto de 2-3 frases. NUNCA coloque conteúdo de desenvolvimento dentro deles. O desenvolvimento extenso vem ENTRE eles.
-
-Ordem obrigatória dentro de cada seção:
-
-1. PRIMEIRO marcador (no início da seção):
-## Contexto Teorico
-(2-3 frases explicando por que esse tema importa para loyalty. PARE após o parágrafo.)
-
-2. [DESENVOLVIMENTO EXTENSO AQUI — sub-headers, parágrafos, tabelas, listas, diagramas]
-
-3. SEGUNDO marcador (no meio, após parte do desenvolvimento):
-## Resumo dos Dados
-(2-3 frases resumindo as métricas-chave que embasam esta seção. PARE após o parágrafo.)
-
-4. [MAIS DESENVOLVIMENTO — análises, tabelas, diagramas]
-
-5. TERCEIRO marcador (no final da seção):
-## Nossa Recomendacao
-(2-3 frases sintetizando a ação principal. PARE após o parágrafo.)
-
-PROIBIDO: Colocar tabelas, listas, sub-headers ou parágrafos adicionais dentro dos marcadores visuais. Eles são APENAS 1 parágrafo cada.
-IMPORTANTE: Use exatamente esses headers sem emoji e sem acento: "## Contexto Teorico", "## Resumo dos Dados", "## Nossa Recomendacao".`;
+IMPORTANTE: Os blocos 📚, 📊 e 🎯 são COMPLEMENTARES e CURTOS (máximo 1 parágrafo, 2-3 frases cada). O conteúdo principal da seção (tabelas, diagramas, listas, análises profundas com múltiplos parágrafos) deve estar ENTRE eles e ser EXTENSO e DETALHADO.`;
 
 // ─── Bloco 5: Regras Específicas por Seção ───
 const BLOCO5_EXCECOES = `Siga estas regras estritas para seções específicas:
 
-DIAGRAMAS — Insira no formato HTML comment abaixo. Você pode usar MÚLTIPLOS diagramas por seção quando fizer sentido (ex: um comparison + um flow na mesma seção). Formatos disponíveis:
-- <!-- DIAGRAM: comparison | Item 1: descrição | Item 2: descrição | Item 3: descrição -->
-- <!-- DIAGRAM: pyramid | Topo | Meio | Base -->
-- <!-- DIAGRAM: funnel | Etapa 1 | Etapa 2 | Etapa 3 -->
-- <!-- DIAGRAM: flow | Passo 1 | Passo 2 | Passo 3 | Passo 4 -->
-- <!-- DIAGRAM: gauge | nível de 1-10 | label -->
-
-Diagramas recomendados por seção (use estes + adicione outros se o conteúdo pedir):
-- sumario: comparison (Situação Atual vs Proposta vs Impacto)
-- maturidade: gauge (nível numérico)
-- objetivos: pyramid (hierarquia de objetivos)
-- estrutura: comparison (pilares do programa) + flow (jornada do cliente)
-- estrategia: funnel (funil de aquisição → retenção → advocacy)
-- beneficios: comparison (tangíveis vs intangíveis vs ROI)
-- segmentacao: pyramid (tiers) + comparison (perfil de cada tier)
-- canais: flow (jornada de cadastro)
-- operacoes: flow (fluxo operacional)
-- custos: comparison (investimento vs retorno vs payback)
+DIAGRAMAS OBRIGATÓRIOS — Insira exatamente no formato abaixo (HTML comment), sem alterar a sintaxe:
+- sumario: <!-- DIAGRAM: comparison | Situação Atual: descrição | Proposta: descrição | Impacto Esperado: descrição -->
+- maturidade: <!-- DIAGRAM: gauge | nível numérico de 1-10 | label do nível -->
+- objetivos: <!-- DIAGRAM: pyramid | Objetivo Primário | Objetivo Secundário | Objetivo Terciário -->
+- estrutura: <!-- DIAGRAM: flow | Etapa 1 | Etapa 2 | Etapa 3 | Etapa 4 -->
+- estrategia: <!-- DIAGRAM: funnel | Topo: Aquisição | Meio: Engajamento | Base: Retenção | Fundo: Advocacy -->
+- beneficios: <!-- DIAGRAM: comparison | Tangíveis: lista | Intangíveis: lista | ROI Esperado: valor -->
+- segmentacao: <!-- DIAGRAM: pyramid | Tier Premium | Tier Intermediário | Tier Base -->
+- canais: <!-- DIAGRAM: flow | Canal 1 | Canal 2 | Canal 3 | Canal 4 -->
+- operacoes: <!-- DIAGRAM: flow | Processo 1 | Processo 2 | Processo 3 | Processo 4 -->
+- custos: <!-- DIAGRAM: comparison | Investimento: valor | Retorno: valor | Payback: período -->
 
 REGRA PARA SEÇÃO 11 (cronograma):
 Formate as fases com sub-headers ## e negrito para o período. Exemplo:
@@ -104,13 +73,17 @@ Formate as fases com sub-headers ## e negrito para o período. Exemplo:
 **Período:** Meses 1-3
 - Marco 1: Definição de escopo
 - Marco 2: Seleção de plataforma
+## Fase 2: Desenvolvimento
+**Período:** Meses 4-6
+- Marco 1: MVP do programa
 
 REGRA PARA SEÇÃO 12 (plano5w2h):
-Deve conter uma tabela Markdown com EXATAMENTE estas colunas e no MÍNIMO 10 linhas de ações detalhadas:
+Deve conter uma tabela Markdown com EXATAMENTE estas colunas e no MÍNIMO 10 linhas de ações detalhadas. A coluna "Área" deve conter apenas: RFV, NBO, CX ou Estratégico.
 | Área | O Quê | Por Quê | Onde | Quando | Quem | Como | Quanto |
 |------|-------|---------|------|--------|------|------|--------|
+| RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mês 1 | Equipe Analytics | Análise RFV | R$ 5.000 |
 
-NÃO use code fences na resposta — apenas JSON puro.`;
+NÃO use code fences (\`\`\`) na resposta — apenas JSON puro.`;
 
 function buildSystemPrompt(): string {
   return [BLOCO1_PERSONA, BLOCO2_JSON, BLOCO3_CONTEUDO, BLOCO4_VISUAL, BLOCO5_EXCECOES].join('\n\n---\n\n');
@@ -186,13 +159,7 @@ ${nboSummary || 'Dados NBO não disponíveis.'}
 ${cxSummary || 'Dados CX não disponíveis.'}
 (Nota para a IA: Use estes dados principalmente nas seções de Canais, Operações e Maturidade)
 
-LEMBRETE FINAL: 
-- Responda APENAS com o JSON válido, sem nenhum texto adicional.
-- Os 3 marcadores visuais (Contexto Teorico, Resumo dos Dados, Nossa Recomendacao) são CURTOS (1 parágrafo, 2-3 frases). O conteúdo rico vem ENTRE eles.
-- Use sub-headers ## descritivos para organizar o desenvolvimento.
-- Estruture informações complexas com listas numeradas onde cada item tem título em negrito + explicação.
-- Inclua tabelas markdown sempre que houver dados comparativos.
-- Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.`;
+Lembre-se: Responda APENAS com o JSON válido, sem nenhum texto adicional.`;
 }
 
 serve(async (req) => {
@@ -213,13 +180,13 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         stream: false,
-        temperature: 0.4,
+        temperature: 0.7,
       }),
     });
 
