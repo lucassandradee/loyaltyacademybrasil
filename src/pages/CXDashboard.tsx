@@ -514,6 +514,13 @@ const CXDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Next step CTA */}
+      <div className="mt-6 flex justify-end">
+        <Button onClick={() => navigate('/lab-framework')} className="gap-2">
+          Próxima etapa: Formulário LAB <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

@@ -326,6 +326,12 @@ const NBODashboard = () => {
           )}
         </CardContent>
       </Card>
+      {/* Next step CTA */}
+      <div className="mt-6 flex justify-end">
+        <Button onClick={() => navigate('/cx')} className="gap-2">
+          Próxima etapa: Customer Experience <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

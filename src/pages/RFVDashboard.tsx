@@ -425,9 +425,12 @@ const RFVDashboard = () => {
         </CardContent>
       </Card>
 
-      <div className="mt-6">
+      <div className="mt-6 flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate('/rfv/parametros', { state: { clientData } })}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Parametrização
+        </Button>
+        <Button onClick={() => navigate('/nbo/dashboard')} className="gap-2">
+          Próxima etapa: Next Best Offer <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </div>
