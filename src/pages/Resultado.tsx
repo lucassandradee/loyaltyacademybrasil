@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2, BarChart3, List, Table2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
@@ -127,7 +127,7 @@ function parseTimeline(md: string): TimelinePhase[] {
     const lines = part.trim().split('\n');
     const name = lines[0]?.trim() || '';
     if (!name) continue;
-    const periodMatch = part.match(/\*\*Período:\*\*\s*(.+)/i) || part.match(/Período:\s*(.+)/i) || part.match(/\*\*(.+?meses?.*?)\*\*/i);
+    const periodMatch = part.match(/\*\*Per[ií]odo:\*\*\s*(.+)/i) || part.match(/Per[ií]odo:\s*(.+)/i) || part.match(/\*\*(.+?meses?.*?)\*\*/i);
     const period = periodMatch ? periodMatch[1].trim() : '';
     const milestones = lines.filter(l => /^[-•]/.test(l.trim())).map(l => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
     if (name) phases.push({ name, period, milestones });
@@ -152,7 +152,6 @@ function parse5W2H(md: string): Action5W2H[] {
   const actions: Action5W2H[] = [];
   const lines = md.split('\n').filter(l => l.trim().startsWith('|'));
   const dataLines = lines.filter(l => !/^\|[\s-:]+\|$/.test(l.trim().replace(/\|/g, '|')));
-  // skip header row
   for (let i = 1; i < dataLines.length; i++) {
     const cells = dataLines[i].split('|').slice(1, -1).map(c => c.trim());
     if (cells.length >= 7) {
@@ -181,6 +180,64 @@ function parseSectionsFromContent(planContent: any): PlanSection[] {
     try { return parseSectionsFromContent(JSON.parse(planContent)); } catch { return [{ id: 'plano', title: 'Plano Estratégico', content: planContent }]; }
   }
   return [];
+}
+
+// ─── 6-Block Section Parser ───
+
+interface SectionBlocks {
+  contexto: string | null;
+  desenvolvimento: string;
+  principaisPontos: string[] | null;
+  tabela: string | null;
+  conclusao: string | null;
+}
+
+function parseSectionBlocks(content: string): SectionBlocks {
+  let remaining = content;
+
+  // Remove any "Resumo dos Dados" remnants
+  remaining = remaining.replace(/##\s*📊?\s*Resumo dos Dados[^\n]*\n?/g, '');
+
+  // 1. Extract Contexto Teórico
+  let contexto: string | null = null;
+  const ctxMatch = remaining.match(/##\s*(?:📚\s*)?Contexto Te[oó]rico[^\n]*\n([\s\S]*?)(?=\n##|$)/);
+  if (ctxMatch) {
+    contexto = ctxMatch[1].trim().split(/\n\n/)[0].trim();
+    remaining = remaining.replace(ctxMatch[0], '');
+  }
+
+  // 5. Extract Conclusão (do it before desenvolvimento to remove from remaining)
+  let conclusao: string | null = null;
+  const concMatch = remaining.match(/##\s*(?:🎯\s*)?(?:Conclus[aã]o|Nossa Recomenda[cç][aã]o)[^\n]*\n([\s\S]*?)$/);
+  if (concMatch) {
+    conclusao = concMatch[1].trim().split(/\n\n/)[0].trim();
+    remaining = remaining.replace(concMatch[0], '');
+  }
+
+  // 4. Extract Tabela de Resultados
+  let tabela: string | null = null;
+  const tabMatch = remaining.match(/##\s*(?:📊\s*)?Tabela de Resultados[^\n]*\n([\s\S]*?)(?=\n##|$)/);
+  if (tabMatch) {
+    tabela = tabMatch[1].trim();
+    remaining = remaining.replace(tabMatch[0], '');
+  }
+
+  // 3. Extract Principais Pontos
+  let principaisPontos: string[] | null = null;
+  const ppMatch = remaining.match(/##\s*(?:📋\s*)?Principais Pontos[^\n]*\n([\s\S]*?)(?=\n##|$)/);
+  if (ppMatch) {
+    const ppContent = ppMatch[1].trim();
+    principaisPontos = ppContent
+      .split('\n')
+      .map(l => l.replace(/^\d+\.\s*/, '').trim())
+      .filter(Boolean);
+    remaining = remaining.replace(ppMatch[0], '');
+  }
+
+  // 2. Desenvolvimento = whatever is left
+  const desenvolvimento = remaining.trim();
+
+  return { contexto, desenvolvimento, principaisPontos, tabela, conclusao };
 }
 
 // ─── Visual renderers ───
@@ -275,56 +332,29 @@ function ActionPlan5W2H({ content }: { content: string }) {
   );
 }
 
-// ─── Section renderer ───
+// ─── Section renderer with 6 blocks ───
 
 function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
-  // Clean out any "Resumo dos Dados" blocks the AI might generate
-  let cleaned = section.content.replace(/## 📊\s*Resumo dos Dados[^\n]*\n?/g, '');
-
-  // Extract Contexto Teórico: only first paragraph after header
-  let contextoBlock: string | null = null;
-  const contextoMatch = cleaned.match(/## 📚\s*Contexto Te[oó]rico[^\n]*\n([\s\S]*?)(?=\n##|\n<!--|\n\||\n\d+\.\s|\n-\s|$)/);
-  if (contextoMatch) {
-    // Get just the first paragraph (up to double newline)
-    const afterHeader = contextoMatch[1].trim();
-    const firstPara = afterHeader.split(/\n\n/)[0].trim();
-    contextoBlock = firstPara;
-    // Remove the entire contexto header + first paragraph from content
-    cleaned = cleaned.replace(/## 📚\s*Contexto Te[oó]rico[^\n]*\n/, '');
-    if (firstPara) cleaned = cleaned.replace(firstPara, '');
-  }
-
-  // Extract Nossa Recomendação: only first paragraph after header
-  let recomBlock: string | null = null;
-  const recomMatch = cleaned.match(/## 🎯\s*Nossa Recomenda[cç][aã]o[^\n]*\n([\s\S]*?)$/);
-  if (recomMatch) {
-    const afterHeader = recomMatch[1].trim();
-    const firstPara = afterHeader.split(/\n\n/)[0].trim();
-    recomBlock = firstPara;
-    // Remove the header + content from cleaned
-    cleaned = cleaned.replace(/## 🎯\s*Nossa Recomenda[cç][aã]o[^\n]*\n[\s\S]*$/, '');
-  }
-
-  // Render: Contexto (colored) → Development (white) → Recomendação (colored)
-  const devParts = parseDiagrams(cleaned.trim());
+  const blocks = parseSectionBlocks(section.content);
+  const devParts = parseDiagrams(blocks.desenvolvimento);
 
   return (
-    <div className="space-y-4">
-      {/* Contexto Teórico — subtle colored card */}
-      {contextoBlock && (
+    <div className="space-y-5">
+      {/* Block 1: Contexto Teórico */}
+      {blocks.contexto && (
         <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="h-4 w-4 text-red-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{contextoBlock}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.contexto}</p>
         </div>
       )}
 
-      {/* Main development content — clean white background */}
+      {/* Block 2: Desenvolvimento */}
       <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
         {devParts.map((part, i) => {
           if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
@@ -332,14 +362,43 @@ function SectionContent({ section }: { section: PlanSection }) {
         })}
       </div>
 
-      {/* Nossa Recomendação — subtle colored card */}
-      {recomBlock && (
+      {/* Block 3: Principais Pontos */}
+      {blocks.principaisPontos && blocks.principaisPontos.length > 0 && (
+        <div className="border-l-4 border-l-blue-400 rounded-r-lg p-4 bg-blue-50/30 dark:bg-blue-950/10">
+          <div className="flex items-center gap-2 mb-3">
+            <List className="h-4 w-4 text-blue-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
+          </div>
+          <ol className="space-y-2">
+            {blocks.principaisPontos.map((pt, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-sm text-muted-foreground leading-relaxed">{pt}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Block 4: Tabela de Resultados */}
+      {blocks.tabela && (
+        <div className="border-l-4 border-l-amber-400 rounded-r-lg p-4 bg-amber-50/30 dark:bg-amber-950/10">
+          <div className="flex items-center gap-2 mb-3">
+            <Table2 className="h-4 w-4 text-amber-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tabela de Resultados</span>
+          </div>
+          <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
+        </div>
+      )}
+
+      {/* Block 5: Conclusão */}
+      {blocks.conclusao && (
         <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
           <div className="flex items-center gap-2 mb-2">
             <Target className="h-4 w-4 text-emerald-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nossa Recomendação</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{recomBlock}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
         </div>
       )}
     </div>
@@ -410,7 +469,6 @@ const Resultado = () => {
     }
     setHasLab(true);
 
-    // Extract company data from diagnostic answers
     const companyData = diagAnswers ? {
       modelo: diagAnswers.modelo,
       segmento: diagAnswers.segmento,
@@ -464,6 +522,10 @@ const Resultado = () => {
       const BRAND_BLUE: [number, number, number] = [30, 64, 175];
       const DARK_GRAY: [number, number, number] = [51, 51, 51];
       const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
+      const RED_LIGHT: [number, number, number] = [254, 242, 242];
+      const BLUE_LIGHT: [number, number, number] = [239, 246, 255];
+      const AMBER_LIGHT: [number, number, number] = [255, 251, 235];
+      const GREEN_LIGHT: [number, number, number] = [240, 253, 244];
 
       const checkBreak = (yy: number, needed: number) => {
         if (yy + needed > doc.internal.pageSize.getHeight() - 25) { doc.addPage(); return 28; }
@@ -472,16 +534,61 @@ const Resultado = () => {
 
       const cleanEmoji = (t: string) => t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
 
+      const renderColoredBox = (text: string, label: string, bgColor: [number, number, number], borderColor: [number, number, number], startY: number): number => {
+        let y = checkBreak(startY, 20);
+        const lines = doc.splitTextToSize(cleanEmoji(text), maxW - 12);
+        const boxH = lines.length * 4.2 + 14;
+        y = checkBreak(y, boxH);
+        doc.setFillColor(...bgColor);
+        doc.rect(14, y, maxW, boxH, 'F');
+        doc.setFillColor(...borderColor);
+        doc.rect(14, y, 2, boxH, 'F');
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...borderColor);
+        doc.text(label.toUpperCase(), 20, y + 5);
+        doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+        doc.text(lines, 20, y + 11);
+        return y + boxH + 4;
+      };
+
       const renderTextBlock = (text: string, startY: number): number => {
         let y = startY;
-        const plain = text
-          .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-          .replace(/^\|.*\|$/gm, '').replace(/^[-:]+$/gm, '').replace(/^- /gm, '- ').replace(/^\d+\. /gm, '  ');
-        const cleaned = cleanEmoji(plain).trim();
-        if (!cleaned) return y;
-        doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(cleaned, maxW);
-        for (const line of lines) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
+        const lines = text.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) { y += 2; continue; }
+          // Sub-headers
+          const h2Match = trimmed.match(/^##\s+(.+)/);
+          if (h2Match) {
+            y = checkBreak(y, 10);
+            doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK_GRAY);
+            doc.setFillColor(...BRAND_BLUE);
+            doc.rect(14, y - 1, 2, 5, 'F');
+            const hLines = doc.splitTextToSize(cleanEmoji(h2Match[1]), maxW - 6);
+            doc.text(hLines, 19, y + 3);
+            y += hLines.length * 5 + 3;
+            continue;
+          }
+          // Bullets
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            y = checkBreak(y, 5);
+            doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+            const bText = cleanEmoji(trimmed.replace(/^[-*]\s+/, ''));
+            const bLines = doc.splitTextToSize(bText, maxW - 10);
+            doc.setFillColor(...BRAND_BLUE);
+            doc.circle(18, y + 1, 0.8, 'F');
+            doc.text(bLines, 22, y + 2);
+            y += bLines.length * 4 + 1.5;
+            continue;
+          }
+          // Regular text — handle bold
+          y = checkBreak(y, 5);
+          const plainText = cleanEmoji(trimmed.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/#{1,4}\s*/g, ''));
+          if (!plainText) continue;
+          doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+          const tLines = doc.splitTextToSize(plainText, maxW);
+          doc.text(tLines, 14, y + 2);
+          y += tLines.length * 4 + 1.5;
+        }
         return y + 2;
       };
 
@@ -525,6 +632,30 @@ const Resultado = () => {
         return (doc as any).lastAutoTable.finalY + 6;
       };
 
+      const renderNumberedList = (items: string[], startY: number): number => {
+        let y = checkBreak(startY, 15 + items.length * 6);
+        // Blue background box
+        const boxH = items.length * 6 + 10;
+        y = checkBreak(y, boxH);
+        doc.setFillColor(...BLUE_LIGHT);
+        doc.rect(14, y, maxW, boxH, 'F');
+        doc.setFillColor(59, 130, 246);
+        doc.rect(14, y, 2, boxH, 'F');
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
+        doc.text('PRINCIPAIS PONTOS', 20, y + 5);
+        let innerY = y + 10;
+        items.forEach((item, i) => {
+          doc.setFillColor(59, 130, 246);
+          doc.circle(20, innerY + 1, 2.5, 'F');
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+          doc.text(String(i + 1), 19, innerY + 2);
+          doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+          doc.text(cleanEmoji(item), 26, innerY + 2);
+          innerY += 6;
+        });
+        return y + boxH + 4;
+      };
+
       // Cover
       doc.setFillColor(...BRAND_BLUE);
       doc.rect(0, 0, w, 50, 'F');
@@ -550,7 +681,7 @@ const Resultado = () => {
         titleLines.forEach((line: string) => { doc.text(line, 20, y + 6); y += 6; });
         y += 8;
 
-        // 5W2H
+        // 5W2H special
         if (section.id === 'plano5w2h') {
           const actions = parse5W2H(section.content);
           if (actions.length > 0) {
@@ -570,7 +701,7 @@ const Resultado = () => {
           }
         }
 
-        // Cronograma
+        // Cronograma special
         if (section.id === 'cronograma') {
           const phases = parseTimeline(section.content);
           if (phases.length > 0) {
@@ -596,49 +727,78 @@ const Resultado = () => {
           }
         }
 
-        // Sequential processing: split content into text/table/diagram segments
-        const content = section.content;
-        const tableRegex = /(\|.+\|(?:\r?\n)?){3,}/g;
-        const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
+        // Regular sections: parse into 6 blocks
+        const blocks = parseSectionBlocks(section.content);
 
-        // Find all tables and diagrams with their positions
-        interface Segment { type: 'table' | 'diagram'; start: number; end: number; data: any; }
-        const segments: Segment[] = [];
-
-        let match;
-        while ((match = tableRegex.exec(content)) !== null) {
-          segments.push({ type: 'table', start: match.index, end: match.index + match[0].length, data: match[0] });
-        }
-        while ((match = diagramRegex.exec(content)) !== null) {
-          const dType = match[1];
-          const dItems = match[2].split('|').map(s => s.trim()).filter(Boolean);
-          segments.push({ type: 'diagram', start: match.index, end: match.index + match[0].length, data: { type: dType, items: dItems } });
+        // Block 1: Contexto Teórico (red box)
+        if (blocks.contexto) {
+          y = renderColoredBox(blocks.contexto, 'Contexto Teorico', RED_LIGHT, [220, 38, 38], y);
         }
 
-        // Sort by position
-        segments.sort((a, b) => a.start - b.start);
+        // Block 2: Desenvolvimento (text + diagrams + inline tables)
+        if (blocks.desenvolvimento.trim()) {
+          // Process dev content sequentially for tables & diagrams
+          const devContent = blocks.desenvolvimento;
+          const tableRegex = /(\|.+\|(?:\r?\n)?){3,}/g;
+          const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
 
-        // Process sequentially
-        let cursor = 0;
-        for (const seg of segments) {
-          // Text before this segment
-          if (seg.start > cursor) {
-            const textBefore = content.slice(cursor, seg.start);
-            if (textBefore.trim()) y = renderTextBlock(textBefore, y);
+          interface Segment { type: 'table' | 'diagram'; start: number; end: number; data: any; }
+          const segments: Segment[] = [];
+
+          let match;
+          while ((match = tableRegex.exec(devContent)) !== null) {
+            segments.push({ type: 'table', start: match.index, end: match.index + match[0].length, data: match[0] });
           }
-          // Render the segment
-          if (seg.type === 'table') {
-            y = renderTable(seg.data, y);
-          } else {
-            y = renderDiagram(seg.data.type, seg.data.items, y);
+          while ((match = diagramRegex.exec(devContent)) !== null) {
+            const dType = match[1];
+            const dItems = match[2].split('|').map(s => s.trim()).filter(Boolean);
+            segments.push({ type: 'diagram', start: match.index, end: match.index + match[0].length, data: { type: dType, items: dItems } });
           }
-          cursor = seg.end;
+          segments.sort((a, b) => a.start - b.start);
+
+          let cursor = 0;
+          for (const seg of segments) {
+            if (seg.start > cursor) {
+              const textBefore = devContent.slice(cursor, seg.start);
+              if (textBefore.trim()) y = renderTextBlock(textBefore, y);
+            }
+            if (seg.type === 'table') {
+              y = renderTable(seg.data, y);
+            } else {
+              y = renderDiagram(seg.data.type, seg.data.items, y);
+            }
+            cursor = seg.end;
+          }
+          if (cursor < devContent.length) {
+            const remaining = devContent.slice(cursor);
+            if (remaining.trim()) y = renderTextBlock(remaining, y);
+          }
         }
-        // Text after last segment
-        if (cursor < content.length) {
-          const remaining = content.slice(cursor);
-          if (remaining.trim()) y = renderTextBlock(remaining, y);
+
+        // Block 3: Principais Pontos (blue box)
+        if (blocks.principaisPontos && blocks.principaisPontos.length > 0) {
+          y = renderNumberedList(blocks.principaisPontos, y);
         }
+
+        // Block 4: Tabela de Resultados (amber header table)
+        if (blocks.tabela) {
+          // Label
+          y = checkBreak(y, 10);
+          doc.setFillColor(...AMBER_LIGHT);
+          doc.rect(14, y, maxW, 7, 'F');
+          doc.setFillColor(217, 119, 6);
+          doc.rect(14, y, 2, 7, 'F');
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(217, 119, 6);
+          doc.text('TABELA DE RESULTADOS', 20, y + 5);
+          y += 9;
+          y = renderTable(blocks.tabela, y);
+        }
+
+        // Block 5: Conclusão (green box)
+        if (blocks.conclusao) {
+          y = renderColoredBox(blocks.conclusao, 'Conclusao', GREEN_LIGHT, [16, 185, 129], y);
+        }
+
         y += 6;
       }
 
@@ -731,7 +891,7 @@ const Resultado = () => {
         </div>
       </div>
 
-      {/* Canvas Mode — Business Model Canvas layout */}
+      {/* Canvas Mode */}
       {viewMode === 'canvas' && sections.length > 0 && (() => {
         const findSection = (id: string) => {
           const idx = sections.findIndex(s => s.id === id);
@@ -796,16 +956,13 @@ const Resultado = () => {
 
         return (
           <div className="border-2 border-border/80 rounded-xl overflow-hidden bg-card">
-            {/* Row 1: Sumário (full width) */}
             <div className="grid grid-cols-1">
               <CanvasCell id="sumario" className="rounded-none border-0 border-b-2 border-border/60 min-h-[80px]" />
             </div>
-            {/* Row 2: Objetivos | Diagnóstico de Maturidade */}
             <div className="grid grid-cols-2">
               <CanvasCell id="objetivos" className="rounded-none border-0 border-r-2 border-b-2 border-border/60 min-h-[90px]" />
               <CanvasCell id="maturidade" className="rounded-none border-0 border-b-2 border-border/60 min-h-[90px]" />
             </div>
-            {/* Row 3: Estratégia | (Benefícios + Segmentação) | (Canais + Operações) | Estrutura */}
             <div className="grid grid-cols-[1fr_2fr_1fr]" style={{ minHeight: 180 }}>
               <CanvasCell id="estrategia" className="rounded-none border-0 border-r-2 border-b-2 border-border/60" />
               <div className="grid grid-cols-2 grid-rows-2 border-r-2 border-b-2 border-border/60">
@@ -816,7 +973,6 @@ const Resultado = () => {
               </div>
               <CanvasCell id="estrutura" className="rounded-none border-0 border-b-2 border-border/60" />
             </div>
-            {/* Row 4: Custos | Cronograma | Plano de Ação */}
             <div className="grid grid-cols-3">
               <CanvasCell id="custos" className="rounded-none border-0 border-r-2 border-border/60 min-h-[90px]" />
               <CanvasCell id="cronograma" className="rounded-none border-0 border-r-2 border-border/60 min-h-[90px]" />
