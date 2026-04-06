@@ -7,9 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-const LAB_DRAFT_KEY = 'lab_draft';
-const LAB_STEP_KEY = 'lab_step';
+import { LAB_DRAFT_KEY, LAB_DRAFT_USER_KEY, LAB_STEP_KEY, clearLabDraftStorage } from '@/lib/lab-storage';
 
 interface LABStep {
   id: string;
@@ -17,6 +15,8 @@ interface LABStep {
   type: 'single' | 'multi';
   options: string[];
 }
+
+type LABAnswers = Record<string, string | string[]>;
 
 const labSteps: LABStep[] = [
   { id: 'objetivos', question: 'Quais são os principais objetivos do programa de Loyalty?', type: 'multi', options: ['Expansão', 'Ganho de Share', 'Segmentar e premiar por valor', 'Adquirir clientes', 'Reter clientes', 'Combater concorrência', 'Reduzir custos', 'Diversificação', 'Serviços financeiros', 'Aumentar NPS'] },
@@ -36,23 +36,87 @@ const labSteps: LABStep[] = [
   { id: 'custos', question: 'Como você pensa sobre os custos do programa?', type: 'multi', options: ['Impacta ROI do programa', 'Não impacta ROI', 'Custos adicionais previstos', 'Absorvido pelas lojas', 'Absorvido pela matriz', 'Modelo híbrido de custo'] },
 ];
 
+const labStepsById = new Map(labSteps.map((labStep) => [labStep.id, labStep]));
+
+const sanitizeLabAnswers = (value: unknown): LABAnswers => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.entries(value as Record<string, unknown>).reduce<LABAnswers>((acc, [id, rawValue]) => {
+    const definition = labStepsById.get(id);
+    if (!definition) return acc;
+
+    if (definition.type === 'multi') {
+      if (!Array.isArray(rawValue)) return acc;
+
+      const selectedOptions = Array.from(
+        new Set(rawValue.filter((item): item is string => typeof item === 'string' && definition.options.includes(item)))
+      );
+
+      if (selectedOptions.length > 0) {
+        acc[id] = selectedOptions;
+      }
+
+      return acc;
+    }
+
+    if (typeof rawValue === 'string' && definition.options.includes(rawValue)) {
+      acc[id] = rawValue;
+    }
+
+    return acc;
+  }, {});
+};
+
+const getFirstIncompleteStep = (answers: LABAnswers) => {
+  const firstIncompleteStep = labSteps.findIndex((labStep) => {
+    const answer = answers[labStep.id];
+
+    return labStep.type === 'multi'
+      ? !Array.isArray(answer) || answer.length === 0
+      : typeof answer !== 'string' || answer.length === 0;
+  });
+
+  return firstIncompleteStep === -1 ? labSteps.length - 1 : firstIncompleteStep;
+};
+
 const FormularioLAB = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [answers, setAnswers] = useState<LABAnswers>({});
   const [saving, setSaving] = useState(false);
   const [loadingFromDB, setLoadingFromDB] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [didHydrateUserData, setDidHydrateUserData] = useState(false);
 
   // Load saved LAB answers from DB on mount — never trust localStorage blindly
   useEffect(() => {
+    let isActive = true;
+
     const loadFromDB = async () => {
+      setLoadingFromDB(true);
+      setDidHydrateUserData(false);
+      setAnswers({});
+      setStep(0);
+
       const { data: { user } } = await supabase.auth.getUser();
+      if (!isActive) return;
+
       if (!user) {
-        localStorage.removeItem(LAB_DRAFT_KEY);
-        localStorage.removeItem(LAB_STEP_KEY);
+        setCurrentUserId(null);
+        clearLabDraftStorage();
+        setDidHydrateUserData(true);
         setLoadingFromDB(false);
         return;
+      }
+
+      setCurrentUserId(user.id);
+
+      const storedDraftUserId = localStorage.getItem(LAB_DRAFT_USER_KEY);
+      if (storedDraftUserId && storedDraftUserId !== user.id) {
+        clearLabDraftStorage();
       }
 
       const { data } = await supabase
@@ -63,25 +127,50 @@ const FormularioLAB = () => {
         .limit(1)
         .maybeSingle();
 
-      if (data?.answers) {
-        const allAnswers = data.answers as Record<string, any>;
-        if (allAnswers.lab && typeof allAnswers.lab === 'object' && Object.keys(allAnswers.lab).length > 0) {
-          setAnswers(allAnswers.lab);
-        }
+      if (!isActive) return;
+
+      const responseAnswers = data?.answers && typeof data.answers === 'object' && !Array.isArray(data.answers)
+        ? (data.answers as Record<string, unknown>)
+        : null;
+      const safeLabAnswers = sanitizeLabAnswers(responseAnswers?.lab);
+
+      if (Object.keys(safeLabAnswers).length > 0) {
+        setAnswers(safeLabAnswers);
+        setStep(getFirstIncompleteStep(safeLabAnswers));
+      } else {
+        clearLabDraftStorage();
       }
 
-      // Always clear stale localStorage — we loaded from DB
-      localStorage.removeItem(LAB_DRAFT_KEY);
-      localStorage.removeItem(LAB_STEP_KEY);
+      setDidHydrateUserData(true);
       setLoadingFromDB(false);
     };
-    loadFromDB();
+
+    void loadFromDB();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      void loadFromDB();
+    });
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
+    if (!didHydrateUserData || !currentUserId) return;
+
+    if (Object.keys(answers).length === 0 && step === 0) {
+      localStorage.removeItem(LAB_DRAFT_KEY);
+      localStorage.removeItem(LAB_STEP_KEY);
+      localStorage.setItem(LAB_DRAFT_USER_KEY, currentUserId);
+      return;
+    }
+
     localStorage.setItem(LAB_DRAFT_KEY, JSON.stringify(answers));
     localStorage.setItem(LAB_STEP_KEY, String(step));
-  }, [answers, step]);
+    localStorage.setItem(LAB_DRAFT_USER_KEY, currentUserId);
+  }, [answers, currentUserId, didHydrateUserData, step]);
 
   const current = labSteps[step];
   const progress = ((step + 1) / labSteps.length) * 100;
@@ -150,8 +239,7 @@ const FormularioLAB = () => {
       return;
     }
 
-    localStorage.removeItem(LAB_DRAFT_KEY);
-    localStorage.removeItem(LAB_STEP_KEY);
+    clearLabDraftStorage();
     toast({ title: 'Framework LAB salvo!', description: 'Gerando seu Plano Estratégico...' });
     navigate('/plano-final');
   };

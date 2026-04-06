@@ -8,12 +8,10 @@ import { Loader2, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
+import { clearLabDraftStorage } from '@/lib/lab-storage';
 
 const DRAFT_KEY = 'diagnostic_draft';
 const DRAFT_STEP_KEY = 'diagnostic_step';
-const LAB_DRAFT_KEY = 'lab_draft';
-const LAB_STEP_KEY = 'lab_step';
-
 const Cadastro = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -69,8 +67,7 @@ const Cadastro = () => {
       if (authError) throw authError;
 
       // Clear LAB draft from any previous session
-      localStorage.removeItem(LAB_DRAFT_KEY);
-      localStorage.removeItem(LAB_STEP_KEY);
+      clearLabDraftStorage();
 
       if (authData.user) {
         const { error: saveError } = await supabase
