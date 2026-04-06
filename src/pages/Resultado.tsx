@@ -1,6 +1,6 @@
 import { useEffect, useState, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -448,6 +448,7 @@ function ProgressOverlay({ title, steps, currentStep, onClose }: { title: string
 
 const Resultado = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -578,7 +579,8 @@ const Resultado = () => {
     } finally { setGenerating(false); }
   };
 
-  useEffect(() => { loadAndGenerate(); }, []);
+  const forceFromLab = !!(location.state as any)?.forceRegenerate;
+  useEffect(() => { loadAndGenerate(forceFromLab); }, []);
 
   const handleRegenerate = () => { setSections([]); setActiveSection(0); setGenError(null); setGenerating(true); setGenStep(0); loadAndGenerate(true); };
 
