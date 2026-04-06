@@ -21,7 +21,7 @@ export function PyramidDiagram({ items }: DiagramProps) {
   const maxW = 360;
 
   return (
-    <div className="my-6 flex justify-center">
+    <div className="my-8 flex justify-center">
       <svg viewBox={`0 0 400 ${h + 10}`} className="w-full max-w-md" role="img">
         {items.map((item, i) => {
           const topW = minW + ((maxW - minW) * i) / Math.max(n - 1, 1);
@@ -61,7 +61,7 @@ export function FunnelDiagram({ items }: DiagramProps) {
   const maxW = 360;
 
   return (
-    <div className="my-6 flex justify-center">
+    <div className="my-8 flex justify-center">
       <svg viewBox={`0 0 400 ${h + 10}`} className="w-full max-w-md" role="img">
         {items.map((item, i) => {
           const w = maxW - (i * (maxW - 100)) / Math.max(n - 1, 1);
@@ -94,7 +94,7 @@ export function FlowDiagram({ items }: DiagramProps) {
 
   // Vertical layout for better readability
   return (
-    <div className="my-6 flex justify-center">
+    <div className="my-8 flex justify-center">
       <div className="flex flex-col gap-0 w-full max-w-lg">
         {items.map((item, i) => {
           const label = item.includes(':') ? item.split(':')[0].trim() : item;
@@ -125,7 +125,7 @@ export function ComparisonDiagram({ items }: DiagramProps) {
   const compText = ['text-blue-700', 'text-violet-700', 'text-emerald-700', 'text-amber-700'];
 
   return (
-    <div className="my-6 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
+    <div className="my-8 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
       {items.map((item, i) => {
         const label = item.includes(':') ? item.split(':')[0].trim() : item;
         const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
@@ -149,7 +149,7 @@ export function GaugeDiagram({ items }: DiagramProps) {
   const gaugeColor = value <= 3 ? '#ef4444' : value <= 6 ? '#f59e0b' : '#10b981';
 
   return (
-    <div className="my-6 flex justify-center">
+    <div className="my-8 flex justify-center">
       <svg viewBox="0 0 200 130" className="w-full max-w-xs" role="img">
         <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeLinecap="round" />
         <path

@@ -51,22 +51,6 @@ const timelineColors = [
   { bg: 'bg-cyan-500', light: 'bg-cyan-50 border-cyan-200', text: 'text-cyan-700' },
 ];
 
-// ─── Diagram to table for PDF ───
-
-function renderDiagramAsTable(diagram: ParsedDiagram): string {
-  const items = diagram.items;
-  if (items.length === 0) return '';
-  const rows = items.map(item => {
-    const label = item.includes(':') ? item.split(':')[0].trim() : item;
-    const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-    return `<tr><td style="padding:4px 8px;font-weight:600;border-bottom:1px solid #e5e7eb;font-size:11px;color:#1e40af;">${label}</td><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;font-size:11px;color:#555;">${desc}</td></tr>`;
-  }).join('');
-  const typeLabel = diagram.type === 'pyramid' ? 'Hierarquia' : diagram.type === 'funnel' ? 'Funil' : diagram.type === 'flow' ? 'Fluxo' : diagram.type === 'comparison' ? 'Comparação' : 'Indicador';
-  return `<div style="margin:8px 0;"><table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
-    <thead><tr style="background:#1e40af;color:white;"><th colspan="2" style="padding:5px 8px;text-align:left;font-size:10px;font-weight:700;">${typeLabel}</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-
 // ─── Markdown helpers ───
 
 function markdownToHtml(md: string): string {
