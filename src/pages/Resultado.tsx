@@ -342,20 +342,20 @@ function SectionContent({ section }: { section: PlanSection }) {
   const devParts = parseDiagrams(blocks.desenvolvimento);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Block 1: Contexto Teórico */}
       {blocks.contexto && (
-        <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
-          <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="h-4 w-4 text-red-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
+        <div className="border-l-4 border-l-red-400 rounded-r-lg p-3 bg-red-50/30 dark:bg-red-950/10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <BookOpen className="h-3.5 w-3.5 text-red-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">{blocks.contexto}</p>
         </div>
       )}
 
       {/* Block 2: Desenvolvimento */}
-      <div className="prose prose-xs max-w-none text-muted-foreground text-xs [&_h2]:text-foreground [&_h2]:text-base [&_h3]:text-foreground [&_h3]:text-sm [&_h4]:text-foreground [&_h4]:text-xs [&_strong]:text-foreground [&_p]:text-xs [&_li]:text-xs">
+      <div className="max-w-none text-muted-foreground text-xs [&_h2]:text-foreground [&_h2]:text-sm [&_h2]:font-bold [&_h3]:text-foreground [&_h3]:text-xs [&_h3]:font-semibold [&_h4]:text-foreground [&_h4]:text-xs [&_strong]:text-foreground [&_p]:text-xs [&_li]:text-xs [&_th]:text-xs [&_td]:text-xs">
         {devParts.map((part, i) => {
           if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
           return <DiagramRenderer key={i} diagram={part} />;
@@ -364,15 +364,15 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 3: Principais Pontos */}
       {blocks.principaisPontos && blocks.principaisPontos.length > 0 && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <List className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
+        <div className="rounded-lg border p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <List className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
           </div>
-          <ol className="space-y-2">
+          <ol className="space-y-1.5">
             {blocks.principaisPontos.map((pt, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+              <li key={i} className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold shrink-0 mt-0.5">{i + 1}</span>
                 <span className="text-xs text-muted-foreground leading-relaxed">{pt}</span>
               </li>
             ))}
@@ -387,10 +387,10 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 5: Conclusão */}
       {blocks.conclusao && (
-        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="h-4 w-4 text-emerald-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
+        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-3 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Target className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
         </div>
