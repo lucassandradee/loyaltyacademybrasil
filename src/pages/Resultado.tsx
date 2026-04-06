@@ -945,6 +945,7 @@ const Resultado = () => {
         };
 
         return (
+          <>
           <div className="border-2 border-border/80 rounded-xl overflow-hidden bg-card">
             <div className="grid grid-cols-1">
               <CanvasCell id="sumario" className="rounded-none border-0 border-b-2 border-border/60 min-h-[80px]" />
@@ -978,6 +979,8 @@ const Resultado = () => {
               <BookOpen className="h-4 w-4" /> Ver Plano Completo
             </Button>
           </div>
+          </>
+        );
         );
       })()}
 
