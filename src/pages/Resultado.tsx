@@ -289,7 +289,8 @@ function SectionContent({ section }: { section: PlanSection }) {
   // Split by marker headers (with or without emoji, accent-insensitive) — no more "Resumo dos Dados"
   const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
 
-  const content = section.content;
+  // Strip any "Resumo dos Dados" headers the AI might still generate
+  const content = section.content.replace(/^## (?:📊\s*)?Resumo dos Dados[^\n]*/gmi, '');
   const markers: { index: number; key: string; fullMatch: string }[] = [];
   let m;
   while ((m = markerRegex.exec(content)) !== null) {

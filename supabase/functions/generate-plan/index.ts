@@ -64,7 +64,7 @@ const BLOCO4_VISUAL = `Cada seção DEVE conter EXATAMENTE 2 marcadores visuais 
 
 REGRA CRÍTICA: Cada marcador visual deve ter EXATAMENTE 1 parágrafo curto de 2-3 frases. NUNCA coloque conteúdo de desenvolvimento dentro deles.
 
-Ordem obrigatória dentro de cada seção:
+Os ÚNICOS 2 marcadores permitidos são:
 
 1. PRIMEIRO marcador (no início da seção):
 ## Contexto Teorico
@@ -78,7 +78,7 @@ Ordem obrigatória dentro de cada seção:
 
 PROIBIDO: Colocar tabelas, listas, sub-headers ou parágrafos adicionais dentro dos marcadores visuais. Eles são APENAS 1 parágrafo cada.
 IMPORTANTE: Use exatamente esses headers sem emoji e sem acento: "## Contexto Teorico", "## Nossa Recomendacao".
-NÃO USE o marcador "## Resumo dos Dados" — ele foi removido.`;
+Qualquer outro marcador ## com emoji ou que não seja esses dois é PROIBIDO.`;
 
 // ─── Bloco 5: Regras Específicas por Seção ───
 const BLOCO5_EXCECOES = `Siga estas regras estritas para seções específicas:
@@ -192,9 +192,9 @@ ${cxSummary || 'Dados CX não disponíveis.'}
 
 LEMBRETE FINAL: 
 - Responda APENAS com o JSON válido, sem nenhum texto adicional.
-- Cada seção tem EXATAMENTE 2 marcadores visuais curtos (1 parágrafo, 2-3 frases): "## Contexto Teorico" no início e "## Nossa Recomendacao" no final. NÃO use "Resumo dos Dados".
+- Os ÚNICOS marcadores visuais permitidos são "## Contexto Teorico" (início) e "## Nossa Recomendacao" (final). Nenhum outro marcador ## especial é permitido.
 - ORDEM OBRIGATÓRIA dentro do desenvolvimento de cada seção: sub-headers ## com parágrafos analíticos → diagrama(s) de apoio → lista numerada com pontos-chave → tabela comparativa/métricas → Nossa Recomendação.
-- Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.`;
+- Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.
 }
 
 serve(async (req) => {
