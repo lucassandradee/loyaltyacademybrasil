@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2, BarChart3, List, Table2 } from 'lucide-react';
+import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2, BarChart3, List, Table2, AlertTriangle, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
@@ -14,6 +14,7 @@ import type { ClientData } from '@/lib/rfv-logic';
 import type { CXTicket } from '@/lib/cx-logic';
 import { cn } from '@/lib/utils';
 import { parseDiagrams, DiagramRenderer, type ParsedDiagram } from '@/components/plan/DiagramRenderer';
+import { Progress } from '@/components/ui/progress';
 
 
 interface PlanSection {
@@ -155,7 +156,7 @@ function parse5W2H(md: string): Action5W2H[] {
   const dataLines = lines.filter(l => !/^\|[\s-:]+\|$/.test(l.trim().replace(/\|/g, '|')));
   for (let i = 1; i < dataLines.length; i++) {
     const cells = dataLines[i].split('|').slice(1, -1).map(c => c.trim());
-    if (cells.length >= 7) {
+    if (cells.length >= 7 && cells.some(c => c.length > 0)) {
       actions.push({
         area: cells[0] || 'Estratégico',
         oQue: cells[1] || '',
@@ -168,7 +169,7 @@ function parse5W2H(md: string): Action5W2H[] {
       });
     }
   }
-  return actions;
+  return actions.filter(a => a.oQue.length > 0);
 }
 
 function parseSectionsFromContent(planContent: any): PlanSection[] {
@@ -195,11 +196,8 @@ interface SectionBlocks {
 
 function parseSectionBlocks(content: string): SectionBlocks {
   let remaining = content;
-
-  // Remove any "Resumo dos Dados" remnants
   remaining = remaining.replace(/##\s*📊?\s*Resumo dos Dados[^\n]*\n?/g, '');
 
-  // 1. Extract Contexto Teórico
   let contexto: string | null = null;
   const ctxMatch = remaining.match(/##\s*(?:📚\s*)?Contexto Te[oó]rico[^\n]*\n([\s\S]*?)(?=\n##|$)/);
   if (ctxMatch) {
@@ -207,7 +205,6 @@ function parseSectionBlocks(content: string): SectionBlocks {
     remaining = remaining.replace(ctxMatch[0], '');
   }
 
-  // 5. Extract Conclusão (do it before desenvolvimento to remove from remaining)
   let conclusao: string | null = null;
   const concMatch = remaining.match(/##\s*(?:🎯\s*)?(?:Conclus[aã]o|Nossa Recomenda[cç][aã]o)[^\n]*\n([\s\S]*?)$/);
   if (concMatch) {
@@ -215,7 +212,6 @@ function parseSectionBlocks(content: string): SectionBlocks {
     remaining = remaining.replace(concMatch[0], '');
   }
 
-  // 4. Extract Tabela de Resultados
   let tabela: string | null = null;
   const tabMatch = remaining.match(/##\s*(?:📊\s*)?Tabela de Resultados[^\n]*\n([\s\S]*?)(?=\n##|$)/);
   if (tabMatch) {
@@ -223,7 +219,6 @@ function parseSectionBlocks(content: string): SectionBlocks {
     remaining = remaining.replace(tabMatch[0], '');
   }
 
-  // 3. Extract Principais Pontos
   let principaisPontos: string[] | null = null;
   const ppMatch = remaining.match(/##\s*(?:📋\s*)?Principais Pontos[^\n]*\n([\s\S]*?)(?=\n##|$)/);
   if (ppMatch) {
@@ -235,9 +230,7 @@ function parseSectionBlocks(content: string): SectionBlocks {
     remaining = remaining.replace(ppMatch[0], '');
   }
 
-  // 2. Desenvolvimento = whatever is left
   const desenvolvimento = remaining.trim();
-
   return { contexto, desenvolvimento, principaisPontos, tabela, conclusao };
 }
 
@@ -400,6 +393,57 @@ function SectionContent({ section }: { section: PlanSection }) {
   );
 }
 
+// ─── Generation status steps ───
+const generationSteps = [
+  'Coletando dados do diagnóstico...',
+  'Analisando RFV, NBO e CX...',
+  'Gerando conteúdo com IA...',
+  'Montando seções do plano...',
+];
+
+const pdfExportSteps = [
+  'Preparando seções...',
+  'Capturando blocos visuais...',
+  'Montando páginas do PDF...',
+  'Finalizando documento...',
+];
+
+// ─── Progress Overlay ───
+function ProgressOverlay({ title, steps, currentStep, onClose }: { title: string; steps: string[]; currentStep: number; onClose?: () => void }) {
+  const progress = Math.min(((currentStep + 1) / steps.length) * 100, 100);
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <Card className="w-full max-w-md mx-4 shadow-2xl">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-foreground">{title}</h3>
+            {onClose && (
+              <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Progress value={progress} className="h-2 mb-4" />
+          <div className="space-y-2">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-2">
+                {i < currentStep ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                ) : i === currentStep ? (
+                  <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border border-muted-foreground/30 shrink-0" />
+                )}
+                <span className={cn('text-sm', i <= currentStep ? 'text-foreground' : 'text-muted-foreground/50')}>{step}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main component ───
 
 const Resultado = () => {
@@ -407,10 +451,14 @@ const Resultado = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [genStep, setGenStep] = useState(0);
   const [sections, setSections] = useState<PlanSection[]>([]);
   const [activeSection, setActiveSection] = useState(0);
   const [hasLab, setHasLab] = useState(false);
   const [viewMode, setViewMode] = useState<'canvas' | 'detail'>('canvas');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfStep, setPdfStep] = useState(0);
+  const [genError, setGenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sections.length > 0) {
@@ -439,16 +487,20 @@ const Resultado = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/login'); return; }
 
+    setGenError(null);
+    setGenStep(0);
+
     if (!forceRegenerate) {
       const { data: existingPlan } = await supabase.from('generated_plans').select('plan_content').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (existingPlan?.plan_content) {
         const parsed = parseSectionsFromContent(existingPlan.plan_content);
-        if (parsed.length > 0 && parsed[0].content && !parsed[0].content.trim().startsWith('{') && !parsed[0].content.trim().startsWith('```')) {
+        if (parsed.length > 1 && parsed[0].content && !parsed[0].content.trim().startsWith('{') && !parsed[0].content.trim().startsWith('```')) {
           setSections(parsed); setHasLab(true); setLoading(false); return;
         }
       }
     }
 
+    setGenStep(0);
     const [profileRes, diagRes, rfvRes, cxRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('diagnostic_responses').select('answers').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -477,6 +529,7 @@ const Resultado = () => {
       desafio: diagAnswers.desafio,
     } : null;
 
+    setGenStep(1);
     let rfvSummary = '', nboSummary = '', cxSummary = '';
     if (rfvRes.data?.client_data) {
       const cd = rfvRes.data.client_data as unknown as ClientData[];
@@ -485,32 +538,41 @@ const Resultado = () => {
     }
     if (cxRes.data?.ticket_data) cxSummary = generateCXSummary(cxRes.data.ticket_data as unknown as CXTicket[]);
 
-    setGenerating(true); setLoading(false);
+    setGenerating(true); setLoading(false); setGenStep(2);
     try {
       const { data: funcData, error: funcError } = await supabase.functions.invoke('generate-plan', {
         body: { profile, labAnswers, companyData, rfvSummary, nboSummary, cxSummary },
       });
       if (funcError) throw new Error(funcError.message);
       if (funcData?.error) throw new Error(funcData.error);
+      
+      setGenStep(3);
       const planSections = parseSectionsFromContent(funcData);
+      
+      // Validate: must have more than 1 section
+      if (planSections.length <= 1) {
+        throw new Error('O plano gerado está incompleto. Apenas 1 seção foi retornada. Tente regenerar.');
+      }
+      
       setSections(planSections);
       const userId = (await supabase.auth.getUser()).data.user!.id;
       await supabase.from('generated_plans').delete().eq('user_id', userId);
       await supabase.from('generated_plans').insert({ user_id: userId, plan_content: JSON.parse(JSON.stringify({ sections: planSections })) });
     } catch (err: any) {
       console.error('Plan generation error:', err);
+      setGenError(err.message || 'Erro desconhecido ao gerar o plano.');
       toast({ title: 'Erro ao gerar plano', description: err.message || 'Tente novamente.', variant: 'destructive' });
     } finally { setGenerating(false); }
   };
 
   useEffect(() => { loadAndGenerate(); }, []);
 
-  const handleRegenerate = () => { setSections([]); setActiveSection(0); setGenerating(true); loadAndGenerate(true); };
+  const handleRegenerate = () => { setSections([]); setActiveSection(0); setGenError(null); setGenerating(true); setGenStep(0); loadAndGenerate(true); };
 
   const handleDownloadPDF = async () => {
+    setExportingPdf(true);
+    setPdfStep(0);
     try {
-      toast({ title: 'Gerando PDF...', description: 'Capturando o plano completo. Aguarde.' });
-
       const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
 
@@ -518,10 +580,12 @@ const Resultado = () => {
       const A4_H_MM = 297;
       const HEADER_H = 14;
       const FOOTER_H = 12;
-      const MARGIN_MM = 15;
+      const MARGIN_MM = 16;
       const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
       const CONTENT_H_MM = A4_H_MM - HEADER_H - FOOTER_H - 4;
-      const SECTION_GAP_MM = 3;
+      const BLOCK_GAP_MM = 2;
+
+      setPdfStep(0);
 
       const host = document.createElement('div');
       host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;z-index:-1;background:white;';
@@ -538,7 +602,7 @@ const Resultado = () => {
       host.appendChild(styleEl);
 
       const renderCanvas = async (element: HTMLElement, width = 794) => {
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 200));
         return html2canvas(element, {
           scale: 2,
           useCORS: true,
@@ -555,6 +619,8 @@ const Resultado = () => {
       };
 
       const capturedSections: CapturedSection[] = [];
+
+      setPdfStep(1);
 
       for (const section of sections) {
         const wrapper = document.createElement('div');
@@ -573,14 +639,23 @@ const Resultado = () => {
         root.render(createElement(SectionContent, { section }));
 
         host.appendChild(wrapper);
+        await new Promise(r => setTimeout(r, 300));
+        
         const titleCanvas = await renderCanvas(titleBar);
 
         const blockCanvases: HTMLCanvasElement[] = [];
         const blockElements = Array.from(mount.querySelectorAll('[data-pdf-block]')) as HTMLElement[];
 
         if (blockElements.length === 0) {
-          // Fallback: capture entire mount
-          blockCanvases.push(await renderCanvas(mount));
+          // If no blocks found, split mount children individually
+          const children = Array.from(mount.children) as HTMLElement[];
+          for (const child of children) {
+            if (child.offsetHeight === 0) continue;
+            blockCanvases.push(await renderCanvas(child, child.offsetWidth || 794));
+          }
+          if (blockCanvases.length === 0) {
+            blockCanvases.push(await renderCanvas(mount));
+          }
         } else {
           for (const block of blockElements) {
             if (block.offsetHeight === 0) continue;
@@ -594,6 +669,8 @@ const Resultado = () => {
       }
 
       document.body.removeChild(host);
+
+      setPdfStep(2);
 
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       let currentY = HEADER_H + 2;
@@ -624,60 +701,50 @@ const Resultado = () => {
         return heightMm;
       };
 
+      const pageBottom = HEADER_H + 2 + CONTENT_H_MM;
+
       capturedSections.forEach((sectionCapture, index) => {
+        // Each section ALWAYS starts on a new page
         if (index > 0) {
           pdf.addPage();
           currentY = HEADER_H + 2;
         }
 
-        const titleHeight = (sectionCapture.titleCanvas.height * CONTENT_W_MM) / sectionCapture.titleCanvas.width;
-        if (currentY + titleHeight > HEADER_H + 2 + CONTENT_H_MM) {
-          pdf.addPage();
-          currentY = HEADER_H + 2;
-        }
+        // Add section title
+        currentY += addCanvas(sectionCapture.titleCanvas, currentY) + BLOCK_GAP_MM;
 
-        currentY += addCanvas(sectionCapture.titleCanvas, currentY) + 2;
-
+        // Add each block - NEVER break a block across pages
         sectionCapture.blockCanvases.forEach((blockCanvas) => {
           const blockHeight = (blockCanvas.height * CONTENT_W_MM) / blockCanvas.width;
-          const pageLimit = HEADER_H + 2 + CONTENT_H_MM;
 
-          if (blockHeight <= CONTENT_H_MM && currentY + blockHeight > pageLimit) {
+          // If block fits on a page but not on current page → new page
+          if (blockHeight <= CONTENT_H_MM && currentY + blockHeight > pageBottom) {
             pdf.addPage();
             currentY = HEADER_H + 2;
           }
 
+          // If block is taller than a full page → scale it down to fit one page
           if (blockHeight > CONTENT_H_MM) {
-            const pxPerPage = (CONTENT_H_MM * blockCanvas.width) / CONTENT_W_MM;
-            let srcY = 0;
-            let firstSlice = true;
-
-            while (srcY < blockCanvas.height) {
-              if (!firstSlice) {
-                pdf.addPage();
-                currentY = HEADER_H + 2;
-              }
-
-              const sliceHeightPx = Math.min(pxPerPage, blockCanvas.height - srcY);
-              const sliceCanvas = document.createElement('canvas');
-              sliceCanvas.width = blockCanvas.width;
-              sliceCanvas.height = sliceHeightPx;
-              const ctx = sliceCanvas.getContext('2d');
-              if (ctx) {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-                ctx.drawImage(blockCanvas, 0, srcY, blockCanvas.width, sliceHeightPx, 0, 0, blockCanvas.width, sliceHeightPx);
-                currentY += addCanvas(sliceCanvas, currentY) + SECTION_GAP_MM;
-              }
-
-              srcY += sliceHeightPx;
-              firstSlice = false;
+            // Scale down to fit within CONTENT_H_MM
+            const scale = CONTENT_H_MM / blockHeight;
+            const scaledW = CONTENT_W_MM * scale;
+            const scaledH = CONTENT_H_MM;
+            const xOffset = MARGIN_MM + (CONTENT_W_MM - scaledW) / 2;
+            
+            if (currentY !== HEADER_H + 2) {
+              pdf.addPage();
+              currentY = HEADER_H + 2;
             }
+            
+            pdf.addImage(blockCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', xOffset, currentY, scaledW, scaledH);
+            currentY += scaledH + BLOCK_GAP_MM;
           } else {
-            currentY += addCanvas(blockCanvas, currentY) + SECTION_GAP_MM;
+            currentY += addCanvas(blockCanvas, currentY) + BLOCK_GAP_MM;
           }
         });
       });
+
+      setPdfStep(3);
 
       const totalPages = pdf.getNumberOfPages();
       for (let page = 1; page <= totalPages; page++) addHeaderFooter(page, totalPages);
@@ -686,10 +753,13 @@ const Resultado = () => {
       toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
     } catch (err) {
       console.error('PDF error:', err);
-      toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
+      toast({ title: 'Erro ao gerar PDF', description: 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setExportingPdf(false);
     }
   };
 
+  // Loading state
   if (loading) return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4">
       <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -697,6 +767,7 @@ const Resultado = () => {
     </div>
   );
 
+  // No LAB filled
   if (!hasLab) return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4">
       <FileText className="h-16 w-16 text-muted-foreground" />
@@ -706,11 +777,30 @@ const Resultado = () => {
     </div>
   );
 
+  // Generating with overlay
   if (generating && sections.length === 0) return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      <p className="text-lg font-medium text-muted-foreground">Gerando seu plano estratégico com IA...</p>
-      <p className="text-sm text-muted-foreground">Isso pode levar até 60 segundos</p>
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4">
+      <ProgressOverlay
+        title="Gerando Plano Estratégico"
+        steps={generationSteps}
+        currentStep={genStep}
+      />
+    </div>
+  );
+
+  // Generation error with retry
+  if (genError && sections.length === 0) return (
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">Erro na geração do plano</h2>
+          <p className="text-sm text-muted-foreground mb-4">{genError}</p>
+          <Button onClick={handleRegenerate} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -718,6 +808,15 @@ const Resultado = () => {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* PDF Export Overlay */}
+      {exportingPdf && (
+        <ProgressOverlay
+          title="Exportando PDF"
+          steps={pdfExportSteps}
+          currentStep={pdfStep}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -739,8 +838,8 @@ const Resultado = () => {
               <BookOpen className="h-3.5 w-3.5" /> Leitura
             </button>
           </div>
-          <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="gap-2" disabled={sections.length === 0}>
-            <Download className="h-4 w-4" /> PDF Completo
+          <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="gap-2" disabled={sections.length === 0 || exportingPdf}>
+            {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF Completo
           </Button>
           <Button onClick={handleRegenerate} disabled={generating} variant="outline" size="sm" className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -748,6 +847,19 @@ const Resultado = () => {
           </Button>
         </div>
       </div>
+
+      {/* Incomplete plan warning */}
+      {sections.length > 0 && sections.length < 3 && (
+        <Card className="mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-400">Plano incompleto — apenas {sections.length} seção(ões) gerada(s)</p>
+              <p className="text-xs text-amber-600 dark:text-amber-500">O ideal são 12 seções. Clique em "Regenerar" para tentar novamente.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Canvas Mode */}
       {viewMode === 'canvas' && sections.length > 0 && (() => {
