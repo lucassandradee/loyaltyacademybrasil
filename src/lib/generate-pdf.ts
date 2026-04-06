@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DiagnosticResult } from './diagnostic-logic';
 
-const BRAND_BLUE: [number, number, number] = [30, 64, 175];
+const BRAND_BLUE: [number, number, number] = [168, 0, 0];
 const DARK_GRAY: [number, number, number] = [51, 51, 51];
 const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
 
