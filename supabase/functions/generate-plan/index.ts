@@ -190,11 +190,11 @@ ${nboSummary || 'Dados NBO não disponíveis.'}
 ${cxSummary || 'Dados CX não disponíveis.'}
 (Nota para a IA: Use estes dados principalmente nas seções de Canais, Operações e Maturidade)
 
-LEMBRETE FINAL: 
+LEMBRETE FINAL:
 - Responda APENAS com o JSON válido, sem nenhum texto adicional.
 - Os ÚNICOS marcadores visuais permitidos são "## Contexto Teorico" (início) e "## Nossa Recomendacao" (final). Nenhum outro marcador ## especial é permitido.
 - ORDEM OBRIGATÓRIA dentro do desenvolvimento de cada seção: sub-headers ## com parágrafos analíticos → diagrama(s) de apoio → lista numerada com pontos-chave → tabela comparativa/métricas → Nossa Recomendação.
-- Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.
+- Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.`;
 }
 
 serve(async (req) => {
