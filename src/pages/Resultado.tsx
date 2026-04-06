@@ -535,10 +535,14 @@ const Resultado = () => {
       const marginPx = 56; // ~20mm lateral margins at 794px width
       const contentWidthPx = 794 - marginPx * 2; // usable content width
 
-      // Render each section individually, capture as canvas, then lay out on pages
-      const sectionCanvases: HTMLCanvasElement[] = [];
+      // For each section, render blocks individually, then lay out on pages
+      // Rule: each section starts on a new page; blocks never split across pages
+      type BlockCapture = { canvas: HTMLCanvasElement; isNewSection: boolean };
+      const blocks: BlockCapture[] = [];
 
-      // Cover page element
+      const h2cOpts = { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 794 };
+
+      // Cover page
       const coverDiv = document.createElement('div');
       coverDiv.style.cssText = `width:794px;background:white;`;
       coverDiv.className = 'bg-background text-foreground';
@@ -552,11 +556,11 @@ const Resultado = () => {
       coverDiv.appendChild(coverInner);
       hiddenHost.appendChild(coverDiv);
       await new Promise(r => setTimeout(r, 100));
-      const coverCanvas = await html2canvas(coverDiv, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 794 });
-      sectionCanvases.push(coverCanvas);
+      const coverCanvas = await html2canvas(coverDiv, h2cOpts);
+      blocks.push({ canvas: coverCanvas, isNewSection: true });
       hiddenHost.removeChild(coverDiv);
 
-      // Render each section separately
+      // Render each section — capture title bar + each child block separately
       for (const section of sections) {
         const sectionDiv = document.createElement('div');
         sectionDiv.style.cssText = `width:794px;background:white;padding:20px ${marginPx}px;`;
@@ -579,77 +583,102 @@ const Resultado = () => {
         hiddenHost.appendChild(sectionDiv);
         await new Promise(r => setTimeout(r, 400));
 
-        const sCanvas = await html2canvas(sectionDiv, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 794 });
-        sectionCanvases.push(sCanvas);
+        // Capture the title bar as the first block of this section (marks new section)
+        const titleCanvas = await html2canvas(titleBar, h2cOpts);
+        blocks.push({ canvas: titleCanvas, isNewSection: true });
+
+        // Capture each direct child of contentMount as a separate block
+        const children = contentMount.children;
+        if (children.length === 0) {
+          const contentCanvas = await html2canvas(contentMount, h2cOpts);
+          blocks.push({ canvas: contentCanvas, isNewSection: false });
+        } else {
+          for (let c = 0; c < children.length; c++) {
+            const child = children[c] as HTMLElement;
+            if (child.offsetHeight === 0) continue;
+            const childCanvas = await html2canvas(child, { ...h2cOpts, width: child.offsetWidth, windowWidth: 794 });
+            blocks.push({ canvas: childCanvas, isNewSection: false });
+          }
+        }
+
         hiddenHost.removeChild(sectionDiv);
       }
 
       document.body.removeChild(hiddenHost);
 
-      // Now lay out canvases on PDF pages — each section starts on a new page
+      // Layout blocks on PDF pages
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidthMm = doc.internal.pageSize.getWidth();
       const pageHeightMm = doc.internal.pageSize.getHeight();
       const headerH = 14;
       const footerH = 12;
-      const marginMm = 16; // lateral margins in mm
+      const marginMm = 16;
       const usableWidthMm = pageWidthMm - marginMm * 2;
-      const contentHeightMm = pageHeightMm - headerH - footerH - 4; // 4mm bottom breathing
-
+      const maxContentYMm = pageHeightMm - footerH - 4;
+      let cursorY = headerH + 2;
       let pageCount = 0;
 
-      const addHeaderFooter = (doc: any, pageNum: number, totalPages: number) => {
-        doc.setFillColor(30, 64, 175);
-        doc.rect(0, 0, pageWidthMm, headerH, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Loyalty Academy Brasil — Plano Estratégico', marginMm, 9);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${pageNum}/${totalPages}`, pageWidthMm - marginMm, 9, { align: 'right' });
-        const fY = pageHeightMm - footerH;
-        doc.setDrawColor(30, 64, 175);
-        doc.setLineWidth(0.3);
-        doc.line(marginMm, fY + 2, pageWidthMm - marginMm, fY + 2);
-        doc.setFontSize(7);
-        doc.setTextColor(120, 120, 120);
-        doc.text('Documento gerado pela Plataforma Loyalty Academy Brasil', marginMm, fY + 7);
-        doc.text(new Date().toLocaleDateString('pt-BR'), pageWidthMm - marginMm, fY + 7, { align: 'right' });
+      const newPage = () => {
+        if (pageCount > 0) doc.addPage();
+        pageCount++;
+        cursorY = headerH + 2;
       };
 
-      for (let i = 0; i < sectionCanvases.length; i++) {
-        const cvs = sectionCanvases[i];
-        const imgW = cvs.width;
-        const imgH = cvs.height;
-        const scale = usableWidthMm / imgW; // px to mm
-        const totalImgHeightMm = imgH * scale;
+      const addHeaderFooter = (d: any, pn: number, tp: number) => {
+        d.setFillColor(30, 64, 175);
+        d.rect(0, 0, pageWidthMm, headerH, 'F');
+        d.setTextColor(255, 255, 255);
+        d.setFontSize(8);
+        d.setFont('helvetica', 'bold');
+        d.text('Loyalty Academy Brasil — Plano Estratégico', marginMm, 9);
+        d.setFont('helvetica', 'normal');
+        d.text(`${pn}/${tp}`, pageWidthMm - marginMm, 9, { align: 'right' });
+        const fY = pageHeightMm - footerH;
+        d.setDrawColor(30, 64, 175);
+        d.setLineWidth(0.3);
+        d.line(marginMm, fY + 2, pageWidthMm - marginMm, fY + 2);
+        d.setFontSize(7);
+        d.setTextColor(120, 120, 120);
+        d.text('Documento gerado pela Plataforma Loyalty Academy Brasil', marginMm, fY + 7);
+        d.text(new Date().toLocaleDateString('pt-BR'), pageWidthMm - marginMm, fY + 7, { align: 'right' });
+      };
 
-        // If section fits in one page, place it directly
-        if (totalImgHeightMm <= contentHeightMm) {
-          if (pageCount > 0) doc.addPage();
-          pageCount++;
-          const imgData = cvs.toDataURL('image/jpeg', 0.95);
-          doc.addImage(imgData, 'JPEG', marginMm, headerH, usableWidthMm, totalImgHeightMm);
-        } else {
-          // Section is taller than one page — slice it into pages
-          const pxPerPageContent = contentHeightMm / scale;
-          const sliceCount = Math.ceil(imgH / pxPerPageContent);
+      for (const block of blocks) {
+        const cvs = block.canvas;
+        const scale = usableWidthMm / cvs.width;
+        const blockHMm = cvs.height * scale;
+
+        // New section → always new page
+        if (block.isNewSection) {
+          newPage();
+        } else if (cursorY + blockHMm > maxContentYMm && cursorY > headerH + 4) {
+          // Block doesn't fit → move to next page (don't split)
+          newPage();
+        }
+
+        // If block is taller than a full page, slice it (unavoidable)
+        if (blockHMm > maxContentYMm - headerH - 2) {
+          const pxPerPage = (maxContentYMm - headerH - 2) / scale;
+          const sliceCount = Math.ceil(cvs.height / pxPerPage);
           for (let s = 0; s < sliceCount; s++) {
-            if (pageCount > 0) doc.addPage();
-            pageCount++;
-            const srcY = s * pxPerPageContent;
-            const srcH = Math.min(pxPerPageContent, imgH - srcY);
+            if (s > 0) newPage();
+            const srcY = s * pxPerPage;
+            const srcH = Math.min(pxPerPage, cvs.height - srcY);
             const sliceCanvas = document.createElement('canvas');
-            sliceCanvas.width = imgW;
+            sliceCanvas.width = cvs.width;
             sliceCanvas.height = srcH;
             const ctx = sliceCanvas.getContext('2d')!;
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, imgW, srcH);
-            ctx.drawImage(cvs, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
-            const sliceImg = sliceCanvas.toDataURL('image/jpeg', 0.95);
-            const sliceHMm = srcH * scale;
-            doc.addImage(sliceImg, 'JPEG', marginMm, headerH, usableWidthMm, sliceHMm);
+            ctx.fillRect(0, 0, cvs.width, srcH);
+            ctx.drawImage(cvs, 0, srcY, cvs.width, srcH, 0, 0, cvs.width, srcH);
+            const img = sliceCanvas.toDataURL('image/jpeg', 0.95);
+            doc.addImage(img, 'JPEG', marginMm, cursorY, usableWidthMm, srcH * scale);
+            cursorY += srcH * scale;
           }
+        } else {
+          const img = cvs.toDataURL('image/jpeg', 0.95);
+          doc.addImage(img, 'JPEG', marginMm, cursorY, usableWidthMm, blockHMm);
+          cursorY += blockHMm + 2;
         }
       }
 
@@ -659,6 +688,7 @@ const Resultado = () => {
         doc.setPage(p);
         addHeaderFooter(doc, p, totalPages);
       }
+
 
       doc.save('Plano_Estrategico_Loyalty_LAB.pdf');
       toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
