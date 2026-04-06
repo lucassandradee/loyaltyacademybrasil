@@ -192,10 +192,8 @@ ${cxSummary || 'Dados CX não disponíveis.'}
 
 LEMBRETE FINAL: 
 - Responda APENAS com o JSON válido, sem nenhum texto adicional.
-- Os 3 marcadores visuais (Contexto Teorico, Resumo dos Dados, Nossa Recomendacao) são CURTOS (1 parágrafo, 2-3 frases). O conteúdo rico vem ENTRE eles.
-- Use sub-headers ## descritivos para organizar o desenvolvimento.
-- Estruture informações complexas com listas numeradas onde cada item tem título em negrito + explicação.
-- Inclua tabelas markdown sempre que houver dados comparativos.
+- Cada seção tem EXATAMENTE 2 marcadores visuais curtos (1 parágrafo, 2-3 frases): "## Contexto Teorico" no início e "## Nossa Recomendacao" no final. NÃO use "Resumo dos Dados".
+- ORDEM OBRIGATÓRIA dentro do desenvolvimento de cada seção: sub-headers ## com parágrafos analíticos → diagrama(s) de apoio → lista numerada com pontos-chave → tabela comparativa/métricas → Nossa Recomendação.
 - Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.`;
 }
 
