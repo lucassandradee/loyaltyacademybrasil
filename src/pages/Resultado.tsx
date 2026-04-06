@@ -563,7 +563,7 @@ const Resultado = () => {
 
         const titleBar = document.createElement('div');
         titleBar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
-        titleBar.innerHTML = `<div style="width:3px;height:20px;background:#1e40af;border-radius:2px;"></div><h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>`;
+        titleBar.innerHTML = `<div style="width:3px;height:20px;background:#a80000;border-radius:2px;"></div><h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>`;
         wrapper.appendChild(titleBar);
 
         const mount = document.createElement('div');
@@ -599,7 +599,7 @@ const Resultado = () => {
 
       const addHeaderFooter = (page: number, total: number) => {
         pdf.setPage(page);
-        pdf.setFillColor(30, 64, 175);
+        pdf.setFillColor(168, 0, 0);
         pdf.rect(0, 0, A4_W_MM, HEADER_H, 'F');
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(8);
@@ -608,7 +608,7 @@ const Resultado = () => {
         pdf.setFont('helvetica', 'normal');
         pdf.text(`${page}/${total}`, A4_W_MM - MARGIN_MM, 9, { align: 'right' });
         const footerY = A4_H_MM - FOOTER_H;
-        pdf.setDrawColor(30, 64, 175);
+        pdf.setDrawColor(168, 0, 0);
         pdf.setLineWidth(0.3);
         pdf.line(MARGIN_MM, footerY + 2, A4_W_MM - MARGIN_MM, footerY + 2);
         pdf.setFontSize(7);
