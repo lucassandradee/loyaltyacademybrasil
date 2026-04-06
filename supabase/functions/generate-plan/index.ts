@@ -189,28 +189,46 @@ serve(async (req) => {
     const result = await response.json();
     const content = result.choices?.[0]?.message?.content || "";
 
-    let planData;
-    try {
-      planData = JSON.parse(content.trim());
-    } catch {
-      try {
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          planData = JSON.parse(jsonMatch[1].trim());
-        } else {
-          const firstBrace = content.indexOf("{");
-          const lastBrace = content.lastIndexOf("}");
-          if (firstBrace !== -1 && lastBrace > firstBrace) {
-            planData = JSON.parse(content.substring(firstBrace, lastBrace + 1));
-          } else {
-            throw new Error("No JSON found");
-          }
-        }
-      } catch {
-        planData = {
-          sections: [{ id: "plano", title: "Plano Estrategico", content }],
-        };
+    let planData: any = null;
+
+    // Attempt 1: Direct parse
+    try { planData = JSON.parse(content.trim()); } catch { /* continue */ }
+
+    // Attempt 2: Extract from code fences
+    if (!planData) {
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        try { planData = JSON.parse(jsonMatch[1].trim()); } catch { /* continue */ }
       }
+    }
+
+    // Attempt 3: Extract from first { to last }
+    if (!planData) {
+      const firstBrace = content.indexOf("{");
+      const lastBrace = content.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        try { planData = JSON.parse(content.substring(firstBrace, lastBrace + 1)); } catch { /* continue */ }
+      }
+    }
+
+    // Attempt 4: Maybe nested — content has a sections array inside code fences inside a wrapper
+    if (!planData || (planData.sections?.length === 1 && planData.sections[0].id === "plano")) {
+      try {
+        const inner = planData?.sections?.[0]?.content || content;
+        const cleaned = inner.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+        const fb = cleaned.indexOf("{");
+        const lb = cleaned.lastIndexOf("}");
+        if (fb !== -1 && lb > fb) {
+          const parsed = JSON.parse(cleaned.substring(fb, lb + 1));
+          if (parsed.sections?.length > 1) planData = parsed;
+        }
+      } catch { /* continue */ }
+    }
+
+    // Final fallback
+    if (!planData) {
+      console.error("Failed to parse AI response. First 500 chars:", content.substring(0, 500));
+      planData = { sections: [{ id: "plano", title: "Plano Estrategico", content }] };
     }
 
     return new Response(JSON.stringify(planData), {
