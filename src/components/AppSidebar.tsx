@@ -90,14 +90,18 @@ export function AppSidebar() {
       const [rfvRes, cxRes, diagRes] = await Promise.all([
         supabase.from('rfv_uploads').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
         supabase.from('cx_uploads').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
-        supabase.from('diagnostic_responses').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+        supabase.from('diagnostic_responses').select('id, answers').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
+
+      // LAB is only complete if diagnostic_responses has answers.lab key
+      const diagAnswers = diagRes.data?.answers as Record<string, any> | null;
+      const labDone = !!(diagAnswers?.lab && typeof diagAnswers.lab === 'object' && Object.keys(diagAnswers.lab).length > 0);
 
       setCompletion({
         rfv: !!rfvRes.data,
         nbo: !!rfvRes.data, // NBO uses same data as RFV
         cx: !!cxRes.data,
-        lab: !!diagRes.data,
+        lab: labDone,
       });
     };
     fetchCompletion();
