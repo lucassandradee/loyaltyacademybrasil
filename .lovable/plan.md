@@ -1,52 +1,43 @@
 
 
-# Ajustes na Estrutura Visual: Remover "Resumo dos Dados" + Reordenar Elementos
+# Corrigir Estrutura: Remover Resumo dos Dados + Ordem Correta + PDF com Diagramas
+
+## Problemas Identificados
+
+1. **Resumo dos Dados ainda no prompt**: O `LEMBRETE FINAL` (linha 195) ainda menciona "3 marcadores visuais (Contexto Teorico, Resumo dos Dados, Nossa Recomendacao)" — contradiz o BLOCO4 que diz para não usar. A IA fica confusa.
+
+2. **Ordem dos elementos**: O BLOCO3 já define a ordem correta (texto → diagrama → lista → tabela → recomendação), mas o LEMBRETE FINAL contradiz isso.
+
+3. **PDF não mostra diagramas direito**: O `renderDiagram` existe e funciona, mas o PDF processa os chunks sequencialmente e os diagramas são renderizados como tabelas genéricas com 2 colunas ("Hierarquia" / "Detalhe"). O problema real é que o resultado visual no PDF é pobre comparado à tela — precisa melhorar a apresentação dos diagramas no PDF para ficarem mais parecidos com a tela.
 
 ## Mudanças
 
-### 1. Remover bloco "Resumo dos Dados" do prompt e da renderização
+### 1. `supabase/functions/generate-plan/index.ts`
+- Corrigir LEMBRETE FINAL: trocar "3 marcadores" por "2 marcadores (Contexto Teorico e Nossa Recomendacao)"
+- Remover menção a "Resumo dos Dados" do lembrete
+- Reforçar a ordem: texto analítico → diagrama(s) → lista numerada → tabela → Nossa Recomendação
 
-**`supabase/functions/generate-plan/index.ts`**:
-- No `BLOCO4_VISUAL`, remover toda referência ao marcador `## Resumo dos Dados`
-- Reduzir de 3 para 2 marcadores: `## Contexto Teorico` (início) e `## Nossa Recomendacao` (final)
-- Atualizar a ordem: Contexto Teórico → desenvolvimento com texto + diagramas + listas + tabelas → Nossa Recomendação
+### 2. `src/pages/Resultado.tsx` — PDF rendering
+- Melhorar `renderDiagram` para criar visuais mais ricos:
+  - **Comparison**: Cards lado a lado com fundo colorido e borda
+  - **Flow**: Caixas com setas entre elas
+  - **Pyramid/Funnel**: Blocos com largura variável
+  - **Gauge**: Indicador numérico com destaque visual
+- Usar formas geométricas do jsPDF (rect, line, text) em vez de autoTable genérica para diagramas
+- Garantir que o processamento sequencial de chunks não pule nenhum diagrama
 
-**`src/pages/Resultado.tsx`**:
-- Remover `'resumo dos dados'` do `blockConfig` e do regex de markers
-- Remover a cor amber e o ícone BarChart3 associados
+### 3. `src/pages/Resultado.tsx` — SectionContent (tela)
+- Sem mudanças na renderização da tela — já está correto com markers + conteúdo + diagramas inline
 
-### 2. Reordenar elementos no prompt para: texto → diagrama → lista → tabela → recomendação
-
-**`supabase/functions/generate-plan/index.ts`** — `BLOCO3_CONTEUDO` e `BLOCO4_VISUAL`:
-- Instruir a IA a seguir a ordem dentro do desenvolvimento:
-  1. Parágrafos de análise (desenvolvimento do texto)
-  2. Diagrama(s) de apoio logo após o texto
-  3. Lista numerada com pontos-chave (cada item com título bold + explicação)
-  4. Tabela comparativa/de métricas
-  5. `## Nossa Recomendacao` como fechamento
-
-### 3. Melhorar diagramas e listas no PDF
-
-**`src/pages/Resultado.tsx`** — `handleDownloadPDF`:
-- Os diagramas já são renderizados como tabelas no PDF via `renderDiagram` — verificar que estão aparecendo na sequência correta
-- Garantir que listas numeradas (`1. **Título:** explicação`) sejam renderizadas no PDF com formatting adequado (atualmente stripped pela função `renderTextBlock` que remove `**` e converte `\d+.` para `→`)
-- Ajustar `renderTextBlock` para manter os bullets/numeração e usar bold quando possível (setFont bold para trechos entre `**`)
-
-### 4. Paridade visual tela ↔ PDF
-
-O PDF hoje perde diagramas porque a regex de tabela pode engolir conteúdo antes do diagram marker. O sistema de chunks sequenciais já existe — verificar que não há overlap entre slices de tabela e diagram. Especificamente:
-- Garantir que `cleanSlices` não pula diagrams que estejam logo após uma tabela
-- Melhorar `renderTextBlock` para processar listas (linhas com `- ` ou `1. `) como items indentados com bullets em vez de texto corrido
-
-## Arquivos afetados
+## Arquivos
 
 | Arquivo | Ação |
 |---------|------|
-| `supabase/functions/generate-plan/index.ts` | Remover "Resumo dos Dados", reordenar regras de estrutura |
-| `src/pages/Resultado.tsx` | Remover marker "resumo dos dados" do renderer + melhorar PDF lists/diagrams |
+| `supabase/functions/generate-plan/index.ts` | Corrigir LEMBRETE FINAL (remover Resumo dos Dados) |
+| `src/pages/Resultado.tsx` | Melhorar renderDiagram no PDF para visual rico |
 
 ## Resultado esperado
-- Cada seção: Contexto Teórico (curto) → texto analítico → diagrama → lista → tabela → Nossa Recomendação (curto)
-- PDF mostra diagramas (como tabelas formatadas) e listas na mesma ordem da tela
-- Visual mais limpo sem o bloco amarelo de "Resumo dos Dados"
+- Prompt sem contradições — IA gera apenas 2 markers (Contexto + Recomendação)
+- Ordem: texto → diagrama → lista → tabela → recomendação
+- PDF com diagramas visuais ricos (cards coloridos, setas, blocos) em vez de tabelas genéricas
 
