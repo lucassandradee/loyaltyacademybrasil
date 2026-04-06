@@ -1,36 +1,48 @@
 
 
-# PDF Pixel-Perfect via html2canvas + Ajustes Visuais
+# PDF Idêntico à Tela + Tipografia Consistente
 
-## 3 Mudanças
+## Problema Raiz
+O PDF **não clona** o DOM da tela — ele reconstrói HTML manualmente no offscreen div (linhas 539-631), por isso fica diferente: cores, fontes, diagramas, tudo é recriado do zero. Os diagramas SVG nem são incluídos. A tela também tem inconsistência de fontes (tabela com fonte maior que o resto).
 
-### 1. Remover wrapper da "Tabela de Resultados"
-No `SectionContent`, o bloco 4 (linhas 384-391) tem um `div` com borda, ícone e label "TABELA DE RESULTADOS". Remover tudo isso — renderizar apenas o `dangerouslySetInnerHTML` da tabela diretamente, sem container extra.
+## Solução
 
-### 2. Reduzir fontes do plano
-No `SectionContent` e nos componentes visuais:
-- Título da seção (`CardTitle`): de `text-xl` para `text-lg`
-- Contexto Teórico / Conclusão: texto de `text-sm` para `text-xs`
-- Labels "CONTEXTO TEÓRICO" / "CONCLUSÃO": já são `text-xs`, manter
-- Desenvolvimento: de `prose-sm` para `prose-xs` (custom) ou adicionar `text-sm` override e reduzir espaçamentos
-- Principais Pontos: texto de `text-sm` para `text-xs`, círculos de `w-6 h-6` para `w-5 h-5`
-- H2/H3 no markdown: reduzir 1 nível (h2 de `text-lg` para `text-base`, h3 de `text-base` para `text-sm`)
+### 1. PDF: Clonar o DOM real em vez de reconstruir
+Reescrever `handleDownloadPDF` para:
+- Renderizar temporariamente TODAS as 12 seções na tela (não apenas a ativa) dentro de um container oculto
+- **Clonar os elementos renderizados pelo React** (`cloneNode(true)`) para o div offscreen
+- Isso garante que SVGs (diagramas), tabelas, cores, fontes — tudo é capturado exatamente como aparece
+- Capturar com `html2canvas` e fatiar em páginas A4
 
-### 3. PDF via html2canvas (cópia pixel-perfect)
-- Instalar `html2canvas` (npm)
-- Reescrever `handleDownloadPDF`:
-  1. Criar um `div` offscreen (posição absoluta, fora da tela) com largura fixa de ~794px (A4)
-  2. Renderizar TODAS as 12 seções sequencialmente nesse div (reutilizando `SectionContent`, `TimelineView`, `ActionPlan5W2H`)
-  3. Usar `html2canvas` para capturar o div inteiro como imagem de alta resolução (scale: 2)
-  4. Fatiar a imagem em páginas A4 (cada ~1123px de altura na escala 2x)
-  5. Adicionar cada fatia como página no jsPDF
-  6. Adicionar header/footer simples por cima de cada página
-  7. Salvar o PDF
-- Isso garante que o PDF é uma cópia exata do que aparece na tela — mesmas tabelas, diagramas SVG, cores, fontes, tudo
+### 2. Tipografia: 3 tamanhos únicos
+Padronizar em `SectionContent` e `markdownToHtml`:
+- **Título**: `text-sm font-bold` (14px) — para h2, h3, section title
+- **Subtítulo**: `text-xs font-semibold` (12px) — para h4, labels
+- **Corpo**: `text-xs` (12px) — tudo: parágrafos, bullets, tabelas, pontos
 
-### Arquivo único
-`src/pages/Resultado.tsx` — remover wrapper tabela, reduzir fontes, reescrever `handleDownloadPDF` com html2canvas
+Ajustes específicos:
+- Tabela markdown: forçar `text-xs` no `<th>` e `<td>` (hoje não tem controle de tamanho)
+- `markdownToHtml`: h2 de `text-lg` → `text-sm`, h3 de `text-base` → `text-xs font-semibold`
+- Remover `prose-xs` wrapper, usar classes diretas
 
-### Dependência nova
-`html2canvas` — instalar via package.json
+### 3. Diagramas no PDF
+Como vamos clonar o DOM real, os SVGs dos diagramas serão incluídos automaticamente. Hoje eles são ignorados porque o PDF reconstrói HTML sem os `<!-- DIAGRAM -->` markers.
+
+## Implementação Técnica
+
+**`handleDownloadPDF`** — nova lógica:
+1. Criar container offscreen com `width: 794px`
+2. Para cada seção, criar um React root temporário que renderiza `<SectionContent section={s} />` (ou clonar do DOM)
+3. Alternativa mais simples: renderizar todas as seções de uma vez no detail mode em um div oculto, depois clonar com `cloneNode(true)`
+4. `html2canvas` captura → fatiar → jsPDF
+
+**`markdownToHtml`** — ajustar classes:
+- h2: `text-sm font-bold` (era `text-lg`)
+- h3: `text-xs font-semibold` (era `text-base`)
+- th/td: adicionar `text-xs`
+
+**`SectionContent`** — já usa `text-xs` na maioria, verificar tabela
+
+## Arquivo
+`src/pages/Resultado.tsx` — único arquivo modificado
 
