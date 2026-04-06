@@ -1,64 +1,59 @@
 
-# Ajustar PDF, espaçamento e “Principais Pontos”
+Objetivo: corrigir de vez a lógica de quebra de página do PDF e trocar todo o azul hardcoded pelo vermelho da marca.
 
-## Problema real no código
-Hoje o PDF não usa os diagramas reais da tela. Em `src/pages/Resultado.tsx`, o `handleDownloadPDF` ainda reconstrói o conteúdo manualmente e chama `renderDiagramAsTable()`, então:
-- o diagrama vira tabela/outro formato no PDF
-- o PDF nunca fica idêntico à tela
-- o espaçamento do PDF segue outro layout
+1. Corrigir a regra de paginação no PDF
+- Reescrever o fluxo de `handleDownloadPDF` em `src/pages/Resultado.tsx` para trabalhar com:
+  - seção = sempre começa em nova página
+  - bloco = nunca quebra entre páginas
+- Manter a captura por blocos, mas parar de “fatiar” blocos normais em alturas arbitrárias.
+- Antes de inserir cada bloco no PDF:
+  - calcular a altura real dele no PDF
+  - se não couber no espaço restante, abrir nova página
+  - inserir o bloco inteiro na página seguinte
+- Só permitir quebra quando um bloco isolado for maior que a área útil inteira da página. Nesse caso:
+  - quebrar apenas esse bloco excepcionalmente
+  - preferencialmente em sub-blocos lógicos, não em corte cego por pixels
 
-Na tela, os blocos também estão compactados demais:
-- `SectionContent` usa `space-y-3`
-- `markdownToHtml()` usa margens pequenas (`mb-1`, `mb-2`, `space-y-0.5`)
-- “Principais Pontos” usa círculo pequeno demais (`w-4.5 h-4.5 text-[9px]`)
+2. Separar melhor os blocos para a exportação
+- Em `SectionContent`, marcar explicitamente os blocos principais para o PDF:
+  - contexto
+  - desenvolvimento textual por trecho
+  - cada diagrama
+  - principais pontos
+  - tabela
+  - conclusão
+- Isso evita capturar uma seção inteira como uma imagem grande demais e evita cortes feios no meio de conteúdo diferente.
 
-## O que vou ajustar
-
-### 1. PDF com os diagramas reais, sem transformar em tabela
+3. Eliminar o azul hardcoded do PDF
 Em `src/pages/Resultado.tsx`:
-- remover a estratégia de reconstruir HTML manualmente para exportação
-- parar de usar `renderDiagramAsTable()` no fluxo do PDF
-- criar um container oculto, em largura fixa A4, renderizado pelo React com **as mesmas seções e os mesmos componentes reais da tela**
-- capturar esse DOM real com `html2canvas`
-- gerar o PDF a partir dessa captura
+- trocar os azuis fixos do PDF:
+  - barra do título da seção (`#1e40af`)
+  - header/footer (`30, 64, 175`)
+- usar a cor primária da marca (vermelho) em todos esses pontos, mantendo consistência com a interface.
 
-Resultado:
-- SVGs dos diagramas entram como aparecem na tela
-- cores, fontes, espaçamentos e blocos ficam consistentes
-- o PDF passa a ser uma cópia visual do plano
+4. Corrigir os diagramas que ainda estão azuis
+Em `src/components/plan/DiagramRenderer.tsx`:
+- substituir as paletas azuis fixas de:
+  - `pyramidColors`
+  - `funnelColors`
+  - `FlowDiagram`
+  - `ComparisonDiagram`
+- migrar para uma paleta vermelha/bordô compatível com a identidade visual atual.
+- Garantir que o PDF fique visualmente coerente com a marca, já que ele captura esses componentes reais.
 
-### 2. Melhorar espaçamento geral do plano
-Em `SectionContent` e `markdownToHtml()`:
-- aumentar o espaçamento entre os blocos principais da seção
-- aumentar respiro entre títulos, parágrafos, listas e tabelas
-- dar mais margem vertical antes/depois dos diagramas
-- melhorar a distância entre uma linha e outra nas listas e no texto corrido
+5. Ajustar o visual sem repetir os erros anteriores
+- Não mexer novamente nos espaçamentos globais do plano, já que você pediu para cancelar essas mudanças.
+- Limitar os ajustes apenas ao necessário para:
+  - paginação correta no PDF
+  - cor correta no PDF/diagramas
 
-A ideia é deixar a leitura mais limpa, sem “grudar” conteúdo.
+Resultado esperado
+- Seção 1 começa em uma página; seção 2 começa sempre em outra; e assim por diante
+- blocos não quebram feio entre páginas
+- desaparece o azul indevido do PDF
+- diagramas passam a refletir a cor da marca
 
-### 3. Melhorar os números de “Principais Pontos”
-No bloco “Principais Pontos”:
-- aumentar o círculo do número
-- aumentar o número dentro dele
-- alinhar melhor o texto com o marcador
-- aumentar o espaçamento entre os itens
-
-Resultado esperado:
-- os 5 pontos ficam visíveis de verdade
-- o número vira um marcador claro, não um detalhe perdido
-
-## Arquivos a ajustar
-- `src/pages/Resultado.tsx`
-  - refatorar `handleDownloadPDF`
-  - remover a conversão de diagramas em tabela no PDF
-  - melhorar espaçamentos de `SectionContent`
-  - aumentar os círculos de “Principais Pontos”
-  - ajustar o HTML gerado por `markdownToHtml()`
-- `src/components/plan/DiagramRenderer.tsx`
-  - aumentar margens/respiração vertical dos diagramas para harmonizar com o restante da seção
-
-## Resultado esperado
-- PDF com diagramas reais, sem virar tabela ou “outras coisas”
-- PDF visualmente muito mais fiel à tela
-- seção com mais respiro entre linhas e blocos
-- “Principais Pontos” com números grandes e legíveis dentro de círculos melhores
+Detalhes técnicos
+- Problema atual: o código ainda usa `sliceCanvas` quando `blockHeight > CONTENT_H_MM`, o que produz cortes ruins.
+- Problema de cor: há hardcode azul em `Resultado.tsx` (header/footer/title bar) e em `DiagramRenderer.tsx`.
+- Estratégia correta: paginação orientada por bloco lógico, não por fatias visuais fixas.
