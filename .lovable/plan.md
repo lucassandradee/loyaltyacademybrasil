@@ -1,43 +1,36 @@
 
 
-# Corrigir Estrutura: Remover Resumo dos Dados + Ordem Correta + PDF com Diagramas
+# Remover "Resumo dos Dados" de vez + Reforçar ordem dos elementos
 
-## Problemas Identificados
-
-1. **Resumo dos Dados ainda no prompt**: O `LEMBRETE FINAL` (linha 195) ainda menciona "3 marcadores visuais (Contexto Teorico, Resumo dos Dados, Nossa Recomendacao)" — contradiz o BLOCO4 que diz para não usar. A IA fica confusa.
-
-2. **Ordem dos elementos**: O BLOCO3 já define a ordem correta (texto → diagrama → lista → tabela → recomendação), mas o LEMBRETE FINAL contradiz isso.
-
-3. **PDF não mostra diagramas direito**: O `renderDiagram` existe e funciona, mas o PDF processa os chunks sequencialmente e os diagramas são renderizados como tabelas genéricas com 2 colunas ("Hierarquia" / "Detalhe"). O problema real é que o resultado visual no PDF é pobre comparado à tela — precisa melhorar a apresentação dos diagramas no PDF para ficarem mais parecidos com a tela.
+## Problema
+O prompt já diz "NÃO USE Resumo dos Dados" mas a IA continua gerando porque:
+1. A frase "NÃO USE o marcador Resumo dos Dados" paradoxalmente **ensina** o modelo que esse marcador existe
+2. O renderer não filtra/esconde esse header — ele aparece como conteúdo normal com `##`
 
 ## Mudanças
 
 ### 1. `supabase/functions/generate-plan/index.ts`
-- Corrigir LEMBRETE FINAL: trocar "3 marcadores" por "2 marcadores (Contexto Teorico e Nossa Recomendacao)"
-- Remover menção a "Resumo dos Dados" do lembrete
-- Reforçar a ordem: texto analítico → diagrama(s) → lista numerada → tabela → Nossa Recomendação
+- **Apagar TODA menção** a "Resumo dos Dados" do prompt inteiro (linhas 81 e 195) — nem "não use", nem nada. Se o modelo nunca vê o termo, não gera.
+- Reforçar no LEMBRETE FINAL: "Os ÚNICOS marcadores visuais permitidos são `## Contexto Teorico` e `## Nossa Recomendacao`. Qualquer outro marcador com `##` seguido de emoji é PROIBIDO."
+- Reforçar ordem explícita: texto analítico → diagrama(s) → lista numerada → tabela → `## Nossa Recomendacao`
 
-### 2. `src/pages/Resultado.tsx` — PDF rendering
-- Melhorar `renderDiagram` para criar visuais mais ricos:
-  - **Comparison**: Cards lado a lado com fundo colorido e borda
-  - **Flow**: Caixas com setas entre elas
-  - **Pyramid/Funnel**: Blocos com largura variável
-  - **Gauge**: Indicador numérico com destaque visual
-- Usar formas geométricas do jsPDF (rect, line, text) em vez de autoTable genérica para diagramas
-- Garantir que o processamento sequencial de chunks não pule nenhum diagrama
+### 2. `src/pages/Resultado.tsx` — SectionContent
+- Adicionar filtro ativo: se o renderer encontrar um header `## ... Resumo dos Dados` no conteúdo, **stripá-lo silenciosamente** (remover o header e tratar o texto abaixo como conteúdo normal)
+- Isso garante que mesmo que a IA desobedeça, o bloco visual colorido não aparece
 
-### 3. `src/pages/Resultado.tsx` — SectionContent (tela)
-- Sem mudanças na renderização da tela — já está correto com markers + conteúdo + diagramas inline
+### 3. Ordem visual na tela (já está correto no prompt, mas reforçar)
+A ordem dentro de cada seção deve ser:
+1. `## Contexto Teorico` (card com borda)
+2. Texto analítico extenso (parágrafos, sub-headers)
+3. Diagrama(s)
+4. Lista numerada
+5. Tabela
+6. `## Nossa Recomendacao` (card com borda — último elemento)
 
 ## Arquivos
 
 | Arquivo | Ação |
 |---------|------|
-| `supabase/functions/generate-plan/index.ts` | Corrigir LEMBRETE FINAL (remover Resumo dos Dados) |
-| `src/pages/Resultado.tsx` | Melhorar renderDiagram no PDF para visual rico |
-
-## Resultado esperado
-- Prompt sem contradições — IA gera apenas 2 markers (Contexto + Recomendação)
-- Ordem: texto → diagrama → lista → tabela → recomendação
-- PDF com diagramas visuais ricos (cards coloridos, setas, blocos) em vez de tabelas genéricas
+| `supabase/functions/generate-plan/index.ts` | Apagar toda menção a "Resumo dos Dados", reforçar que só 2 marcadores existem |
+| `src/pages/Resultado.tsx` | Filtro para strip de "Resumo dos Dados" se aparecer no conteúdo |
 
