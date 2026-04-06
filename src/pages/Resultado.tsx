@@ -838,9 +838,7 @@ const Resultado = () => {
               <BookOpen className="h-3.5 w-3.5" /> Leitura
             </button>
           </div>
-          <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="gap-2" disabled={sections.length === 0 || exportingPdf}>
-            {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF Completo
-          </Button>
+          {/* PDF button hidden for now */}
           <Button onClick={handleRegenerate} disabled={generating} variant="outline" size="sm" className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Regenerar
