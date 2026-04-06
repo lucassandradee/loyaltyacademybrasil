@@ -516,100 +516,89 @@ const Resultado = () => {
 
       const A4_W_MM = 210;
       const A4_H_MM = 297;
-      const MARGIN_MM = 15;
-      const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
       const HEADER_H = 14;
       const FOOTER_H = 12;
-      const USABLE_H_MM = A4_H_MM - HEADER_H - FOOTER_H - 2;
+      const MARGIN_MM = 15;
+      const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
+      const CONTENT_H_MM = A4_H_MM - HEADER_H - FOOTER_H - 4;
+      const SECTION_GAP_MM = 3;
 
-      // Hidden host for rendering
       const host = document.createElement('div');
-      host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;z-index:-1;';
+      host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;z-index:-1;background:white;';
       document.body.appendChild(host);
 
-      // Copy stylesheets
       const styleEl = document.createElement('style');
-      let css = '';
+      let cssText = '';
       for (const sheet of Array.from(document.styleSheets)) {
-        try { for (const rule of Array.from(sheet.cssRules)) css += rule.cssText + '\n'; } catch {}
+        try {
+          for (const rule of Array.from(sheet.cssRules)) cssText += rule.cssText + '\n';
+        } catch {}
       }
-      styleEl.textContent = css;
+      styleEl.textContent = cssText;
       host.appendChild(styleEl);
 
-      // Capture each section as ONE complete canvas
-      const sectionCanvases: HTMLCanvasElement[] = [];
+      const renderCanvas = async (element: HTMLElement, width = 794) => {
+        await new Promise(r => setTimeout(r, 250));
+        return html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width,
+          windowWidth: 794,
+        });
+      };
+
+      type CapturedSection = {
+        titleCanvas: HTMLCanvasElement;
+        blockCanvases: HTMLCanvasElement[];
+      };
+
+      const capturedSections: CapturedSection[] = [];
 
       for (const section of sections) {
-        const div = document.createElement('div');
-        div.style.cssText = 'width:794px;background:white;padding:24px 48px;';
-        div.className = 'bg-background text-foreground';
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'width:794px;background:white;padding:24px 48px;';
+        wrapper.className = 'bg-background text-foreground';
 
-        // Title
-        const title = document.createElement('div');
-        title.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
-        title.innerHTML = `<div style="width:3px;height:20px;background:#1e40af;border-radius:2px;"></div><h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>`;
-        div.appendChild(title);
+        const titleBar = document.createElement('div');
+        titleBar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
+        titleBar.innerHTML = `<div style="width:3px;height:20px;background:#1e40af;border-radius:2px;"></div><h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>`;
+        wrapper.appendChild(titleBar);
 
-        // Content — real React component
         const mount = document.createElement('div');
-        div.appendChild(mount);
+        wrapper.appendChild(mount);
+
         const root = createRoot(mount);
         root.render(createElement(SectionContent, { section }));
 
-        host.appendChild(div);
-        await new Promise(r => setTimeout(r, 500));
+        host.appendChild(wrapper);
+        const titleCanvas = await renderCanvas(titleBar);
 
-        const canvas = await html2canvas(div, {
-          scale: 2, useCORS: true, logging: false,
-          backgroundColor: '#ffffff', width: 794, windowWidth: 794,
-        });
-        sectionCanvases.push(canvas);
-        host.removeChild(div);
+        const blockCanvases: HTMLCanvasElement[] = [];
+        const childElements = Array.from(mount.children) as HTMLElement[];
+
+        if (childElements.length === 0) {
+          blockCanvases.push(await renderCanvas(mount));
+        } else {
+          for (const child of childElements) {
+            if (child.offsetHeight === 0) continue;
+            blockCanvases.push(await renderCanvas(child, child.offsetWidth || 794));
+          }
+        }
+
+        capturedSections.push({ titleCanvas, blockCanvases });
+        root.unmount();
+        host.removeChild(wrapper);
       }
 
       document.body.removeChild(host);
 
-      // Build PDF — each section starts on a new page
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let pageCount = 0;
+      let currentY = HEADER_H + 2;
 
-      for (let i = 0; i < sectionCanvases.length; i++) {
-        const cvs = sectionCanvases[i];
-        const scale = CONTENT_W_MM / cvs.width;
-        const totalH = cvs.height * scale;
-
-        // New section → new page (except the very first)
-        if (i > 0) pdf.addPage();
-        pageCount = i > 0 ? pageCount + 1 : 1;
-
-        // If section fits in one page
-        if (totalH <= USABLE_H_MM) {
-          const img = cvs.toDataURL('image/jpeg', 0.95);
-          pdf.addImage(img, 'JPEG', MARGIN_MM, HEADER_H + 1, CONTENT_W_MM, totalH);
-        } else {
-          // Section spans multiple pages — slice
-          const pxPerPage = USABLE_H_MM / scale;
-          const slices = Math.ceil(cvs.height / pxPerPage);
-          for (let s = 0; s < slices; s++) {
-            if (s > 0) { pdf.addPage(); pageCount++; }
-            const srcY = s * pxPerPage;
-            const srcH = Math.min(pxPerPage, cvs.height - srcY);
-            const sliceC = document.createElement('canvas');
-            sliceC.width = cvs.width;
-            sliceC.height = srcH;
-            const ctx = sliceC.getContext('2d')!;
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, cvs.width, srcH);
-            ctx.drawImage(cvs, 0, srcY, cvs.width, srcH, 0, 0, cvs.width, srcH);
-            pdf.addImage(sliceC.toDataURL('image/jpeg', 0.95), 'JPEG', MARGIN_MM, HEADER_H + 1, CONTENT_W_MM, srcH * scale);
-          }
-        }
-      }
-
-      // Headers & footers on every page
-      const total = pdf.getNumberOfPages();
-      for (let p = 1; p <= total; p++) {
-        pdf.setPage(p);
+      const addHeaderFooter = (page: number, total: number) => {
+        pdf.setPage(page);
         pdf.setFillColor(30, 64, 175);
         pdf.rect(0, 0, A4_W_MM, HEADER_H, 'F');
         pdf.setTextColor(255, 255, 255);
@@ -617,19 +606,83 @@ const Resultado = () => {
         pdf.setFont('helvetica', 'bold');
         pdf.text('Loyalty Academy Brasil — Plano Estratégico', MARGIN_MM, 9);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`${p}/${total}`, A4_W_MM - MARGIN_MM, 9, { align: 'right' });
-        const fY = A4_H_MM - FOOTER_H;
+        pdf.text(`${page}/${total}`, A4_W_MM - MARGIN_MM, 9, { align: 'right' });
+        const footerY = A4_H_MM - FOOTER_H;
         pdf.setDrawColor(30, 64, 175);
         pdf.setLineWidth(0.3);
-        pdf.line(MARGIN_MM, fY + 2, A4_W_MM - MARGIN_MM, fY + 2);
+        pdf.line(MARGIN_MM, footerY + 2, A4_W_MM - MARGIN_MM, footerY + 2);
         pdf.setFontSize(7);
         pdf.setTextColor(120, 120, 120);
-        pdf.text('Documento gerado pela Plataforma Loyalty Academy Brasil', MARGIN_MM, fY + 7);
-        pdf.text(new Date().toLocaleDateString('pt-BR'), A4_W_MM - MARGIN_MM, fY + 7, { align: 'right' });
-      }
+        pdf.text('Documento gerado pela Plataforma Loyalty Academy Brasil', MARGIN_MM, footerY + 7);
+        pdf.text(new Date().toLocaleDateString('pt-BR'), A4_W_MM - MARGIN_MM, footerY + 7, { align: 'right' });
+      };
+
+      const addCanvas = (canvas: HTMLCanvasElement, y: number) => {
+        const heightMm = (canvas.height * CONTENT_W_MM) / canvas.width;
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', MARGIN_MM, y, CONTENT_W_MM, heightMm);
+        return heightMm;
+      };
+
+      capturedSections.forEach((sectionCapture, index) => {
+        if (index > 0) {
+          pdf.addPage();
+          currentY = HEADER_H + 2;
+        }
+
+        const titleHeight = (sectionCapture.titleCanvas.height * CONTENT_W_MM) / sectionCapture.titleCanvas.width;
+        if (currentY + titleHeight > HEADER_H + 2 + CONTENT_H_MM) {
+          pdf.addPage();
+          currentY = HEADER_H + 2;
+        }
+
+        currentY += addCanvas(sectionCapture.titleCanvas, currentY) + 2;
+
+        sectionCapture.blockCanvases.forEach((blockCanvas) => {
+          const blockHeight = (blockCanvas.height * CONTENT_W_MM) / blockCanvas.width;
+          const pageLimit = HEADER_H + 2 + CONTENT_H_MM;
+
+          if (blockHeight <= CONTENT_H_MM && currentY + blockHeight > pageLimit) {
+            pdf.addPage();
+            currentY = HEADER_H + 2;
+          }
+
+          if (blockHeight > CONTENT_H_MM) {
+            const pxPerPage = (CONTENT_H_MM * blockCanvas.width) / CONTENT_W_MM;
+            let srcY = 0;
+            let firstSlice = true;
+
+            while (srcY < blockCanvas.height) {
+              if (!firstSlice) {
+                pdf.addPage();
+                currentY = HEADER_H + 2;
+              }
+
+              const sliceHeightPx = Math.min(pxPerPage, blockCanvas.height - srcY);
+              const sliceCanvas = document.createElement('canvas');
+              sliceCanvas.width = blockCanvas.width;
+              sliceCanvas.height = sliceHeightPx;
+              const ctx = sliceCanvas.getContext('2d');
+              if (ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+                ctx.drawImage(blockCanvas, 0, srcY, blockCanvas.width, sliceHeightPx, 0, 0, blockCanvas.width, sliceHeightPx);
+                currentY += addCanvas(sliceCanvas, currentY) + SECTION_GAP_MM;
+              }
+
+              srcY += sliceHeightPx;
+              firstSlice = false;
+            }
+          } else {
+            currentY += addCanvas(blockCanvas, currentY) + SECTION_GAP_MM;
+          }
+        });
+      });
+
+      const totalPages = pdf.getNumberOfPages();
+      for (let page = 1; page <= totalPages; page++) addHeaderFooter(page, totalPages);
 
       pdf.save('Plano_Estrategico_Loyalty_LAB.pdf');
-      toast({ title: 'PDF gerado com sucesso!', description: `${total} páginas exportadas.` });
+      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
     } catch (err) {
       console.error('PDF error:', err);
       toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
