@@ -11,6 +11,8 @@ import { DiagnosticAnswers } from '@/lib/diagnostic-logic';
 
 const DRAFT_KEY = 'diagnostic_draft';
 const DRAFT_STEP_KEY = 'diagnostic_step';
+const LAB_DRAFT_KEY = 'lab_draft';
+const LAB_STEP_KEY = 'lab_step';
 
 const Login = () => {
   const location = useLocation();
