@@ -448,6 +448,7 @@ function ProgressOverlay({ title, steps, currentStep, onClose }: { title: string
 
 const Resultado = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
