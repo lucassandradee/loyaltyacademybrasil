@@ -121,7 +121,7 @@ const Diagnostico = () => {
         if (data && data.length > 0) {
           localStorage.removeItem(DRAFT_KEY);
           localStorage.removeItem(DRAFT_STEP_KEY);
-          navigate('/resultado', { replace: true });
+          navigate('/plano-final', { replace: true });
           return;
         }
       }
@@ -208,7 +208,7 @@ const Diagnostico = () => {
 
       localStorage.removeItem(DRAFT_KEY);
       localStorage.removeItem(DRAFT_STEP_KEY);
-      navigate('/resultado', { state: { answers: finalAnswers } });
+      navigate('/plano-final');
     } else {
       navigate('/cadastro', { state: { answers: finalAnswers } });
     }
