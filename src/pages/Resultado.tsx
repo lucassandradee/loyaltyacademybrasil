@@ -281,71 +281,67 @@ function SectionContent({ section }: { section: PlanSection }) {
   if (section.id === 'cronograma') return <TimelineView content={section.content} />;
   if (section.id === 'plano5w2h') return <ActionPlan5W2H content={section.content} />;
 
-  // Split content into the 3 visual blocks if present
-  const blockRegex = /## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação/g;
-  const hasBlocks = blockRegex.test(section.content);
+  // Clean out any "Resumo dos Dados" blocks the AI might generate
+  let cleaned = section.content.replace(/## 📊\s*Resumo dos Dados[^\n]*\n?/g, '');
 
-  if (!hasBlocks) {
-    const parts = parseDiagrams(section.content);
-    return (
+  // Extract Contexto Teórico: only first paragraph after header
+  let contextoBlock: string | null = null;
+  const contextoMatch = cleaned.match(/## 📚\s*Contexto Te[oó]rico[^\n]*\n([\s\S]*?)(?=\n##|\n<!--|\n\||\n\d+\.\s|\n-\s|$)/);
+  if (contextoMatch) {
+    // Get just the first paragraph (up to double newline)
+    const afterHeader = contextoMatch[1].trim();
+    const firstPara = afterHeader.split(/\n\n/)[0].trim();
+    contextoBlock = firstPara;
+    // Remove the entire contexto header + first paragraph from content
+    cleaned = cleaned.replace(/## 📚\s*Contexto Te[oó]rico[^\n]*\n/, '');
+    if (firstPara) cleaned = cleaned.replace(firstPara, '');
+  }
+
+  // Extract Nossa Recomendação: only first paragraph after header
+  let recomBlock: string | null = null;
+  const recomMatch = cleaned.match(/## 🎯\s*Nossa Recomenda[cç][aã]o[^\n]*\n([\s\S]*?)$/);
+  if (recomMatch) {
+    const afterHeader = recomMatch[1].trim();
+    const firstPara = afterHeader.split(/\n\n/)[0].trim();
+    recomBlock = firstPara;
+    // Remove the header + content from cleaned
+    cleaned = cleaned.replace(/## 🎯\s*Nossa Recomenda[cç][aã]o[^\n]*\n[\s\S]*$/, '');
+  }
+
+  // Render: Contexto (colored) → Development (white) → Recomendação (colored)
+  const devParts = parseDiagrams(cleaned.trim());
+
+  return (
+    <div className="space-y-4">
+      {/* Contexto Teórico — subtle colored card */}
+      {contextoBlock && (
+        <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
+          <div className="flex items-center gap-2 mb-2">
+            <BookOpen className="h-4 w-4 text-red-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">{contextoBlock}</p>
+        </div>
+      )}
+
+      {/* Main development content — clean white background */}
       <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-        {parts.map((part, i) => {
+        {devParts.map((part, i) => {
           if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
           return <DiagramRenderer key={i} diagram={part} />;
         })}
       </div>
-    );
-  }
 
-  // Split by the 3 block headers
-  const blocks = section.content.split(/(?=## 📚 Contexto Teórico|## 📊 Resumo dos Dados|## 🎯 Nossa Recomendação)/g).filter(b => b.trim());
-
-  const blockConfig: Record<string, { border: string; icon: any; label: string; bgClass: string }> = {
-    '📚': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico', bgClass: 'bg-red-50/50 dark:bg-red-950/10' },
-    '📊': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados', bgClass: 'bg-amber-50/50 dark:bg-amber-950/10' },
-    '🎯': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação', bgClass: 'bg-emerald-50/50 dark:bg-emerald-950/10' },
-  };
-
-  return (
-    <div className="space-y-4">
-      {blocks.map((block, i) => {
-        const emojiMatch = block.match(/## (📚|📊|🎯)/);
-        const emoji = emojiMatch?.[1];
-        const config = emoji ? blockConfig[emoji] : null;
-
-        if (!config) {
-          // Content before the first block header (if any)
-          const parts = parseDiagrams(block);
-          return (
-            <div key={i} className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-              {parts.map((part, j) => {
-                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-                return <DiagramRenderer key={j} diagram={part} />;
-              })}
-            </div>
-          );
-        }
-
-        const Icon = config.icon;
-        // Remove the header line itself from the block content
-        const blockContent = block.replace(/## (📚|📊|🎯)\s*[^\n]*\n?/, '').trim();
-        const parts = parseDiagrams(blockContent);
-
-        return (
-          <div key={i} className={cn('border-l-4 rounded-r-lg p-4', config.border, config.bgClass)}>
-            <div className="flex items-center gap-2 mb-3">
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{config.label}</span>
-            </div>
-            <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
-              {parts.map((part, j) => {
-                if (typeof part === 'string') return <div key={j} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-                return <DiagramRenderer key={j} diagram={part} />;
-              })}
-            </div>
+      {/* Nossa Recomendação — subtle colored card */}
+      {recomBlock && (
+        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="h-4 w-4 text-emerald-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nossa Recomendação</span>
           </div>
-        );
-      })}
+          <p className="text-sm text-muted-foreground leading-relaxed">{recomBlock}</p>
+        </div>
+      )}
     </div>
   );
 }
