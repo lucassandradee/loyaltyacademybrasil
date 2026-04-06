@@ -105,8 +105,10 @@ export function AppSidebar() {
       });
     };
     fetchCompletion();
+  }, [location.pathname]);
 
-    // Also poll localStorage for immediate UI updates
+  // Also poll localStorage for plan sections
+  useEffect(() => {
     const handleStorage = () => {
       setPlanSectionsAvailable(localStorage.getItem('plan_sections_ready') === 'true');
     };
