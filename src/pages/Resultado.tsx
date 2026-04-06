@@ -73,9 +73,9 @@ function markdownToHtml(md: string): string {
   if (md.trim().startsWith('{') || md.trim().startsWith('```json')) return '<p><em>Conteúdo sendo processado...</em></p>';
 
   let html = md
-    .replace(/^#### (.+)$/gm, '<h4 class="mt-3 mb-1.5 text-xs font-semibold text-foreground flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-primary inline-block"></span>$1</h4>')
-    .replace(/^### (.+)$/gm, '<h3 class="mt-4 mb-1.5 text-xs font-semibold text-foreground border-b pb-1">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="mt-4 mb-2 text-sm font-bold text-foreground flex items-center gap-2"><span class="w-1.5 h-4 rounded bg-primary inline-block"></span>$1</h2>')
+    .replace(/^#### (.+)$/gm, '<h4 class="mt-4 mb-2 text-xs font-semibold text-foreground flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-primary inline-block"></span>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3 class="mt-5 mb-2 text-xs font-semibold text-foreground border-b pb-1.5">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="mt-5 mb-3 text-sm font-bold text-foreground flex items-center gap-2"><span class="w-1.5 h-4 rounded bg-primary inline-block"></span>$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 
@@ -115,11 +115,11 @@ function markdownToHtml(md: string): string {
     .replace(/^- (.+)$/gm, '<li class="flex items-start gap-2 mb-1"><span class="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span><span class="text-xs">$1</span></li>')
     .replace(/^• (.+)$/gm, '<li class="flex items-start gap-2 mb-1"><span class="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span><span class="text-xs">$1</span></li>')
     .replace(/^\d+\. (.+)$/gm, '<li class="mb-1 ml-4 list-decimal text-xs">$1</li>')
-    .replace(/\n\n/g, '</p><p class="mb-2 leading-relaxed text-xs">')
+    .replace(/\n\n/g, '</p><p class="mb-3 leading-relaxed text-xs">')
     .replace(/\n/g, '<br/>');
 
-  html = html.replace(/(<li[\s\S]*?<\/li>(?:<br\/>)?)+/g, (m) => '<ul class="my-2 space-y-0.5">' + m.replace(/<br\/>/g, '') + '</ul>');
-  return '<div class="space-y-0.5"><p class="mb-2 leading-relaxed text-xs">' + html + '</p></div>';
+  html = html.replace(/(<li[\s\S]*?<\/li>(?:<br\/>)?)+/g, (m) => '<ul class="my-3 space-y-1.5">' + m.replace(/<br\/>/g, '') + '</ul>');
+  return '<div class="space-y-2"><p class="mb-3 leading-relaxed text-xs">' + html + '</p></div>';
 }
 
 function extractSummary(md: string, maxLen = 180): string {
@@ -358,11 +358,11 @@ function SectionContent({ section }: { section: PlanSection }) {
   const devParts = parseDiagrams(blocks.desenvolvimento);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {/* Block 1: Contexto Teórico */}
       {blocks.contexto && (
-        <div className="border-l-4 border-l-red-400 rounded-r-lg p-3 bg-red-50/30 dark:bg-red-950/10">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
+          <div className="flex items-center gap-2 mb-2">
             <BookOpen className="h-3.5 w-3.5 text-red-400" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
           </div>
@@ -380,16 +380,16 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 3: Principais Pontos */}
       {blocks.principaisPontos && blocks.principaisPontos.length > 0 && (
-        <div className="rounded-lg border p-3">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="rounded-lg border p-4">
+          <div className="flex items-center gap-2 mb-3">
             <List className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
           </div>
-          <ol className="space-y-1.5">
+          <ol className="space-y-3">
             {blocks.principaisPontos.map((pt, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold shrink-0 mt-0.5">{i + 1}</span>
-                <span className="text-xs text-muted-foreground leading-relaxed">{pt}</span>
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-[11px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-xs text-muted-foreground leading-relaxed pt-1">{pt}</span>
               </li>
             ))}
           </ol>
@@ -403,8 +403,8 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 5: Conclusão */}
       {blocks.conclusao && (
-        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-3 bg-emerald-50/30 dark:bg-emerald-950/10">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <div className="flex items-center gap-2 mb-2">
             <Target className="h-3.5 w-3.5 text-emerald-500" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
           </div>
