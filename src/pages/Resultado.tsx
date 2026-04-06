@@ -342,7 +342,7 @@ function SectionContent({ section }: { section: PlanSection }) {
   const devParts = parseDiagrams(blocks.desenvolvimento);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Block 1: Contexto Teórico */}
       {blocks.contexto && (
         <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
@@ -350,12 +350,12 @@ function SectionContent({ section }: { section: PlanSection }) {
             <BookOpen className="h-4 w-4 text-red-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.contexto}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{blocks.contexto}</p>
         </div>
       )}
 
       {/* Block 2: Desenvolvimento */}
-      <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+      <div className="prose prose-xs max-w-none text-muted-foreground text-xs [&_h2]:text-foreground [&_h2]:text-base [&_h3]:text-foreground [&_h3]:text-sm [&_h4]:text-foreground [&_h4]:text-xs [&_strong]:text-foreground [&_p]:text-xs [&_li]:text-xs">
         {devParts.map((part, i) => {
           if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
           return <DiagramRenderer key={i} diagram={part} />;
@@ -372,8 +372,8 @@ function SectionContent({ section }: { section: PlanSection }) {
           <ol className="space-y-2">
             {blocks.principaisPontos.map((pt, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
-                <span className="text-sm text-muted-foreground leading-relaxed">{pt}</span>
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-xs text-muted-foreground leading-relaxed">{pt}</span>
               </li>
             ))}
           </ol>
@@ -382,13 +382,7 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 4: Tabela de Resultados */}
       {blocks.tabela && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Table2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tabela de Resultados</span>
-          </div>
-          <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
-        </div>
+        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
       )}
 
       {/* Block 5: Conclusão */}
@@ -398,7 +392,7 @@ function SectionContent({ section }: { section: PlanSection }) {
             <Target className="h-4 w-4 text-emerald-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
         </div>
       )}
     </div>
@@ -983,7 +977,7 @@ const Resultado = () => {
             <CardHeader>
               <div className="flex items-center gap-3">
                 {(() => { const Icon = sectionIcons[currentSection.id] || FileText; return <Icon className="h-6 w-6 text-primary" />; })()}
-                <CardTitle className="text-xl">{currentSection.title}</CardTitle>
+                <CardTitle className="text-lg">{currentSection.title}</CardTitle>
               </div>
               <p className="text-xs text-muted-foreground">Seção {activeSection + 1} de {sections.length}</p>
             </CardHeader>
