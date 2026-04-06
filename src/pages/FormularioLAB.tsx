@@ -39,22 +39,21 @@ const labSteps: LABStep[] = [
 const FormularioLAB = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem(LAB_STEP_KEY);
-    return saved ? parseInt(saved, 10) : 0;
-  });
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>(() => {
-    const saved = localStorage.getItem(LAB_DRAFT_KEY);
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [saving, setSaving] = useState(false);
   const [loadingFromDB, setLoadingFromDB] = useState(true);
 
-  // Load saved LAB answers from DB on mount
+  // Load saved LAB answers from DB on mount — never trust localStorage blindly
   useEffect(() => {
     const loadFromDB = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingFromDB(false); return; }
+      if (!user) {
+        localStorage.removeItem(LAB_DRAFT_KEY);
+        localStorage.removeItem(LAB_STEP_KEY);
+        setLoadingFromDB(false);
+        return;
+      }
 
       const { data } = await supabase
         .from('diagnostic_responses')
@@ -66,14 +65,14 @@ const FormularioLAB = () => {
 
       if (data?.answers) {
         const allAnswers = data.answers as Record<string, any>;
-        if (allAnswers.lab && typeof allAnswers.lab === 'object') {
-          // Only load from DB if localStorage is empty
-          const localDraft = localStorage.getItem(LAB_DRAFT_KEY);
-          if (!localDraft || Object.keys(JSON.parse(localDraft)).length === 0) {
-            setAnswers(allAnswers.lab);
-          }
+        if (allAnswers.lab && typeof allAnswers.lab === 'object' && Object.keys(allAnswers.lab).length > 0) {
+          setAnswers(allAnswers.lab);
         }
       }
+
+      // Always clear stale localStorage — we loaded from DB
+      localStorage.removeItem(LAB_DRAFT_KEY);
+      localStorage.removeItem(LAB_STEP_KEY);
       setLoadingFromDB(false);
     };
     loadFromDB();
