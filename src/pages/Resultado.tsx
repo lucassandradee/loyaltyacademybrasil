@@ -364,15 +364,15 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 3: Principais Pontos */}
       {blocks.principaisPontos && blocks.principaisPontos.length > 0 && (
-        <div className="border-l-4 border-l-blue-400 rounded-r-lg p-4 bg-blue-50/30 dark:bg-blue-950/10">
+        <div className="rounded-lg border p-4">
           <div className="flex items-center gap-2 mb-3">
-            <List className="h-4 w-4 text-blue-500" />
+            <List className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
           </div>
           <ol className="space-y-2">
             {blocks.principaisPontos.map((pt, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
                 <span className="text-sm text-muted-foreground leading-relaxed">{pt}</span>
               </li>
             ))}
@@ -382,9 +382,9 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 4: Tabela de Resultados */}
       {blocks.tabela && (
-        <div className="border-l-4 border-l-amber-400 rounded-r-lg p-4 bg-amber-50/30 dark:bg-amber-950/10">
+        <div className="rounded-lg border p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Table2 className="h-4 w-4 text-amber-500" />
+            <Table2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tabela de Resultados</span>
           </div>
           <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
@@ -634,18 +634,17 @@ const Resultado = () => {
 
       const renderNumberedList = (items: string[], startY: number): number => {
         let y = checkBreak(startY, 15 + items.length * 6);
-        // Blue background box
         const boxH = items.length * 6 + 10;
         y = checkBreak(y, boxH);
-        doc.setFillColor(...BLUE_LIGHT);
-        doc.rect(14, y, maxW, boxH, 'F');
-        doc.setFillColor(59, 130, 246);
-        doc.rect(14, y, 2, boxH, 'F');
-        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
+        // Light border box, no colored background
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.rect(14, y, maxW, boxH);
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
         doc.text('PRINCIPAIS PONTOS', 20, y + 5);
         let innerY = y + 10;
         items.forEach((item, i) => {
-          doc.setFillColor(59, 130, 246);
+          doc.setFillColor(...BRAND_BLUE);
           doc.circle(20, innerY + 1, 2.5, 'F');
           doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
           doc.text(String(i + 1), 19, innerY + 2);
@@ -780,17 +779,12 @@ const Resultado = () => {
           y = renderNumberedList(blocks.principaisPontos, y);
         }
 
-        // Block 4: Tabela de Resultados (amber header table)
+        // Block 4: Tabela de Resultados
         if (blocks.tabela) {
-          // Label
           y = checkBreak(y, 10);
-          doc.setFillColor(...AMBER_LIGHT);
-          doc.rect(14, y, maxW, 7, 'F');
-          doc.setFillColor(217, 119, 6);
-          doc.rect(14, y, 2, 7, 'F');
-          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(217, 119, 6);
-          doc.text('TABELA DE RESULTADOS', 20, y + 5);
-          y += 9;
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+          doc.text('TABELA DE RESULTADOS', 14, y + 5);
+          y += 8;
           y = renderTable(blocks.tabela, y);
         }
 
