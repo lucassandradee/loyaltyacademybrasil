@@ -57,9 +57,9 @@ function markdownToHtml(md: string): string {
   if (md.trim().startsWith('{') || md.trim().startsWith('```json')) return '<p><em>Conteúdo sendo processado...</em></p>';
 
   let html = md
-    .replace(/^#### (.+)$/gm, '<h4 class="mt-4 mb-2 text-sm font-semibold text-foreground flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>$1</h4>')
-    .replace(/^### (.+)$/gm, '<h3 class="mt-5 mb-2 text-base font-semibold text-foreground border-b pb-1">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="mt-6 mb-3 text-lg font-bold text-foreground flex items-center gap-2"><span class="w-2 h-5 rounded bg-primary inline-block"></span>$1</h2>')
+    .replace(/^#### (.+)$/gm, '<h4 class="mt-3 mb-1.5 text-xs font-semibold text-foreground flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-primary inline-block"></span>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3 class="mt-4 mb-1.5 text-xs font-semibold text-foreground border-b pb-1">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="mt-4 mb-2 text-sm font-bold text-foreground flex items-center gap-2"><span class="w-1.5 h-4 rounded bg-primary inline-block"></span>$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 
@@ -74,8 +74,8 @@ function markdownToHtml(md: string): string {
     const parse = (r: string) => r.split('|').slice(1, -1).map(c => c.trim());
     const headerCells = parse(dataRows[0]);
     const bodyRows = dataRows.slice(1);
-    let t = '<div class="overflow-x-auto my-4 rounded-lg border"><table class="w-full text-sm"><thead><tr>';
-    headerCells.forEach(c => { t += `<th class="px-3 py-2.5 text-left font-semibold bg-primary/10 text-foreground border-b">${c}</th>`; });
+    let t = '<div class="overflow-x-auto my-3 rounded-lg border"><table class="w-full text-xs"><thead><tr>';
+    headerCells.forEach(c => { t += `<th class="px-2.5 py-2 text-left text-xs font-semibold bg-primary/10 text-foreground border-b">${c}</th>`; });
     t += '</tr></thead><tbody>';
     bodyRows.forEach((r, i) => {
       const cells = parse(r);
@@ -84,9 +84,9 @@ function markdownToHtml(md: string): string {
       cells.forEach((c, ci) => {
         const areaMatch = ci === 0 && areaBadgeColors[c];
         if (areaMatch) {
-          t += `<td class="px-3 py-2 border-b"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${areaBadgeColors[c]}">${c}</span></td>`;
+          t += `<td class="px-2.5 py-1.5 border-b text-xs"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${areaBadgeColors[c]}">${c}</span></td>`;
         } else {
-          t += `<td class="px-3 py-2 border-b text-muted-foreground">${c}</td>`;
+          t += `<td class="px-2.5 py-1.5 border-b text-xs text-muted-foreground">${c}</td>`;
         }
       });
       t += '</tr>';
@@ -96,14 +96,14 @@ function markdownToHtml(md: string): string {
   });
 
   html = html
-    .replace(/^- (.+)$/gm, '<li class="flex items-start gap-2 mb-1.5"><span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span><span>$1</span></li>')
-    .replace(/^• (.+)$/gm, '<li class="flex items-start gap-2 mb-1.5"><span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span><span>$1</span></li>')
-    .replace(/^\d+\. (.+)$/gm, '<li class="mb-1.5 ml-4 list-decimal">$1</li>')
-    .replace(/\n\n/g, '</p><p class="mb-3 leading-relaxed">')
+    .replace(/^- (.+)$/gm, '<li class="flex items-start gap-2 mb-1"><span class="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span><span class="text-xs">$1</span></li>')
+    .replace(/^• (.+)$/gm, '<li class="flex items-start gap-2 mb-1"><span class="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0"></span><span class="text-xs">$1</span></li>')
+    .replace(/^\d+\. (.+)$/gm, '<li class="mb-1 ml-4 list-decimal text-xs">$1</li>')
+    .replace(/\n\n/g, '</p><p class="mb-2 leading-relaxed text-xs">')
     .replace(/\n/g, '<br/>');
 
-  html = html.replace(/(<li[\s\S]*?<\/li>(?:<br\/>)?)+/g, (m) => '<ul class="my-3 space-y-1">' + m.replace(/<br\/>/g, '') + '</ul>');
-  return '<div class="space-y-1"><p class="mb-3 leading-relaxed">' + html + '</p></div>';
+  html = html.replace(/(<li[\s\S]*?<\/li>(?:<br\/>)?)+/g, (m) => '<ul class="my-2 space-y-0.5">' + m.replace(/<br\/>/g, '') + '</ul>');
+  return '<div class="space-y-0.5"><p class="mb-2 leading-relaxed text-xs">' + html + '</p></div>';
 }
 
 function extractSummary(md: string, maxLen = 180): string {
