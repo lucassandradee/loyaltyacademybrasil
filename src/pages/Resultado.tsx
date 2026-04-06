@@ -342,7 +342,7 @@ function SectionContent({ section }: { section: PlanSection }) {
   const devParts = parseDiagrams(blocks.desenvolvimento);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Block 1: Contexto Teórico */}
       {blocks.contexto && (
         <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
@@ -350,12 +350,12 @@ function SectionContent({ section }: { section: PlanSection }) {
             <BookOpen className="h-4 w-4 text-red-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.contexto}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{blocks.contexto}</p>
         </div>
       )}
 
       {/* Block 2: Desenvolvimento */}
-      <div className="prose prose-sm max-w-none text-muted-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_h4]:text-foreground [&_strong]:text-foreground">
+      <div className="prose prose-xs max-w-none text-muted-foreground text-xs [&_h2]:text-foreground [&_h2]:text-base [&_h3]:text-foreground [&_h3]:text-sm [&_h4]:text-foreground [&_h4]:text-xs [&_strong]:text-foreground [&_p]:text-xs [&_li]:text-xs">
         {devParts.map((part, i) => {
           if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
           return <DiagramRenderer key={i} diagram={part} />;
@@ -372,8 +372,8 @@ function SectionContent({ section }: { section: PlanSection }) {
           <ol className="space-y-2">
             {blocks.principaisPontos.map((pt, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
-                <span className="text-sm text-muted-foreground leading-relaxed">{pt}</span>
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-xs text-muted-foreground leading-relaxed">{pt}</span>
               </li>
             ))}
           </ol>
@@ -382,13 +382,7 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 4: Tabela de Resultados */}
       {blocks.tabela && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Table2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tabela de Resultados</span>
-          </div>
-          <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
-        </div>
+        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
       )}
 
       {/* Block 5: Conclusão */}
@@ -398,7 +392,7 @@ function SectionContent({ section }: { section: PlanSection }) {
             <Target className="h-4 w-4 text-emerald-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{blocks.conclusao}</p>
         </div>
       )}
     </div>
@@ -514,312 +508,213 @@ const Resultado = () => {
 
   const handleDownloadPDF = async () => {
     try {
+      toast({ title: 'Gerando PDF...', description: 'Capturando o plano completo. Aguarde.' });
+
+      const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const w = doc.internal.pageSize.getWidth();
-      const maxW = w - 28;
-      const BRAND_BLUE: [number, number, number] = [30, 64, 175];
-      const DARK_GRAY: [number, number, number] = [51, 51, 51];
-      const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
-      const RED_LIGHT: [number, number, number] = [254, 242, 242];
-      const BLUE_LIGHT: [number, number, number] = [239, 246, 255];
-      const AMBER_LIGHT: [number, number, number] = [255, 251, 235];
-      const GREEN_LIGHT: [number, number, number] = [240, 253, 244];
 
-      const checkBreak = (yy: number, needed: number) => {
-        if (yy + needed > doc.internal.pageSize.getHeight() - 25) { doc.addPage(); return 28; }
-        return yy;
-      };
+      // Create offscreen container matching A4 proportions
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '794px'; // A4 at 96dpi
+      container.style.background = 'white';
+      container.style.padding = '0';
+      container.style.fontFamily = "'Inter', system-ui, -apple-system, sans-serif";
+      document.body.appendChild(container);
 
-      const cleanEmoji = (t: string) => t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+      // Render cover
+      const cover = document.createElement('div');
+      cover.style.cssText = 'background: #1e40af; padding: 40px 28px; color: white; margin-bottom: 20px;';
+      cover.innerHTML = `
+        <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Plano Estratégico de Loyalty</h1>
+        <p style="font-size: 14px; opacity: 0.9; margin: 0 0 4px 0;">Relatório personalizado — Framework LAB</p>
+        <p style="font-size: 12px; opacity: 0.8; margin: 0;">${new Date().toLocaleDateString('pt-BR')}</p>
+      `;
+      container.appendChild(cover);
 
-      const renderColoredBox = (text: string, label: string, bgColor: [number, number, number], borderColor: [number, number, number], startY: number): number => {
-        let y = checkBreak(startY, 20);
-        const lines = doc.splitTextToSize(cleanEmoji(text), maxW - 12);
-        const boxH = lines.length * 4.2 + 14;
-        y = checkBreak(y, boxH);
-        doc.setFillColor(...bgColor);
-        doc.rect(14, y, maxW, boxH, 'F');
-        doc.setFillColor(...borderColor);
-        doc.rect(14, y, 2, boxH, 'F');
-        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...borderColor);
-        doc.text(label.toUpperCase(), 20, y + 5);
-        doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-        doc.text(lines, 20, y + 11);
-        return y + boxH + 4;
-      };
-
-      const renderTextBlock = (text: string, startY: number): number => {
-        let y = startY;
-        const lines = text.split('\n');
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) { y += 2; continue; }
-          // Sub-headers
-          const h2Match = trimmed.match(/^##\s+(.+)/);
-          if (h2Match) {
-            y = checkBreak(y, 10);
-            doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK_GRAY);
-            doc.setFillColor(...BRAND_BLUE);
-            doc.rect(14, y - 1, 2, 5, 'F');
-            const hLines = doc.splitTextToSize(cleanEmoji(h2Match[1]), maxW - 6);
-            doc.text(hLines, 19, y + 3);
-            y += hLines.length * 5 + 3;
-            continue;
-          }
-          // Bullets
-          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            y = checkBreak(y, 5);
-            doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-            const bText = cleanEmoji(trimmed.replace(/^[-*]\s+/, ''));
-            const bLines = doc.splitTextToSize(bText, maxW - 10);
-            doc.setFillColor(...BRAND_BLUE);
-            doc.circle(18, y + 1, 0.8, 'F');
-            doc.text(bLines, 22, y + 2);
-            y += bLines.length * 4 + 1.5;
-            continue;
-          }
-          // Regular text — handle bold
-          y = checkBreak(y, 5);
-          const plainText = cleanEmoji(trimmed.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/#{1,4}\s*/g, ''));
-          if (!plainText) continue;
-          doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-          const tLines = doc.splitTextToSize(plainText, maxW);
-          doc.text(tLines, 14, y + 2);
-          y += tLines.length * 4 + 1.5;
-        }
-        return y + 2;
-      };
-
-      const renderTable = (tableStr: string, startY: number): number => {
-        let y = startY;
-        const rows = tableStr.trim().split('\n').filter(r => r.trim().startsWith('|'));
-        const isSepar = (r: string) => /^\|[\s-:]+\|$/.test(r.trim().replace(/\|/g, '|'));
-        const dRows = rows.filter(r => !isSepar(r));
-        if (dRows.length < 2) return y;
-        const parse = (r: string) => r.split('|').slice(1, -1).map(c => cleanEmoji(c.trim()));
-        y = checkBreak(y, 20);
-        autoTable(doc, {
-          startY: y,
-          head: [parse(dRows[0])],
-          body: dRows.slice(1).map(r => parse(r)),
-          margin: { left: 14, right: 14 },
-          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-        });
-        return (doc as any).lastAutoTable.finalY + 6;
-      };
-
-      const renderDiagram = (type: string, items: string[], startY: number): number => {
-        let y = startY;
-        const typeLabel = type === 'pyramid' ? 'Nivel' : type === 'funnel' ? 'Etapa' : type === 'flow' ? 'Processo' : type === 'gauge' ? 'Medicao' : 'Item';
-        y = checkBreak(y, 20);
-        autoTable(doc, {
-          startY: y,
-          head: [[typeLabel, 'Descricao']],
-          body: items.map(item => {
-            const parts = item.includes(':') ? [cleanEmoji(item.split(':')[0].trim()), cleanEmoji(item.split(':').slice(1).join(':').trim())] : [cleanEmoji(item), ''];
-            return parts;
-          }),
-          margin: { left: 14, right: 14 },
-          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-          columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
-        });
-        return (doc as any).lastAutoTable.finalY + 6;
-      };
-
-      const renderNumberedList = (items: string[], startY: number): number => {
-        let y = checkBreak(startY, 15 + items.length * 6);
-        const boxH = items.length * 6 + 10;
-        y = checkBreak(y, boxH);
-        // Light border box, no colored background
-        doc.setDrawColor(200, 200, 200);
-        doc.setLineWidth(0.3);
-        doc.rect(14, y, maxW, boxH);
-        doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-        doc.text('PRINCIPAIS PONTOS', 20, y + 5);
-        let innerY = y + 10;
-        items.forEach((item, i) => {
-          doc.setFillColor(...BRAND_BLUE);
-          doc.circle(20, innerY + 1, 2.5, 'F');
-          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-          doc.text(String(i + 1), 19, innerY + 2);
-          doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-          doc.text(cleanEmoji(item), 26, innerY + 2);
-          innerY += 6;
-        });
-        return y + boxH + 4;
-      };
-
-      // Cover
-      doc.setFillColor(...BRAND_BLUE);
-      doc.rect(0, 0, w, 50, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Plano Estrategico de Loyalty', 14, 28);
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Relatorio personalizado - Framework LAB', 14, 38);
-      doc.text(new Date().toLocaleDateString('pt-BR'), 14, 45);
-      let y = 60;
-
+      // Get the actual rendered content from the page for each section
+      // We'll clone the SectionContent rendering by using the same HTML
       for (const section of sections) {
-        y = checkBreak(y, 20);
+        const sectionEl = document.createElement('div');
+        sectionEl.style.cssText = 'padding: 20px 28px 10px 28px; page-break-inside: avoid;';
+
         // Section title
-        doc.setFillColor(...BRAND_BLUE);
-        doc.rect(14, y, 3, 8, 'F');
-        doc.setTextColor(...DARK_GRAY);
-        doc.setFontSize(13);
-        doc.setFont('helvetica', 'bold');
-        const titleLines = doc.splitTextToSize(cleanEmoji(section.title), maxW - 10);
-        titleLines.forEach((line: string) => { doc.text(line, 20, y + 6); y += 6; });
-        y += 8;
+        const titleEl = document.createElement('div');
+        titleEl.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;';
+        titleEl.innerHTML = `
+          <div style="width: 4px; height: 24px; background: #1e40af; border-radius: 2px;"></div>
+          <h2 style="font-size: 16px; font-weight: 700; color: #333; margin: 0;">${section.title}</h2>
+        `;
+        sectionEl.appendChild(titleEl);
 
-        // 5W2H special
-        if (section.id === 'plano5w2h') {
-          const actions = parse5W2H(section.content);
-          if (actions.length > 0) {
-            autoTable(doc, {
-              startY: y,
-              head: [['Area', 'O Que', 'Por Que', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto']],
-              body: actions.map(a => [a.area, a.oQue, a.porQue, a.onde, a.quando, a.quem, a.como, a.quanto].map(cleanEmoji)),
-              margin: { left: 14, right: 14 },
-              headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 7, cellPadding: 2 },
-              bodyStyles: { fontSize: 7, textColor: [...DARK_GRAY] as [number, number, number], cellPadding: 2 },
-              alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-              columnStyles: { 0: { cellWidth: 18, fontStyle: 'bold' } },
-              styles: { overflow: 'linebreak' },
-            });
-            y = (doc as any).lastAutoTable.finalY + 10;
-            continue;
-          }
-        }
+        // Render the section content into a temp element on-screen to capture the actual rendered output
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.cssText = 'font-size: 12px; line-height: 1.6; color: #555;';
 
-        // Cronograma special
         if (section.id === 'cronograma') {
+          // Render timeline as table for PDF
           const phases = parseTimeline(section.content);
           if (phases.length > 0) {
-            const rows: string[][] = [];
-            phases.forEach(p => {
-              p.milestones.forEach((m, mi) => {
-                rows.push([mi === 0 ? cleanEmoji(p.name) : '', mi === 0 ? p.period : '', cleanEmoji(m)]);
-              });
-              if (p.milestones.length === 0) rows.push([cleanEmoji(p.name), p.period, '-']);
+            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;">';
+            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:8px 10px;text-align:left;">Fase</th><th style="padding:8px 10px;text-align:left;">Período</th><th style="padding:8px 10px;text-align:left;">Marcos</th></tr></thead><tbody>';
+            phases.forEach((p, pi) => {
+              const bg = pi % 2 === 0 ? '#fff' : '#f5f5f5';
+              tableHtml += `<tr style="background:${bg};"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:top;">${p.name}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;">${p.period}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">${p.milestones.map(m => '• ' + m).join('<br/>')}</td></tr>`;
             });
-            autoTable(doc, {
-              startY: y,
-              head: [['Fase', 'Periodo', 'Marco']],
-              body: rows,
-              margin: { left: 14, right: 14 },
-              headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-              bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-              alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-              columnStyles: { 0: { cellWidth: 45, fontStyle: 'bold' }, 1: { cellWidth: 30 } },
+            tableHtml += '</tbody></table>';
+            contentWrapper.innerHTML = tableHtml;
+          }
+        } else if (section.id === 'plano5w2h') {
+          // Render 5W2H as table
+          const actions = parse5W2H(section.content);
+          if (actions.length > 0) {
+            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:8px;">';
+            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:6px 8px;text-align:left;">Área</th><th style="padding:6px 8px;text-align:left;">O Quê</th><th style="padding:6px 8px;text-align:left;">Por Quê</th><th style="padding:6px 8px;text-align:left;">Onde</th><th style="padding:6px 8px;text-align:left;">Quando</th><th style="padding:6px 8px;text-align:left;">Quem</th><th style="padding:6px 8px;text-align:left;">Como</th><th style="padding:6px 8px;text-align:left;">Quanto</th></tr></thead><tbody>';
+            actions.forEach((a, ai) => {
+              const bg = ai % 2 === 0 ? '#fff' : '#f5f5f5';
+              tableHtml += `<tr style="background:${bg};"><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e5e7eb;">${a.area}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.oQue}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.porQue}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.onde}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quando}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quem}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.como}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quanto}</td></tr>`;
             });
-            y = (doc as any).lastAutoTable.finalY + 10;
-            continue;
+            tableHtml += '</tbody></table>';
+            contentWrapper.innerHTML = tableHtml;
           }
-        }
+        } else {
+          // Regular sections with 6 blocks
+          const blocks = parseSectionBlocks(section.content);
+          let html = '';
 
-        // Regular sections: parse into 6 blocks
-        const blocks = parseSectionBlocks(section.content);
-
-        // Block 1: Contexto Teórico (red box)
-        if (blocks.contexto) {
-          y = renderColoredBox(blocks.contexto, 'Contexto Teorico', RED_LIGHT, [220, 38, 38], y);
-        }
-
-        // Block 2: Desenvolvimento (text + diagrams + inline tables)
-        if (blocks.desenvolvimento.trim()) {
-          // Process dev content sequentially for tables & diagrams
-          const devContent = blocks.desenvolvimento;
-          const tableRegex = /(\|.+\|(?:\r?\n)?){3,}/g;
-          const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
-
-          interface Segment { type: 'table' | 'diagram'; start: number; end: number; data: any; }
-          const segments: Segment[] = [];
-
-          let match;
-          while ((match = tableRegex.exec(devContent)) !== null) {
-            segments.push({ type: 'table', start: match.index, end: match.index + match[0].length, data: match[0] });
+          // Block 1: Contexto Teórico
+          if (blocks.contexto) {
+            html += `<div style="border-left: 4px solid #f87171; background: rgba(254,242,242,0.3); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px;">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 6px;">Contexto Teórico</div>
+              <p style="font-size: 11px; color: #666; margin: 0; line-height: 1.5;">${blocks.contexto}</p>
+            </div>`;
           }
-          while ((match = diagramRegex.exec(devContent)) !== null) {
-            const dType = match[1];
-            const dItems = match[2].split('|').map(s => s.trim()).filter(Boolean);
-            segments.push({ type: 'diagram', start: match.index, end: match.index + match[0].length, data: { type: dType, items: dItems } });
+
+          // Block 2: Desenvolvimento
+          if (blocks.desenvolvimento.trim()) {
+            const devHtml = markdownToHtml(blocks.desenvolvimento);
+            html += `<div style="font-size: 11px; line-height: 1.6; color: #555; margin-bottom: 12px;">${devHtml}</div>`;
           }
-          segments.sort((a, b) => a.start - b.start);
 
-          let cursor = 0;
-          for (const seg of segments) {
-            if (seg.start > cursor) {
-              const textBefore = devContent.slice(cursor, seg.start);
-              if (textBefore.trim()) y = renderTextBlock(textBefore, y);
-            }
-            if (seg.type === 'table') {
-              y = renderTable(seg.data, y);
-            } else {
-              y = renderDiagram(seg.data.type, seg.data.items, y);
-            }
-            cursor = seg.end;
+          // Block 3: Principais Pontos
+          if (blocks.principaisPontos && blocks.principaisPontos.length > 0) {
+            html += `<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 8px;">Principais Pontos</div>
+              <ol style="margin: 0; padding: 0; list-style: none;">
+                ${blocks.principaisPontos.map((pt, i) => `
+                  <li style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #1e40af; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
+                    <span style="font-size: 11px; color: #555; line-height: 1.4;">${pt}</span>
+                  </li>
+                `).join('')}
+              </ol>
+            </div>`;
           }
-          if (cursor < devContent.length) {
-            const remaining = devContent.slice(cursor);
-            if (remaining.trim()) y = renderTextBlock(remaining, y);
+
+          // Block 4: Tabela de Resultados
+          if (blocks.tabela) {
+            const tabelaHtml = markdownToHtml(blocks.tabela);
+            html += `<div style="margin-bottom: 12px;">${tabelaHtml}</div>`;
           }
+
+          // Block 5: Conclusão
+          if (blocks.conclusao) {
+            html += `<div style="border-left: 4px solid #34d399; background: rgba(240,253,244,0.3); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px;">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 6px;">Conclusão</div>
+              <p style="font-size: 11px; color: #666; margin: 0; line-height: 1.5;">${blocks.conclusao}</p>
+            </div>`;
+          }
+
+          contentWrapper.innerHTML = html;
         }
 
-        // Block 3: Principais Pontos (blue box)
-        if (blocks.principaisPontos && blocks.principaisPontos.length > 0) {
-          y = renderNumberedList(blocks.principaisPontos, y);
-        }
+        sectionEl.appendChild(contentWrapper);
 
-        // Block 4: Tabela de Resultados
-        if (blocks.tabela) {
-          y = checkBreak(y, 10);
-          doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-          doc.text('TABELA DE RESULTADOS', 14, y + 5);
-          y += 8;
-          y = renderTable(blocks.tabela, y);
-        }
+        // Add separator
+        const sep = document.createElement('div');
+        sep.style.cssText = 'height: 1px; background: #e5e7eb; margin: 16px 28px 0 28px;';
+        sectionEl.appendChild(sep);
 
-        // Block 5: Conclusão (green box)
-        if (blocks.conclusao) {
-          y = renderColoredBox(blocks.conclusao, 'Conclusao', GREEN_LIGHT, [16, 185, 129], y);
-        }
-
-        y += 6;
+        container.appendChild(sectionEl);
       }
 
-      // Headers & footers
-      const totalPages = doc.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        if (i > 1) {
-          doc.setFillColor(...BRAND_BLUE);
-          doc.rect(0, 0, w, 14, 'F');
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Loyalty Academy Brasil - Plano Estrategico', 14, 9);
-          doc.text(`${i}/${totalPages}`, w - 14, 9, { align: 'right' });
-        }
-        const h = doc.internal.pageSize.getHeight();
-        doc.setDrawColor(...BRAND_BLUE);
+      // Wait for any images/fonts to load
+      await new Promise(r => setTimeout(r, 500));
+
+      // Capture the entire container
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794,
+      });
+
+      // Remove offscreen container
+      document.body.removeChild(container);
+
+      // Create PDF from canvas slices
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidthMm = doc.internal.pageSize.getWidth();
+      const pageHeightMm = doc.internal.pageSize.getHeight();
+      const headerH = 14; // mm for header
+      const footerH = 12; // mm for footer
+      const contentHeightMm = pageHeightMm - headerH - footerH;
+
+      // Calculate scaling
+      const imgWidthPx = canvas.width;
+      const imgHeightPx = canvas.height;
+      const pxPerMm = imgWidthPx / pageWidthMm;
+      const contentHeightPx = contentHeightMm * pxPerMm;
+
+      const totalPages = Math.ceil(imgHeightPx / contentHeightPx);
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+
+        const srcY = page * contentHeightPx;
+        const srcH = Math.min(contentHeightPx, imgHeightPx - srcY);
+
+        // Create a slice canvas
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = imgWidthPx;
+        sliceCanvas.height = srcH;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, imgWidthPx, srcH);
+        ctx.drawImage(canvas, 0, srcY, imgWidthPx, srcH, 0, 0, imgWidthPx, srcH);
+
+        const sliceImg = sliceCanvas.toDataURL('image/jpeg', 0.95);
+        const sliceHeightMm = srcH / pxPerMm;
+
+        doc.addImage(sliceImg, 'JPEG', 0, headerH, pageWidthMm, sliceHeightMm);
+
+        // Header
+        doc.setFillColor(30, 64, 175);
+        doc.rect(0, 0, pageWidthMm, headerH, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Loyalty Academy Brasil — Plano Estratégico', 14, 9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${page + 1}/${totalPages}`, pageWidthMm - 14, 9, { align: 'right' });
+
+        // Footer
+        const fY = pageHeightMm - footerH;
+        doc.setDrawColor(30, 64, 175);
         doc.setLineWidth(0.3);
-        doc.line(14, h - 12, w - 14, h - 12);
+        doc.line(14, fY + 2, pageWidthMm - 14, fY + 2);
         doc.setFontSize(7);
         doc.setTextColor(120, 120, 120);
-        doc.text('Documento gerado pela Plataforma Loyalty Academy Brasil', 14, h - 8);
+        doc.text('Documento gerado pela Plataforma Loyalty Academy Brasil', 14, fY + 7);
+        doc.text(new Date().toLocaleDateString('pt-BR'), pageWidthMm - 14, fY + 7, { align: 'right' });
       }
 
       doc.save('Plano_Estrategico_Loyalty_LAB.pdf');
-      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} paginas exportadas.` });
+      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
     } catch (err) {
       console.error('PDF error:', err);
       toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
@@ -983,7 +878,7 @@ const Resultado = () => {
             <CardHeader>
               <div className="flex items-center gap-3">
                 {(() => { const Icon = sectionIcons[currentSection.id] || FileText; return <Icon className="h-6 w-6 text-primary" />; })()}
-                <CardTitle className="text-xl">{currentSection.title}</CardTitle>
+                <CardTitle className="text-lg">{currentSection.title}</CardTitle>
               </div>
               <p className="text-xs text-muted-foreground">Seção {activeSection + 1} de {sections.length}</p>
             </CardHeader>
