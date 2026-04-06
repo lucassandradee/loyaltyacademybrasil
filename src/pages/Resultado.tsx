@@ -834,10 +834,7 @@ const Resultado = () => {
                 <span className={cn('flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold shrink-0', numColor)}>{num}</span>
                 <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
               </div>
-              <div className="mt-1.5">
-                <h3 className="text-sm font-bold text-foreground leading-tight">{section.title.replace(/^\d+\.\s*/, '')}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-              </div>
+              <h3 className="mt-1.5 text-sm font-bold text-foreground leading-tight">{section.title.replace(/^\d+\.\s*/, '')}</h3>
               <span className="mt-2 text-[9px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">Abrir →</span>
             </button>
           );
