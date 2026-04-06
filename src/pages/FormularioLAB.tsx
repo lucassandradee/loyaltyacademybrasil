@@ -241,7 +241,7 @@ const FormularioLAB = () => {
 
     clearLabDraftStorage();
     toast({ title: 'Framework LAB salvo!', description: 'Gerando seu Plano Estratégico...' });
-    navigate('/plano-final');
+    navigate('/resultado');
   };
 
   if (loadingFromDB) {
