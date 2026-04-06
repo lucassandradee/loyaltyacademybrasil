@@ -251,7 +251,8 @@ serve(async (req) => {
       planData = JSON.parse(content.trim());
     } catch {
       try {
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        const codeBlockRegex = new RegExp('```(?:json)?\\s*([\\s\\S]*?)```');
+        const jsonMatch = content.match(codeBlockRegex);
         if (jsonMatch) {
           planData = JSON.parse(jsonMatch[1].trim());
         } else {
