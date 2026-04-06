@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, ScatterChart, Scatter, CartesianGrid, ZAxis, LineChart, Line } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, Star, Users, Search, X, Download, Timer, CheckCircle, FileText } from 'lucide-react';
+import { Clock, Star, Users, Search, X, Download, Timer, CheckCircle, FileText, ArrowRight } from 'lucide-react';
 import { CXTicket, calculateCXKPIs, analyzeCausasRaiz, getNPSDistribution, generateCXSummary } from '@/lib/cx-logic';
 import { downloadCSV } from '@/lib/export-utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -514,6 +514,13 @@ const CXDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Next step CTA */}
+      <div className="mt-6 flex justify-end">
+        <Button onClick={() => navigate('/lab-framework')} className="gap-2">
+          Próxima etapa: Formulário LAB <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, Search, Settings2, X, Download } from 'lucide-react';
+import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, ArrowRight, Search, Settings2, X, Download } from 'lucide-react';
 import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary } from '@/lib/rfv-logic';
 import { downloadCSV } from '@/lib/export-utils';
 import { FileText } from 'lucide-react';
@@ -425,9 +425,12 @@ const RFVDashboard = () => {
         </CardContent>
       </Card>
 
-      <div className="mt-6">
+      <div className="mt-6 flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate('/rfv/parametros', { state: { clientData } })}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Parametrização
+        </Button>
+        <Button onClick={() => navigate('/nbo/dashboard')} className="gap-2">
+          Próxima etapa: Next Best Offer <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

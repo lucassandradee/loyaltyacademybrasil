@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronDown } from 'lucide-react';
+import { FileText, Upload, SlidersHorizontal, BarChart3, Flag, ClipboardList, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronDown, CheckCircle2, Lock } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -41,7 +41,6 @@ const homeItem = [
   { title: 'Loyalty Management', url: '/plano-final', icon: Flag },
 ];
 
-// Plan section sub-items shown when on /resultado
 const planSectionItems = [
   { id: 'sumario', title: 'Sumário Executivo', icon: FileText },
   { id: 'maturidade', title: 'Diagnóstico de Maturidade', icon: Shield },
@@ -63,23 +62,48 @@ interface Profile {
   cargo: string;
 }
 
+interface StepCompletion {
+  rfv: boolean;
+  nbo: boolean;
+  cx: boolean;
+  lab: boolean;
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [rfvUploaded, setRfvUploaded] = useState(() => localStorage.getItem('rfv_data_uploaded') === 'true');
-  const [cxUploaded, setCxUploaded] = useState(() => localStorage.getItem('cx_data_uploaded') === 'true');
+  const [completion, setCompletion] = useState<StepCompletion>({ rfv: false, nbo: false, cx: false, lab: false });
   const [planSectionsAvailable, setPlanSectionsAvailable] = useState(false);
   const [planSubOpen, setPlanSubOpen] = useState(true);
 
   const isOnResultado = location.pathname === '/resultado';
   const activeHash = location.hash?.replace('#', '') || '';
 
+  // Fetch real completion from DB
   useEffect(() => {
+    const fetchCompletion = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [rfvRes, cxRes, diagRes] = await Promise.all([
+        supabase.from('rfv_uploads').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+        supabase.from('cx_uploads').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+        supabase.from('diagnostic_responses').select('id').eq('user_id', user.id).limit(1).maybeSingle(),
+      ]);
+
+      setCompletion({
+        rfv: !!rfvRes.data,
+        nbo: !!rfvRes.data, // NBO uses same data as RFV
+        cx: !!cxRes.data,
+        lab: !!diagRes.data,
+      });
+    };
+    fetchCompletion();
+
+    // Also poll localStorage for immediate UI updates
     const handleStorage = () => {
-      setRfvUploaded(localStorage.getItem('rfv_data_uploaded') === 'true');
-      setCxUploaded(localStorage.getItem('cx_data_uploaded') === 'true');
       setPlanSectionsAvailable(localStorage.getItem('plan_sections_ready') === 'true');
     };
     window.addEventListener('storage', handleStorage);
@@ -88,7 +112,6 @@ export function AppSidebar() {
   }, []);
 
   useEffect(() => {
-    // Listen for custom event from Resultado page
     const handler = () => setPlanSectionsAvailable(true);
     window.addEventListener('plan-sections-ready', handler);
     return () => window.removeEventListener('plan-sections-ready', handler);
@@ -109,9 +132,15 @@ export function AppSidebar() {
     ? profile.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
 
-  const renderMenuItems = (items: typeof step1Items, uploadedFlag: boolean) =>
+  // Step gating: each step requires the previous one
+  const step1Enabled = true; // Always enabled
+  const step2Enabled = completion.rfv;
+  const step3Enabled = completion.rfv; // NBO uses RFV data, so after RFV you can do CX
+  const step4Enabled = completion.rfv && completion.cx;
+
+  const renderMenuItems = (items: typeof step1Items, stepEnabled: boolean, stepDone: boolean) =>
     items.map((item) => {
-      const enabled = 'alwaysEnabled' in item ? (item.alwaysEnabled || uploadedFlag) : true;
+      const enabled = stepEnabled && ('alwaysEnabled' in item ? (item.alwaysEnabled || stepDone) : true);
       return (
         <SidebarMenuItem key={item.url}>
           <SidebarMenuButton asChild disabled={!enabled}>
@@ -122,7 +151,7 @@ export function AppSidebar() {
               </NavLink>
             ) : (
               <span className="flex items-center opacity-40 cursor-not-allowed">
-                <item.icon className="mr-2 h-4 w-4" />
+                {stepEnabled ? <item.icon className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
                 {!collapsed && <span>{item.title}</span>}
               </span>
             )}
@@ -131,17 +160,31 @@ export function AppSidebar() {
       );
     });
 
-  const renderSimpleItems = (items: typeof step4Items) =>
+  const renderSimpleItems = (items: typeof step4Items, enabled = true) =>
     items.map((item) => (
       <SidebarMenuItem key={item.url}>
-        <SidebarMenuButton asChild>
-          <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-            <item.icon className="mr-2 h-4 w-4" />
-            {!collapsed && <span>{item.title}</span>}
-          </NavLink>
+        <SidebarMenuButton asChild disabled={!enabled}>
+          {enabled ? (
+            <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+              <item.icon className="mr-2 h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </NavLink>
+          ) : (
+            <span className="flex items-center opacity-40 cursor-not-allowed">
+              <Lock className="mr-2 h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </span>
+          )}
         </SidebarMenuButton>
       </SidebarMenuItem>
     ));
+
+  const StepLabel = ({ label, done }: { label: string; done: boolean }) => (
+    <span className="flex items-center gap-1.5">
+      {done && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+      {label}
+    </span>
+  );
 
   return (
     <Sidebar collapsible="icon">
@@ -165,45 +208,44 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Home - Loyalty Management */}
+        {/* Home */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>{renderSimpleItems(homeItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Step 1 - RFV */}
+        {/* Step 1 — RFV */}
         <SidebarGroup>
-          <SidebarGroupLabel>Passo 1 — RFV</SidebarGroupLabel>
+          <SidebarGroupLabel><StepLabel label="Passo 1 — RFV" done={completion.rfv} /></SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderMenuItems(step1Items, rfvUploaded)}</SidebarMenu>
+            <SidebarMenu>{renderMenuItems(step1Items, step1Enabled, completion.rfv)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Step 2 - NBO */}
+        {/* Step 2 — NBO */}
         <SidebarGroup>
-          <SidebarGroupLabel>Passo 2 — Next Best Offer</SidebarGroupLabel>
+          <SidebarGroupLabel><StepLabel label="Passo 2 — Next Best Offer" done={completion.nbo} /></SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderMenuItems(step2Items, rfvUploaded)}</SidebarMenu>
+            <SidebarMenu>{renderMenuItems(step2Items, step2Enabled, completion.nbo)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Step 3 - CX */}
+        {/* Step 3 — CX */}
         <SidebarGroup>
-          <SidebarGroupLabel>Passo 3 — Customer Experience</SidebarGroupLabel>
+          <SidebarGroupLabel><StepLabel label="Passo 3 — Customer Experience" done={completion.cx} /></SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>{renderMenuItems(step3Items, cxUploaded)}</SidebarMenu>
+            <SidebarMenu>{renderMenuItems(step3Items, step3Enabled, completion.cx)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Step 4 - Plano Estratégico */}
+        {/* Step 4 — Plano Estratégico */}
         <SidebarGroup>
-          <SidebarGroupLabel>Passo 4 — Plano Estratégico</SidebarGroupLabel>
+          <SidebarGroupLabel><StepLabel label="Passo 4 — Plano Estratégico" done={completion.lab} /></SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {renderSimpleItems(step4Items)}
+              {renderSimpleItems(step4Items, step4Enabled)}
 
-              {/* Plan section sub-navigation when on /resultado */}
               {isOnResultado && planSectionsAvailable && !collapsed && (
                 <SidebarMenuItem>
                   <button
