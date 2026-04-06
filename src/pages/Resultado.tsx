@@ -945,6 +945,7 @@ const Resultado = () => {
         };
 
         return (
+          <>
           <div className="border-2 border-border/80 rounded-xl overflow-hidden bg-card">
             <div className="grid grid-cols-1">
               <CanvasCell id="sumario" className="rounded-none border-0 border-b-2 border-border/60 min-h-[80px]" />
@@ -969,6 +970,16 @@ const Resultado = () => {
               <CanvasCell id="plano5w2h" className="rounded-none border-0 min-h-[90px]" />
             </div>
           </div>
+          <div className="mt-6 flex justify-center">
+            <Button
+              size="lg"
+              onClick={() => { setActiveSection(0); setViewMode('detail'); }}
+              className="gap-2"
+            >
+              <BookOpen className="h-4 w-4" /> Ver Plano Completo
+            </Button>
+          </div>
+          </>
         );
       })()}
 
