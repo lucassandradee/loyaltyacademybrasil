@@ -689,12 +689,6 @@ const Resultado = () => {
         addHeaderFooter(doc, p, totalPages);
       }
 
-      // Add headers/footers to all pages
-      const totalPages = pageCount;
-      for (let p = 1; p <= totalPages; p++) {
-        doc.setPage(p);
-        addHeaderFooter(doc, p, totalPages);
-      }
 
       doc.save('Plano_Estrategico_Loyalty_LAB.pdf');
       toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
