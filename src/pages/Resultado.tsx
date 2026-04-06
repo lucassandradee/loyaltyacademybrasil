@@ -542,23 +542,7 @@ const Resultado = () => {
 
       const h2cOpts = { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', width: 794, windowWidth: 794 };
 
-      // Cover page
-      const coverDiv = document.createElement('div');
-      coverDiv.style.cssText = `width:794px;background:white;`;
-      coverDiv.className = 'bg-background text-foreground';
-      const coverInner = document.createElement('div');
-      coverInner.style.cssText = `background:#1e40af;padding:40px ${marginPx}px;color:white;`;
-      coverInner.innerHTML = `
-        <h1 style="font-size:24px;font-weight:700;margin:0 0 6px 0;">Plano Estratégico de Loyalty</h1>
-        <p style="font-size:12px;opacity:0.9;margin:0 0 4px 0;">Relatório personalizado — Framework LAB</p>
-        <p style="font-size:11px;opacity:0.8;margin:0;">${new Date().toLocaleDateString('pt-BR')}</p>
-      `;
-      coverDiv.appendChild(coverInner);
-      hiddenHost.appendChild(coverDiv);
-      await new Promise(r => setTimeout(r, 100));
-      const coverCanvas = await html2canvas(coverDiv, h2cOpts);
-      blocks.push({ canvas: coverCanvas, isNewSection: true });
-      hiddenHost.removeChild(coverDiv);
+      // Sem capa no PDF: a seção 1 deve começar na página 1.
 
       // Render each section — capture title bar + each child block separately
       for (const section of sections) {
