@@ -1,16 +1,16 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 interface DiagramProps {
   items: string[];
 }
 
+// Sober, professional color palettes
 const pyramidColors = [
-  { fill: '#7c3aed', text: 'white' },
-  { fill: '#8b5cf6', text: 'white' },
-  { fill: '#a78bfa', text: 'white' },
-  { fill: '#c4b5fd', text: '#4c1d95' },
-  { fill: '#ddd6fe', text: '#4c1d95' },
+  { fill: '#1e40af', text: 'white', border: '#1e3a8a' },
+  { fill: '#2563eb', text: 'white', border: '#1d4ed8' },
+  { fill: '#3b82f6', text: 'white', border: '#2563eb' },
+  { fill: '#60a5fa', text: '#1e3a8a', border: '#3b82f6' },
+  { fill: '#93c5fd', text: '#1e3a8a', border: '#60a5fa' },
 ];
 
 export function PyramidDiagram({ items }: DiagramProps) {
@@ -52,7 +52,7 @@ export function PyramidDiagram({ items }: DiagramProps) {
   );
 }
 
-const funnelColors = ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
+const funnelColors = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'];
 
 export function FunnelDiagram({ items }: DiagramProps) {
   const n = items.length;
@@ -89,58 +89,50 @@ export function FunnelDiagram({ items }: DiagramProps) {
   );
 }
 
-const flowColors = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
-
 export function FlowDiagram({ items }: DiagramProps) {
   const n = items.length;
-  const boxW = 140;
-  const boxH = 56;
-  const gap = 30;
-  const totalW = n * boxW + (n - 1) * gap;
-  const svgW = Math.max(totalW + 20, 400);
 
+  // Vertical layout for better readability
   return (
-    <div className="my-6 overflow-x-auto">
-      <svg viewBox={`0 0 ${svgW} ${boxH + 20}`} className="w-full min-w-[500px]" role="img">
+    <div className="my-6 flex justify-center">
+      <div className="flex flex-col gap-0 w-full max-w-lg">
         {items.map((item, i) => {
-          const x = 10 + i * (boxW + gap);
-          const color = flowColors[i % flowColors.length];
           const label = item.includes(':') ? item.split(':')[0].trim() : item;
           const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
           return (
-            <g key={i}>
-              <rect x={x} y={10} width={boxW} height={boxH} rx="8" fill={color} />
-              <text x={x + boxW / 2} y={10 + boxH / 2 - (desc ? 5 : 0)} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="11" fontWeight="bold">
-                {label.length > 18 ? label.slice(0, 18) + '…' : label}
-              </text>
-              {desc && (
-                <text x={x + boxW / 2} y={10 + boxH / 2 + 11} textAnchor="middle" dominantBaseline="central" fill="white" fontSize="8" opacity="0.9">
-                  {desc.length > 22 ? desc.slice(0, 22) + '…' : desc}
-                </text>
-              )}
+            <div key={i} className="flex flex-col items-center">
+              <div className="w-full rounded-lg border-2 border-blue-200 bg-white p-4 text-center shadow-sm">
+                <div className="text-sm font-bold text-foreground">{label}</div>
+                {desc && <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{desc}</div>}
+              </div>
               {i < n - 1 && (
-                <polygon points={`${x + boxW + 5},${10 + boxH / 2 - 6} ${x + boxW + gap - 5},${10 + boxH / 2} ${x + boxW + 5},${10 + boxH / 2 + 6}`} fill="#6b7280" />
+                <div className="flex flex-col items-center py-1">
+                  <div className="w-0.5 h-4 bg-blue-300" />
+                  <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-blue-300" />
+                </div>
               )}
-            </g>
+            </div>
           );
         })}
-      </svg>
+      </div>
     </div>
   );
 }
 
 export function ComparisonDiagram({ items }: DiagramProps) {
-  const compColors = ['#2563eb', '#7c3aed', '#059669', '#d97706'];
+  const compColors = ['border-blue-500', 'border-violet-500', 'border-emerald-500', 'border-amber-500'];
+  const compBg = ['bg-blue-50', 'bg-violet-50', 'bg-emerald-50', 'bg-amber-50'];
+  const compText = ['text-blue-700', 'text-violet-700', 'text-emerald-700', 'text-amber-700'];
+
   return (
     <div className="my-6 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 4)}, 1fr)` }}>
       {items.map((item, i) => {
         const label = item.includes(':') ? item.split(':')[0].trim() : item;
         const desc = item.includes(':') ? item.split(':').slice(1).join(':').trim() : '';
-        const color = compColors[i % compColors.length];
         return (
-          <div key={i} className="rounded-xl p-4 text-center text-white shadow-lg" style={{ backgroundColor: color }}>
-            <div className="text-sm font-bold mb-1">{label}</div>
-            {desc && <div className="text-xs opacity-90 leading-relaxed">{desc}</div>}
+          <div key={i} className={`rounded-xl border-2 ${compColors[i % compColors.length]} ${compBg[i % compBg.length]} p-4 text-center`}>
+            <div className={`text-sm font-bold mb-1 ${compText[i % compText.length]}`}>{label}</div>
+            {desc && <div className="text-xs text-muted-foreground leading-relaxed">{desc}</div>}
           </div>
         );
       })}
@@ -159,20 +151,15 @@ export function GaugeDiagram({ items }: DiagramProps) {
   return (
     <div className="my-6 flex justify-center">
       <svg viewBox="0 0 200 130" className="w-full max-w-xs" role="img">
-        {/* Background arc */}
         <path d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeLinecap="round" />
-        {/* Value arc */}
         <path
           d={`M 20 110 A 80 80 0 0 1 ${100 + 80 * Math.cos((angle * Math.PI) / 180)} ${110 - 80 * Math.abs(Math.sin((angle * Math.PI) / 180))}`}
           fill="none" stroke={gaugeColor} strokeWidth="16" strokeLinecap="round"
         />
-        {/* Needle */}
         <line x1="100" y1="110" x2={100 + 60 * Math.cos((angle * Math.PI) / 180)} y2={110 - 60 * Math.sin((angle * Math.PI) / 180)} stroke="#374151" strokeWidth="3" strokeLinecap="round" />
         <circle cx="100" cy="110" r="6" fill="#374151" />
-        {/* Value text */}
         <text x="100" y="95" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#1f2937">{value}</text>
         <text x="100" y="125" textAnchor="middle" fontSize="10" fill="#6b7280">{label}</text>
-        {/* Min/Max labels */}
         <text x="20" y="125" textAnchor="middle" fontSize="8" fill="#9ca3af">0</text>
         <text x="180" y="125" textAnchor="middle" fontSize="8" fill="#9ca3af">10</text>
       </svg>

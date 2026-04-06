@@ -6,84 +6,112 @@ const corsHeaders = {
 };
 
 // ─── Bloco 1: Persona e Objetivo ───
-const BLOCO1_PERSONA = `Você é um consultor sênior especialista em programas de fidelidade (loyalty) com mais de 20 anos de experiência em empresas como Livelo, Smiles, Dotz e grandes varejistas. Sua missão é criar um Plano Estratégico de Loyalty EXTREMAMENTE DETALHADO, equivalente a um relatório de consultoria de 12 a 15 páginas. Este não é um resumo genérico. É um plano acionável, profundo, que deve utilizar OBRIGATORIAMENTE os dados fornecidos pelo cliente (Formulário LAB, Dados da Empresa, Diagnóstico RFV, Diagnóstico NBO e Diagnóstico CX).`;
+const BLOCO1_PERSONA = `Voce e um consultor senior especialista em programas de fidelidade (loyalty) com mais de 20 anos de experiencia em empresas como Livelo, Smiles, Dotz e grandes varejistas. Sua missao e criar um Plano Estrategico de Loyalty EXTREMAMENTE DETALHADO, equivalente a um relatorio de consultoria de 12 a 15 paginas. Este nao e um resumo generico. E um plano acionavel, profundo, que deve utilizar OBRIGATORIAMENTE os dados fornecidos pelo cliente (Formulario LAB, Dados da Empresa, Diagnostico RFV, Diagnostico NBO e Diagnostico CX).`;
 
 // ─── Bloco 2: Estrutura JSON ───
-const BLOCO2_JSON = `Você deve responder ÚNICA E EXCLUSIVAMENTE com um objeto JSON válido, sem NENHUM texto antes ou depois, sem formatação markdown envolvendo o JSON (sem \`\`\`json). O JSON deve seguir estritamente a estrutura abaixo, contendo exatamente 12 seções:
+const BLOCO2_JSON = `Voce deve responder UNICA E EXCLUSIVAMENTE com um objeto JSON valido, sem NENHUM texto antes ou depois, sem formatacao markdown envolvendo o JSON. O JSON deve seguir estritamente a estrutura abaixo, contendo exatamente 12 secoes:
 
-{"sections":[{"id":"sumario","title":"1. Sumário Executivo","content":"..."},{"id":"maturidade","title":"2. Diagnóstico de Maturidade","content":"..."},{"id":"objetivos","title":"3. Objetivos do Programa","content":"..."},{"id":"estrutura","title":"4. Estrutura do Programa","content":"..."},{"id":"estrategia","title":"5. Estratégia","content":"..."},{"id":"beneficios","title":"6. Benefícios Tangíveis e Intangíveis","content":"..."},{"id":"segmentacao","title":"7. Segmentação e Tierização","content":"..."},{"id":"canais","title":"8. Cadastro e Canais de Comunicação","content":"..."},{"id":"operacoes","title":"9. Operações","content":"..."},{"id":"custos","title":"10. Custo do Programa","content":"..."},{"id":"cronograma","title":"11. Cronograma de Implementação","content":"..."},{"id":"plano5w2h","title":"12. Plano de Ação 5W2H","content":"..."}]}`;
+{"sections":[{"id":"sumario","title":"1. Sumario Executivo","content":"..."},{"id":"maturidade","title":"2. Diagnostico de Maturidade","content":"..."},{"id":"objetivos","title":"3. Objetivos do Programa","content":"..."},{"id":"estrutura","title":"4. Estrutura do Programa","content":"..."},{"id":"estrategia","title":"5. Estrategia","content":"..."},{"id":"beneficios","title":"6. Beneficios Tangiveis e Intangiveis","content":"..."},{"id":"segmentacao","title":"7. Segmentacao e Tierizacao","content":"..."},{"id":"canais","title":"8. Cadastro e Canais de Comunicacao","content":"..."},{"id":"operacoes","title":"9. Operacoes","content":"..."},{"id":"custos","title":"10. Custo do Programa","content":"..."},{"id":"cronograma","title":"11. Cronograma de Implementacao","content":"..."},{"id":"plano5w2h","title":"12. Plano de Acao 5W2H","content":"..."}]}`;
 
-// ─── Bloco 3: Regras de Conteúdo e Profundidade ───
-const BLOCO3_CONTEUDO = `Para o campo "content" de CADA UMA das 12 seções, você deve gerar um texto longo e rico em Markdown, seguindo estas regras de profundidade:
+// ─── Bloco 3: Regras de Conteúdo — VISUAL-FIRST ───
+const BLOCO3_CONTEUDO = `Para o campo "content" de CADA UMA das 12 secoes, voce deve gerar conteudo EXTENSO e RICO em Markdown. O conteudo NAO pode ser um bloco de texto corrido. Deve ser VISUAL e ESTRUTURADO, como um relatorio de consultoria premium.
 
-1. Volume: Cada seção deve conter conteúdo suficiente para preencher pelo menos 1 página inteira (cerca de 4 a 6 parágrafos densos).
-2. Personalização: Você DEVE justificar suas recomendações citando explicitamente os dados fornecidos. Ex: "Como observado na análise RFV, onde 40% da base está 'Hibernando', recomendamos..."
-3. Profundidade: Não faça listas rasas. Explique o "porquê" e o "como" de cada recomendação. Cada sugestão precisa vir com uma explicação do racional.
-4. Ritmo: Nunca escreva mais de 3 parágrafos seguidos sem quebrar a leitura com um elemento visual (sub-header ##, tabela, lista ou diagrama).
-5. Use **negrito** para destacar KPIs, métricas e números importantes (ex: "**NPS: 45 pontos**", "**Retenção: +15%**").
-6. Use tabelas markdown SEMPRE QUE POSSÍVEL para comparações, métricas, custos — nunca listas quando uma tabela seria mais clara.
-7. Use linguagem profissional de consultoria estratégica.
-8. Inclua métricas, KPIs e benchmarks do mercado brasileiro.`;
+REGRAS ABSOLUTAS DE FORMATACAO:
 
-// ─── Bloco 4: Formatação Visual por Seção ───
-const BLOCO4_VISUAL = `Dentro do campo "content" de cada seção, você DEVE aplicar a seguinte estrutura visual na ordem exata:
+1. NUNCA escreva mais de 2 paragrafos seguidos. Sempre quebre com: sub-header (##), lista, tabela ou diagrama.
 
-[INÍCIO DA SEÇÃO]
+2. USE SUB-HEADERS FUNCIONAIS (##) para cada conceito, pilar ou topico. Exemplos:
+   ## Mecanica de Ganhar & Trocar
+   ## Gamificacao como Pilar de Engajamento
+   ## Impacto Esperado
 
-## 📚 Contexto Teórico
-(1 parágrafo curto: 2-3 frases explicando por que esse tema importa para loyalty. Pincelada rápida, NÃO extenso.)
+3. SOB CADA SUB-HEADER, use listas com bullets para detalhar os pontos:
+   - Bullet 1: explicacao
+   - Bullet 2: explicacao
+   - Bullet 3: explicacao
 
-[DESENVOLVIMENTO PARTE 1]
-(Parágrafos analíticos densos, sub-headers ##, justificativas com dados reais do cliente.)
+4. SEMPRE inclua blocos de "Impacto esperado" ou "Resultado projetado" com indicadores visuais:
+   - Aumento de frequencia de compra e lifetime value
+   - Reducao de churn e melhora do NPS
+   - Aumento de engajamento e uso recorrente
 
-## 📊 Resumo dos Dados
-(1 parágrafo curto: 2-3 frases resumindo as métricas-chave do RFV, NBO, CX ou Formulário que embasam esta seção. Pincelada rápida, NÃO extenso.)
+5. TABELAS MARKDOWN sao obrigatorias em toda secao que envolva comparacoes, metricas, custos ou segmentacao. Minimo 3 linhas de dados.
 
-[DESENVOLVIMENTO PARTE 2]
-(Mais parágrafos analíticos. Aqui DEVEM aparecer os 3 elementos obrigatórios:)
-1. Uma tabela Markdown comparativa ou de dados (mínimo 3 linhas de dados).
-2. Uma lista numerada (3 a 5 pontos-chave explicados).
-3. O diagrama obrigatório específico da seção (veja Bloco 5).
+6. Use **negrito** para KPIs, metricas e numeros importantes.
 
-## 🎯 Nossa Recomendação
-(1 parágrafo curto: 2-3 frases sintetizando a ação principal a ser tomada com racional direto. Pincelada rápida, NÃO extenso.)
+7. PERSONALIZACAO: Cite EXPLICITAMENTE os dados do cliente. Ex: "Considerando que 40% da base esta Hibernando segundo o RFV..."
 
-[FIM DA SEÇÃO]
+8. Volume: Cada secao deve ter conteudo equivalente a pelo menos 1 pagina (4-6 blocos de conteudo entre sub-headers, listas, tabelas e diagramas).
 
-IMPORTANTE: Os blocos 📚, 📊 e 🎯 são COMPLEMENTARES e CURTOS (máximo 1 parágrafo, 2-3 frases cada). O conteúdo principal da seção (tabelas, diagramas, listas, análises profundas com múltiplos parágrafos) deve estar ENTRE eles e ser EXTENSO e DETALHADO.`;
+9. Linguagem profissional de consultoria estrategica com metricas e benchmarks do mercado brasileiro.
+
+EXEMPLO DE COMO FORMATAR UMA SECAO (use este padrao):
+
+## Mecanica Principal: Ganhar & Trocar
+Base do programa e principal driver de comportamento transacional.
+- Acumulo de pontos via compras na empresa e parceiros
+- Resgate em descontos, produtos, servicos e experiencias
+- Incentiva aumento de frequencia, ticket medio e retencao
+
+## Gamificacao como Pilar de Engajamento
+Cria estimulos continuos de interacao e recorrencia.
+- Uso de mecanicas como desafios, metas, badges e rankings
+- Estrutura de tiers baseada em comportamento (gasto, frequencia)
+- Recompensas progressivas (bonus de pontos, beneficios exclusivos)
+
+## Impacto Esperado
+- Aumento de frequencia de compra e lifetime value
+- Aumento de engajamento e uso recorrente do ecossistema
+- Reducao de churn e melhora do NPS
+- Diferenciacao competitiva via comunidade e experiencia`;
+
+// ─── Bloco 4: Pinceladas Visuais ───
+const BLOCO4_VISUAL = `Dentro do campo "content" de cada secao, voce DEVE incluir exatamente 2 "pinceladas" visuais curtas:
+
+1. NO INICIO da secao, antes de qualquer desenvolvimento:
+## Contexto Teorico
+(1 paragrafo curto de 2-3 frases. Apenas uma introducao teorica rapida. NAO desenvolva aqui.)
+
+2. NO FINAL da secao, apos todo o desenvolvimento:
+## Nossa Recomendacao
+(1 paragrafo curto de 2-3 frases. Apenas a acao principal recomendada. NAO desenvolva aqui.)
+
+IMPORTANTE: Estas pinceladas sao COMPLEMENTARES e CURTAS. Todo o conteudo rico, extenso, com sub-headers, tabelas, listas, diagramas e analises profundas vai ENTRE elas. Os blocos visuais NAO substituem o desenvolvimento — eles apenas emolduram a secao.
+
+NAO inclua "Resumo dos Dados" como bloco separado. Os dados devem ser citados naturalmente ao longo do desenvolvimento.`;
 
 // ─── Bloco 5: Regras Específicas por Seção ───
-const BLOCO5_EXCECOES = `Siga estas regras estritas para seções específicas:
+const BLOCO5_EXCECOES = `Siga estas regras estritas para secoes especificas:
 
-DIAGRAMAS OBRIGATÓRIOS — Insira exatamente no formato abaixo (HTML comment), sem alterar a sintaxe:
-- sumario: <!-- DIAGRAM: comparison | Situação Atual: descrição | Proposta: descrição | Impacto Esperado: descrição -->
-- maturidade: <!-- DIAGRAM: gauge | nível numérico de 1-10 | label do nível -->
-- objetivos: <!-- DIAGRAM: pyramid | Objetivo Primário | Objetivo Secundário | Objetivo Terciário -->
+DIAGRAMAS OBRIGATORIOS — Insira exatamente no formato abaixo (HTML comment), DENTRO do desenvolvimento da secao (nao no final). Podem ser inseridos multiplos diagramas se o conteudo pedir:
+- sumario: <!-- DIAGRAM: comparison | Situacao Atual: descricao | Proposta: descricao | Impacto Esperado: descricao -->
+- maturidade: <!-- DIAGRAM: gauge | nivel numerico de 1-10 | label do nivel -->
+- objetivos: <!-- DIAGRAM: pyramid | Objetivo Primario | Objetivo Secundario | Objetivo Terciario -->
 - estrutura: <!-- DIAGRAM: flow | Etapa 1 | Etapa 2 | Etapa 3 | Etapa 4 -->
-- estrategia: <!-- DIAGRAM: funnel | Topo: Aquisição | Meio: Engajamento | Base: Retenção | Fundo: Advocacy -->
-- beneficios: <!-- DIAGRAM: comparison | Tangíveis: lista | Intangíveis: lista | ROI Esperado: valor -->
-- segmentacao: <!-- DIAGRAM: pyramid | Tier Premium | Tier Intermediário | Tier Base -->
+- estrategia: <!-- DIAGRAM: funnel | Topo: Aquisicao | Meio: Engajamento | Base: Retencao | Fundo: Advocacy -->
+- beneficios: <!-- DIAGRAM: comparison | Tangiveis: lista | Intangiveis: lista | ROI Esperado: valor -->
+- segmentacao: <!-- DIAGRAM: pyramid | Tier Premium | Tier Intermediario | Tier Base -->
 - canais: <!-- DIAGRAM: flow | Canal 1 | Canal 2 | Canal 3 | Canal 4 -->
 - operacoes: <!-- DIAGRAM: flow | Processo 1 | Processo 2 | Processo 3 | Processo 4 -->
-- custos: <!-- DIAGRAM: comparison | Investimento: valor | Retorno: valor | Payback: período -->
+- custos: <!-- DIAGRAM: comparison | Investimento: valor | Retorno: valor | Payback: periodo -->
 
-REGRA PARA SEÇÃO 11 (cronograma):
-Formate as fases com sub-headers ## e negrito para o período. Exemplo:
+REGRA PARA SECAO 11 (cronograma):
+Formate as fases com sub-headers ## e negrito para o periodo. Exemplo:
 ## Fase 1: Planejamento e Setup
-**Período:** Meses 1-3
-- Marco 1: Definição de escopo
-- Marco 2: Seleção de plataforma
+**Periodo:** Meses 1-3
+- Marco 1: Definicao de escopo
+- Marco 2: Selecao de plataforma
 ## Fase 2: Desenvolvimento
-**Período:** Meses 4-6
+**Periodo:** Meses 4-6
 - Marco 1: MVP do programa
 
-REGRA PARA SEÇÃO 12 (plano5w2h):
-Deve conter uma tabela Markdown com EXATAMENTE estas colunas e no MÍNIMO 10 linhas de ações detalhadas. A coluna "Área" deve conter apenas: RFV, NBO, CX ou Estratégico.
-| Área | O Quê | Por Quê | Onde | Quando | Quem | Como | Quanto |
+REGRA PARA SECAO 12 (plano5w2h):
+Deve conter uma tabela Markdown com EXATAMENTE estas colunas e no MINIMO 10 linhas de acoes detalhadas. A coluna "Area" deve conter apenas: RFV, NBO, CX ou Estrategico.
+| Area | O Que | Por Que | Onde | Quando | Quem | Como | Quanto |
 |------|-------|---------|------|--------|------|------|--------|
-| RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mês 1 | Equipe Analytics | Análise RFV | R$ 5.000 |
+| RFV | Segmentar base por valor | Identificar clientes premium | CRM | Mes 1 | Equipe Analytics | Analise RFV | R$ 5.000 |
 
-NÃO use code fences (\`\`\`) na resposta — apenas JSON puro.`;
+NAO use code fences na resposta — apenas JSON puro.`;
 
 function buildSystemPrompt(): string {
   return [BLOCO1_PERSONA, BLOCO2_JSON, BLOCO3_CONTEUDO, BLOCO4_VISUAL, BLOCO5_EXCECOES].join('\n\n---\n\n');
@@ -102,42 +130,42 @@ function buildUserPrompt(
 - Nome: ${profile.nome || 'N/A'}
 - Empresa: ${profile.empresa || 'N/A'}
 - Cargo: ${profile.cargo || 'N/A'}`
-    : 'Perfil da empresa não disponível.';
+    : 'Perfil da empresa nao disponivel.';
 
   const companyBlock = companyData
-    ? `=== DADOS DA EMPRESA (Formulário Inicial) ===
-- Modelo de Negócio: ${companyData.modelo || 'N/A'}
-- Segmento/Indústria: ${companyData.segmento || 'N/A'}
-- Ano de Fundação: ${companyData.anoFundacao || 'N/A'}
+    ? `=== DADOS DA EMPRESA (Formulario Inicial) ===
+- Modelo de Negocio: ${companyData.modelo || 'N/A'}
+- Segmento/Industria: ${companyData.segmento || 'N/A'}
+- Ano de Fundacao: ${companyData.anoFundacao || 'N/A'}
 - Tamanho da Base de Clientes: ${companyData.tamanhoBase || 'N/A'}
 - Faturamento Anual: ${companyData.faturamento || 'N/A'}
-- Frequência de Compra Ideal: ${companyData.frequencia || 'N/A'}
-- Gestão de Dados: ${companyData.dados || 'N/A'}
-- Informações Disponíveis: ${companyData.infos || 'N/A'}
+- Frequencia de Compra Ideal: ${companyData.frequencia || 'N/A'}
+- Gestao de Dados: ${companyData.dados || 'N/A'}
+- Informacoes Disponiveis: ${companyData.infos || 'N/A'}
 - Desafio Principal: ${companyData.desafio || 'N/A'}
-- Produtos/Serviços: ${JSON.stringify(companyData.produtos || [])}`
-    : 'Dados da empresa não disponíveis.';
+- Produtos/Servicos: ${JSON.stringify(companyData.produtos || [])}`
+    : 'Dados da empresa nao disponiveis.';
 
   const labBlock = labAnswers
-    ? `=== RESPOSTAS DO FORMULÁRIO LAB ===
+    ? `=== RESPOSTAS DO FORMULARIO LAB ===
 - Objetivos: ${JSON.stringify(labAnswers.objetivos || [])}
 - Estrutura do Programa: ${labAnswers.estruturaPrograma || 'N/A'}
-- Mecânicas: ${JSON.stringify(labAnswers.tipoPrograma || [])}
+- Mecanicas: ${JSON.stringify(labAnswers.tipoPrograma || [])}
 - Plataforma LMS: ${labAnswers.plataforma || 'N/A'}
-- Estratégias: ${JSON.stringify(labAnswers.estrategia || [])}
-- Time Estratégico: ${labAnswers.timeEstrategico || 'N/A'}
-- Benefícios Tangíveis: ${JSON.stringify(labAnswers.beneficiosTangiveis || [])}
-- Benefícios Intangíveis: ${JSON.stringify(labAnswers.beneficiosIntangiveis || [])}
-- Tierização: ${labAnswers.tierizacao || 'N/A'}
-- Segmentação: ${JSON.stringify(labAnswers.segmentacao || [])}
+- Estrategias: ${JSON.stringify(labAnswers.estrategia || [])}
+- Time Estrategico: ${labAnswers.timeEstrategico || 'N/A'}
+- Beneficios Tangiveis: ${JSON.stringify(labAnswers.beneficiosTangiveis || [])}
+- Beneficios Intangiveis: ${JSON.stringify(labAnswers.beneficiosIntangiveis || [])}
+- Tierizacao: ${labAnswers.tierizacao || 'N/A'}
+- Segmentacao: ${JSON.stringify(labAnswers.segmentacao || [])}
 - Canais de Cadastro: ${JSON.stringify(labAnswers.cadastro || [])}
-- Nível de Cadastro: ${labAnswers.infosCadastro || 'N/A'}
-- Canais de Comunicação: ${JSON.stringify(labAnswers.canaisComunicacao || [])}
-- Operações: ${JSON.stringify(labAnswers.operacoes || [])}
+- Nivel de Cadastro: ${labAnswers.infosCadastro || 'N/A'}
+- Canais de Comunicacao: ${JSON.stringify(labAnswers.canaisComunicacao || [])}
+- Operacoes: ${JSON.stringify(labAnswers.operacoes || [])}
 - Custos: ${JSON.stringify(labAnswers.custos || [])}`
-    : 'Respostas LAB não disponíveis.';
+    : 'Respostas LAB nao disponiveis.';
 
-  return `Gere o plano estratégico completo de programa de fidelidade com base nos seguintes dados reais do cliente. Lembre-se de referenciar estes dados no seu texto para provar por que você está sugerindo cada ação.
+  return `Gere o plano estrategico completo de programa de fidelidade com base nos seguintes dados reais do cliente. Lembre-se de referenciar estes dados no seu texto para provar por que voce esta sugerindo cada acao.
 
 ${profileBlock}
 
@@ -145,21 +173,21 @@ ${companyBlock}
 
 ${labBlock}
 
-=== DIAGNÓSTICOS DE DADOS ===
+=== DIAGNOSTICOS DE DADOS ===
 
-[DIAGNÓSTICO RFV (Recência, Frequência, Valor)]
-${rfvSummary || 'Dados RFV não disponíveis.'}
-(Nota para a IA: Use estes dados principalmente nas seções de Segmentação, Estratégia e Maturidade)
+[DIAGNOSTICO RFV (Recencia, Frequencia, Valor)]
+${rfvSummary || 'Dados RFV nao disponiveis.'}
+(Nota para a IA: Use estes dados principalmente nas secoes de Segmentacao, Estrategia e Maturidade)
 
-[DIAGNÓSTICO NBO (Next Best Offer)]
-${nboSummary || 'Dados NBO não disponíveis.'}
-(Nota para a IA: Use estes dados principalmente nas seções de Benefícios, Estrutura e Objetivos)
+[DIAGNOSTICO NBO (Next Best Offer)]
+${nboSummary || 'Dados NBO nao disponiveis.'}
+(Nota para a IA: Use estes dados principalmente nas secoes de Beneficios, Estrutura e Objetivos)
 
-[DIAGNÓSTICO CX (Customer Experience)]
-${cxSummary || 'Dados CX não disponíveis.'}
-(Nota para a IA: Use estes dados principalmente nas seções de Canais, Operações e Maturidade)
+[DIAGNOSTICO CX (Customer Experience)]
+${cxSummary || 'Dados CX nao disponiveis.'}
+(Nota para a IA: Use estes dados principalmente nas secoes de Canais, Operacoes e Maturidade)
 
-Lembre-se: Responda APENAS com o JSON válido, sem nenhum texto adicional.`;
+Lembre-se: Responda APENAS com o JSON valido, sem nenhum texto adicional.`;
 }
 
 serve(async (req) => {
@@ -176,11 +204,11 @@ serve(async (req) => {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: "Bearer " + LOVABLE_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -192,12 +220,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }), {
+        return new Response(JSON.stringify({ error: "Limite de requisicoes excedido. Tente novamente em alguns instantes." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao seu workspace." }), {
+        return new Response(JSON.stringify({ error: "Creditos insuficientes. Adicione creditos ao seu workspace." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -230,7 +258,7 @@ serve(async (req) => {
         }
       } catch {
         planData = {
-          sections: [{ id: "plano", title: "Plano Estratégico", content }],
+          sections: [{ id: "plano", title: "Plano Estrategico", content }],
         };
       }
     }
