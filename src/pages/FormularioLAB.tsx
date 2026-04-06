@@ -154,7 +154,7 @@ const FormularioLAB = () => {
     localStorage.removeItem(LAB_DRAFT_KEY);
     localStorage.removeItem(LAB_STEP_KEY);
     toast({ title: 'Framework LAB salvo!', description: 'Gerando seu Plano Estratégico...' });
-    navigate('/resultado');
+    navigate('/plano-final');
   };
 
   if (loadingFromDB) {

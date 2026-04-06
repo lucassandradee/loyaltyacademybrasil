@@ -245,7 +245,7 @@ function parseSectionBlocks(content: string): SectionBlocks {
 
 function TimelineView({ content }: { content: string }) {
   const phases = parseTimeline(content);
-  if (phases.length === 0) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
+  if (phases.length === 0) return <div data-pdf-block className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
 
   return (
     <div className="relative pl-8">
@@ -253,7 +253,7 @@ function TimelineView({ content }: { content: string }) {
       {phases.map((phase, i) => {
         const color = timelineColors[i % timelineColors.length];
         return (
-          <div key={i} className="relative mb-6 last:mb-0">
+          <div key={i} data-pdf-block className="relative mb-6 last:mb-0">
             <div className={cn('absolute -left-[18px] top-1 w-4 h-4 rounded-full border-2 border-background', color.bg)} />
             <div className={cn('ml-4 rounded-lg border p-4', color.light)}>
               <div className="flex items-center justify-between mb-2">
@@ -311,7 +311,7 @@ function ActionPlan5W2H({ content }: { content: string }) {
 
       <div className="grid gap-3 md:grid-cols-2">
         {filtered.map((action, i) => (
-          <div key={i} className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div key={i} data-pdf-block className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold', areaBadgeColors[action.area] || 'bg-muted text-muted-foreground')}>
                 {action.area}
@@ -346,7 +346,7 @@ function SectionContent({ section }: { section: PlanSection }) {
     <div className="space-y-5">
       {/* Block 1: Contexto Teórico */}
       {blocks.contexto && (
-        <div className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
+        <div data-pdf-block className="border-l-4 border-l-red-400 rounded-r-lg p-4 bg-red-50/30 dark:bg-red-950/10">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="h-3.5 w-3.5 text-red-400" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Contexto Teórico</span>
@@ -358,14 +358,14 @@ function SectionContent({ section }: { section: PlanSection }) {
       {/* Block 2: Desenvolvimento */}
       <div className="max-w-none text-muted-foreground text-xs [&_h2]:text-foreground [&_h2]:text-sm [&_h2]:font-bold [&_h3]:text-foreground [&_h3]:text-xs [&_h3]:font-semibold [&_h4]:text-foreground [&_h4]:text-xs [&_strong]:text-foreground [&_p]:text-xs [&_li]:text-xs [&_th]:text-xs [&_td]:text-xs">
         {devParts.map((part, i) => {
-          if (typeof part === 'string') return <div key={i} dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
-          return <DiagramRenderer key={i} diagram={part} />;
+          if (typeof part === 'string') return <div key={i} data-pdf-block dangerouslySetInnerHTML={{ __html: markdownToHtml(part) }} />;
+          return <div key={i} data-pdf-block><DiagramRenderer diagram={part} /></div>;
         })}
       </div>
 
       {/* Block 3: Principais Pontos */}
       {blocks.principaisPontos && blocks.principaisPontos.length > 0 && (
-        <div className="rounded-lg border p-4">
+        <div data-pdf-block className="rounded-lg border p-4">
           <div className="flex items-center gap-2 mb-3">
             <List className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Principais Pontos</span>
@@ -383,12 +383,12 @@ function SectionContent({ section }: { section: PlanSection }) {
 
       {/* Block 4: Tabela de Resultados */}
       {blocks.tabela && (
-        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
+        <div data-pdf-block dangerouslySetInnerHTML={{ __html: markdownToHtml(blocks.tabela) }} />
       )}
 
       {/* Block 5: Conclusão */}
       {blocks.conclusao && (
-        <div className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
+        <div data-pdf-block className="border-l-4 border-l-emerald-400 rounded-r-lg p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
           <div className="flex items-center gap-2 mb-2">
             <Target className="h-3.5 w-3.5 text-emerald-500" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</span>
@@ -576,14 +576,15 @@ const Resultado = () => {
         const titleCanvas = await renderCanvas(titleBar);
 
         const blockCanvases: HTMLCanvasElement[] = [];
-        const childElements = Array.from(mount.children) as HTMLElement[];
+        const blockElements = Array.from(mount.querySelectorAll('[data-pdf-block]')) as HTMLElement[];
 
-        if (childElements.length === 0) {
+        if (blockElements.length === 0) {
+          // Fallback: capture entire mount
           blockCanvases.push(await renderCanvas(mount));
         } else {
-          for (const child of childElements) {
-            if (child.offsetHeight === 0) continue;
-            blockCanvases.push(await renderCanvas(child, child.offsetWidth || 794));
+          for (const block of blockElements) {
+            if (block.offsetHeight === 0) continue;
+            blockCanvases.push(await renderCanvas(block, block.offsetWidth || 794));
           }
         }
 

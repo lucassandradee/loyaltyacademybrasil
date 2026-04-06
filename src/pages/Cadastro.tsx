@@ -36,7 +36,7 @@ const Cadastro = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/resultado', { replace: true });
+        navigate('/plano-final', { replace: true });
       } else {
         setCheckingSession(false);
       }
@@ -87,7 +87,7 @@ const Cadastro = () => {
       }
 
       toast({ title: 'Conta criada com sucesso!', description: 'Gerando seu plano estratégico...' });
-      navigate('/resultado', { state: { answers } });
+      navigate('/plano-final');
     } catch (err: any) {
       toast({ title: 'Erro ao criar conta', description: err.message, variant: 'destructive' });
     } finally {
