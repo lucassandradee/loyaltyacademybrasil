@@ -1,48 +1,64 @@
 
+# Ajustar PDF, espaçamento e “Principais Pontos”
 
-# PDF Idêntico à Tela + Tipografia Consistente
+## Problema real no código
+Hoje o PDF não usa os diagramas reais da tela. Em `src/pages/Resultado.tsx`, o `handleDownloadPDF` ainda reconstrói o conteúdo manualmente e chama `renderDiagramAsTable()`, então:
+- o diagrama vira tabela/outro formato no PDF
+- o PDF nunca fica idêntico à tela
+- o espaçamento do PDF segue outro layout
 
-## Problema Raiz
-O PDF **não clona** o DOM da tela — ele reconstrói HTML manualmente no offscreen div (linhas 539-631), por isso fica diferente: cores, fontes, diagramas, tudo é recriado do zero. Os diagramas SVG nem são incluídos. A tela também tem inconsistência de fontes (tabela com fonte maior que o resto).
+Na tela, os blocos também estão compactados demais:
+- `SectionContent` usa `space-y-3`
+- `markdownToHtml()` usa margens pequenas (`mb-1`, `mb-2`, `space-y-0.5`)
+- “Principais Pontos” usa círculo pequeno demais (`w-4.5 h-4.5 text-[9px]`)
 
-## Solução
+## O que vou ajustar
 
-### 1. PDF: Clonar o DOM real em vez de reconstruir
-Reescrever `handleDownloadPDF` para:
-- Renderizar temporariamente TODAS as 12 seções na tela (não apenas a ativa) dentro de um container oculto
-- **Clonar os elementos renderizados pelo React** (`cloneNode(true)`) para o div offscreen
-- Isso garante que SVGs (diagramas), tabelas, cores, fontes — tudo é capturado exatamente como aparece
-- Capturar com `html2canvas` e fatiar em páginas A4
+### 1. PDF com os diagramas reais, sem transformar em tabela
+Em `src/pages/Resultado.tsx`:
+- remover a estratégia de reconstruir HTML manualmente para exportação
+- parar de usar `renderDiagramAsTable()` no fluxo do PDF
+- criar um container oculto, em largura fixa A4, renderizado pelo React com **as mesmas seções e os mesmos componentes reais da tela**
+- capturar esse DOM real com `html2canvas`
+- gerar o PDF a partir dessa captura
 
-### 2. Tipografia: 3 tamanhos únicos
-Padronizar em `SectionContent` e `markdownToHtml`:
-- **Título**: `text-sm font-bold` (14px) — para h2, h3, section title
-- **Subtítulo**: `text-xs font-semibold` (12px) — para h4, labels
-- **Corpo**: `text-xs` (12px) — tudo: parágrafos, bullets, tabelas, pontos
+Resultado:
+- SVGs dos diagramas entram como aparecem na tela
+- cores, fontes, espaçamentos e blocos ficam consistentes
+- o PDF passa a ser uma cópia visual do plano
 
-Ajustes específicos:
-- Tabela markdown: forçar `text-xs` no `<th>` e `<td>` (hoje não tem controle de tamanho)
-- `markdownToHtml`: h2 de `text-lg` → `text-sm`, h3 de `text-base` → `text-xs font-semibold`
-- Remover `prose-xs` wrapper, usar classes diretas
+### 2. Melhorar espaçamento geral do plano
+Em `SectionContent` e `markdownToHtml()`:
+- aumentar o espaçamento entre os blocos principais da seção
+- aumentar respiro entre títulos, parágrafos, listas e tabelas
+- dar mais margem vertical antes/depois dos diagramas
+- melhorar a distância entre uma linha e outra nas listas e no texto corrido
 
-### 3. Diagramas no PDF
-Como vamos clonar o DOM real, os SVGs dos diagramas serão incluídos automaticamente. Hoje eles são ignorados porque o PDF reconstrói HTML sem os `<!-- DIAGRAM -->` markers.
+A ideia é deixar a leitura mais limpa, sem “grudar” conteúdo.
 
-## Implementação Técnica
+### 3. Melhorar os números de “Principais Pontos”
+No bloco “Principais Pontos”:
+- aumentar o círculo do número
+- aumentar o número dentro dele
+- alinhar melhor o texto com o marcador
+- aumentar o espaçamento entre os itens
 
-**`handleDownloadPDF`** — nova lógica:
-1. Criar container offscreen com `width: 794px`
-2. Para cada seção, criar um React root temporário que renderiza `<SectionContent section={s} />` (ou clonar do DOM)
-3. Alternativa mais simples: renderizar todas as seções de uma vez no detail mode em um div oculto, depois clonar com `cloneNode(true)`
-4. `html2canvas` captura → fatiar → jsPDF
+Resultado esperado:
+- os 5 pontos ficam visíveis de verdade
+- o número vira um marcador claro, não um detalhe perdido
 
-**`markdownToHtml`** — ajustar classes:
-- h2: `text-sm font-bold` (era `text-lg`)
-- h3: `text-xs font-semibold` (era `text-base`)
-- th/td: adicionar `text-xs`
+## Arquivos a ajustar
+- `src/pages/Resultado.tsx`
+  - refatorar `handleDownloadPDF`
+  - remover a conversão de diagramas em tabela no PDF
+  - melhorar espaçamentos de `SectionContent`
+  - aumentar os círculos de “Principais Pontos”
+  - ajustar o HTML gerado por `markdownToHtml()`
+- `src/components/plan/DiagramRenderer.tsx`
+  - aumentar margens/respiração vertical dos diagramas para harmonizar com o restante da seção
 
-**`SectionContent`** — já usa `text-xs` na maioria, verificar tabela
-
-## Arquivo
-`src/pages/Resultado.tsx` — único arquivo modificado
-
+## Resultado esperado
+- PDF com diagramas reais, sem virar tabela ou “outras coisas”
+- PDF visualmente muito mais fiel à tela
+- seção com mais respiro entre linhas e blocos
+- “Principais Pontos” com números grandes e legíveis dentro de círculos melhores
