@@ -513,100 +513,118 @@ const Resultado = () => {
       const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
 
-      // Create offscreen container matching A4 proportions
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      container.style.width = '794px'; // A4 at 96dpi
-      container.style.background = 'white';
-      container.style.padding = '0';
-      container.style.fontFamily = "'Inter', system-ui, -apple-system, sans-serif";
-      document.body.appendChild(container);
+      // Temporarily render ALL sections in a hidden container on-screen
+      // so React renders them with real styles, then clone for capture
+      const hiddenHost = document.createElement('div');
+      hiddenHost.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;z-index:-1;';
+      document.body.appendChild(hiddenHost);
 
-      // Render cover
+      // We need to render each section using the same SectionContent component
+      // The simplest approach: clone the detail view for each section
+      // First, save current state
+      const savedSection = activeSection;
+      const savedMode = viewMode;
+
+      // Create offscreen container
+      const container = document.createElement('div');
+      container.style.cssText = 'width:794px;background:white;font-family:Inter,system-ui,-apple-system,sans-serif;';
+
+      // Cover
       const cover = document.createElement('div');
-      cover.style.cssText = 'background: #1e40af; padding: 40px 28px; color: white; margin-bottom: 20px;';
+      cover.style.cssText = 'background:#1e40af;padding:40px 28px;color:white;margin-bottom:16px;';
       cover.innerHTML = `
-        <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Plano Estratégico de Loyalty</h1>
-        <p style="font-size: 14px; opacity: 0.9; margin: 0 0 4px 0;">Relatório personalizado — Framework LAB</p>
-        <p style="font-size: 12px; opacity: 0.8; margin: 0;">${new Date().toLocaleDateString('pt-BR')}</p>
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 6px 0;">Plano Estratégico de Loyalty</h1>
+        <p style="font-size:12px;opacity:0.9;margin:0 0 4px 0;">Relatório personalizado — Framework LAB</p>
+        <p style="font-size:11px;opacity:0.8;margin:0;">${new Date().toLocaleDateString('pt-BR')}</p>
       `;
       container.appendChild(cover);
 
-      // Get the actual rendered content from the page for each section
-      // We'll clone the SectionContent rendering by using the same HTML
+      // For each section, find the rendered content on-page or render it
+      // We'll use a simpler approach: set viewMode to detail, render each section,
+      // clone the CardContent, then restore. But since React is async, we'll 
+      // just rebuild using the same HTML that SectionContent would produce.
+      
+      // Actually the best approach: find the detail card if visible, or 
+      // build a temporary React render. Since we can't easily do React render 
+      // in vanilla JS, let's clone the actual DOM by briefly switching sections.
+      
+      // BEST APPROACH: render all sections into the hidden host using innerHTML
+      // from the same markdownToHtml + parseSectionBlocks, but also include 
+      // the diagram SVGs by inlining them.
+
       for (const section of sections) {
         const sectionEl = document.createElement('div');
-        sectionEl.style.cssText = 'padding: 20px 28px 10px 28px; page-break-inside: avoid;';
+        sectionEl.style.cssText = 'padding:16px 28px 8px 28px;';
 
         // Section title
         const titleEl = document.createElement('div');
-        titleEl.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;';
+        titleEl.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
         titleEl.innerHTML = `
-          <div style="width: 4px; height: 24px; background: #1e40af; border-radius: 2px;"></div>
-          <h2 style="font-size: 16px; font-weight: 700; color: #333; margin: 0;">${section.title}</h2>
+          <div style="width:3px;height:20px;background:#1e40af;border-radius:2px;"></div>
+          <h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>
         `;
         sectionEl.appendChild(titleEl);
 
-        // Render the section content into a temp element on-screen to capture the actual rendered output
         const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'font-size: 12px; line-height: 1.6; color: #555;';
+        contentWrapper.style.cssText = 'font-size:12px;line-height:1.5;color:#555;';
 
         if (section.id === 'cronograma') {
-          // Render timeline as table for PDF
           const phases = parseTimeline(section.content);
           if (phases.length > 0) {
-            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;">';
-            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:8px 10px;text-align:left;">Fase</th><th style="padding:8px 10px;text-align:left;">Período</th><th style="padding:8px 10px;text-align:left;">Marcos</th></tr></thead><tbody>';
+            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;">';
+            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Fase</th><th style="padding:6px 8px;text-align:left;font-size:11px;">Período</th><th style="padding:6px 8px;text-align:left;font-size:11px;">Marcos</th></tr></thead><tbody>';
             phases.forEach((p, pi) => {
               const bg = pi % 2 === 0 ? '#fff' : '#f5f5f5';
-              tableHtml += `<tr style="background:${bg};"><td style="padding:6px 10px;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:top;">${p.name}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;">${p.period}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">${p.milestones.map(m => '• ' + m).join('<br/>')}</td></tr>`;
+              tableHtml += `<tr style="background:${bg};"><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:11px;">${p.name}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:11px;">${p.period}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;font-size:11px;">${p.milestones.map(m => '• ' + m).join('<br/>')}</td></tr>`;
             });
             tableHtml += '</tbody></table>';
             contentWrapper.innerHTML = tableHtml;
           }
         } else if (section.id === 'plano5w2h') {
-          // Render 5W2H as table
           const actions = parse5W2H(section.content);
           if (actions.length > 0) {
-            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:8px;">';
-            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:6px 8px;text-align:left;">Área</th><th style="padding:6px 8px;text-align:left;">O Quê</th><th style="padding:6px 8px;text-align:left;">Por Quê</th><th style="padding:6px 8px;text-align:left;">Onde</th><th style="padding:6px 8px;text-align:left;">Quando</th><th style="padding:6px 8px;text-align:left;">Quem</th><th style="padding:6px 8px;text-align:left;">Como</th><th style="padding:6px 8px;text-align:left;">Quanto</th></tr></thead><tbody>';
+            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:6px;">';
+            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:5px 6px;text-align:left;font-size:10px;">Área</th><th style="padding:5px 6px;text-align:left;font-size:10px;">O Quê</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Por Quê</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Onde</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quando</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quem</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Como</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quanto</th></tr></thead><tbody>';
             actions.forEach((a, ai) => {
               const bg = ai % 2 === 0 ? '#fff' : '#f5f5f5';
-              tableHtml += `<tr style="background:${bg};"><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e5e7eb;">${a.area}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.oQue}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.porQue}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.onde}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quando}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quem}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.como}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;">${a.quanto}</td></tr>`;
+              tableHtml += `<tr style="background:${bg};"><td style="padding:4px 6px;font-weight:600;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.area}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.oQue}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.porQue}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.onde}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quando}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quem}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.como}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quanto}</td></tr>`;
             });
             tableHtml += '</tbody></table>';
             contentWrapper.innerHTML = tableHtml;
           }
         } else {
-          // Regular sections with 6 blocks
           const blocks = parseSectionBlocks(section.content);
+          const devParts = parseDiagrams(blocks.desenvolvimento);
           let html = '';
 
           // Block 1: Contexto Teórico
           if (blocks.contexto) {
-            html += `<div style="border-left: 4px solid #f87171; background: rgba(254,242,242,0.3); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px;">
-              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 6px;">Contexto Teórico</div>
-              <p style="font-size: 11px; color: #666; margin: 0; line-height: 1.5;">${blocks.contexto}</p>
+            html += `<div style="border-left:4px solid #f87171;background:rgba(254,242,242,0.3);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px;">Contexto Teórico</div>
+              <p style="font-size:11px;color:#666;margin:0;line-height:1.5;">${blocks.contexto}</p>
             </div>`;
           }
 
-          // Block 2: Desenvolvimento
-          if (blocks.desenvolvimento.trim()) {
-            const devHtml = markdownToHtml(blocks.desenvolvimento);
-            html += `<div style="font-size: 11px; line-height: 1.6; color: #555; margin-bottom: 12px;">${devHtml}</div>`;
+          // Block 2: Desenvolvimento (with diagrams as formatted tables)
+          for (const part of devParts) {
+            if (typeof part === 'string') {
+              const devHtml = markdownToHtml(part);
+              html += `<div style="font-size:11px;line-height:1.5;color:#555;margin-bottom:8px;">${devHtml}</div>`;
+            } else {
+              // Render diagram as a formatted table for PDF
+              html += renderDiagramAsTable(part);
+            }
           }
 
           // Block 3: Principais Pontos
           if (blocks.principaisPontos && blocks.principaisPontos.length > 0) {
-            html += `<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
-              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 8px;">Principais Pontos</div>
-              <ol style="margin: 0; padding: 0; list-style: none;">
+            html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:6px;">Principais Pontos</div>
+              <ol style="margin:0;padding:0;list-style:none;">
                 ${blocks.principaisPontos.map((pt, i) => `
-                  <li style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
-                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #1e40af; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
-                    <span style="font-size: 11px; color: #555; line-height: 1.4;">${pt}</span>
+                  <li style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1e40af;color:white;font-size:9px;font-weight:700;flex-shrink:0;">${i + 1}</span>
+                    <span style="font-size:11px;color:#555;line-height:1.4;">${pt}</span>
                   </li>
                 `).join('')}
               </ol>
@@ -616,14 +634,14 @@ const Resultado = () => {
           // Block 4: Tabela de Resultados
           if (blocks.tabela) {
             const tabelaHtml = markdownToHtml(blocks.tabela);
-            html += `<div style="margin-bottom: 12px;">${tabelaHtml}</div>`;
+            html += `<div style="margin-bottom:10px;">${tabelaHtml}</div>`;
           }
 
           // Block 5: Conclusão
           if (blocks.conclusao) {
-            html += `<div style="border-left: 4px solid #34d399; background: rgba(240,253,244,0.3); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px;">
-              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 6px;">Conclusão</div>
-              <p style="font-size: 11px; color: #666; margin: 0; line-height: 1.5;">${blocks.conclusao}</p>
+            html += `<div style="border-left:4px solid #34d399;background:rgba(240,253,244,0.3);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px;">Conclusão</div>
+              <p style="font-size:11px;color:#666;margin:0;line-height:1.5;">${blocks.conclusao}</p>
             </div>`;
           }
 
@@ -632,18 +650,32 @@ const Resultado = () => {
 
         sectionEl.appendChild(contentWrapper);
 
-        // Add separator
+        // Separator
         const sep = document.createElement('div');
-        sep.style.cssText = 'height: 1px; background: #e5e7eb; margin: 16px 28px 0 28px;';
+        sep.style.cssText = 'height:1px;background:#e5e7eb;margin:12px 28px 0 28px;';
         sectionEl.appendChild(sep);
 
         container.appendChild(sectionEl);
       }
 
-      // Wait for any images/fonts to load
-      await new Promise(r => setTimeout(r, 500));
+      hiddenHost.appendChild(container);
 
-      // Capture the entire container
+      // Copy computed styles for Tailwind classes
+      const allStyleSheets = Array.from(document.styleSheets);
+      const styleEl = document.createElement('style');
+      let cssText = '';
+      for (const sheet of allStyleSheets) {
+        try {
+          for (const rule of Array.from(sheet.cssRules)) {
+            cssText += rule.cssText + '\n';
+          }
+        } catch (e) { /* cross-origin */ }
+      }
+      styleEl.textContent = cssText;
+      hiddenHost.insertBefore(styleEl, container);
+
+      await new Promise(r => setTimeout(r, 300));
+
       const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
@@ -653,18 +685,16 @@ const Resultado = () => {
         windowWidth: 794,
       });
 
-      // Remove offscreen container
-      document.body.removeChild(container);
+      document.body.removeChild(hiddenHost);
 
       // Create PDF from canvas slices
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidthMm = doc.internal.pageSize.getWidth();
       const pageHeightMm = doc.internal.pageSize.getHeight();
-      const headerH = 14; // mm for header
-      const footerH = 12; // mm for footer
+      const headerH = 14;
+      const footerH = 12;
       const contentHeightMm = pageHeightMm - headerH - footerH;
 
-      // Calculate scaling
       const imgWidthPx = canvas.width;
       const imgHeightPx = canvas.height;
       const pxPerMm = imgWidthPx / pageWidthMm;
@@ -678,7 +708,6 @@ const Resultado = () => {
         const srcY = page * contentHeightPx;
         const srcH = Math.min(contentHeightPx, imgHeightPx - srcY);
 
-        // Create a slice canvas
         const sliceCanvas = document.createElement('canvas');
         sliceCanvas.width = imgWidthPx;
         sliceCanvas.height = srcH;
