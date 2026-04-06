@@ -579,7 +579,8 @@ const Resultado = () => {
     } finally { setGenerating(false); }
   };
 
-  useEffect(() => { loadAndGenerate(); }, []);
+  const forceFromLab = !!(location.state as any)?.forceRegenerate;
+  useEffect(() => { loadAndGenerate(forceFromLab); }, []);
 
   const handleRegenerate = () => { setSections([]); setActiveSection(0); setGenError(null); setGenerating(true); setGenStep(0); loadAndGenerate(true); };
 
