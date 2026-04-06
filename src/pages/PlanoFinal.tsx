@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, Users, DollarSign, Star, Target, Trophy, ChevronDown, FileText } from 'lucide-react';
+import { CheckCircle2, Circle, Users, DollarSign, Star, Target, Trophy, ChevronDown, FileText, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -71,17 +71,21 @@ const PlanoFinal = () => {
       const uid = session.session.user.id;
 
       const [diagRes, rfvRes, cxRes, planRes] = await Promise.all([
-        supabase.from('diagnostic_responses').select('id').eq('user_id', uid).limit(1).maybeSingle(),
+        supabase.from('diagnostic_responses').select('id, answers').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('rfv_uploads').select('id, client_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('cx_uploads').select('id, ticket_data').eq('user_id', uid).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('generated_plans').select('id').eq('user_id', uid).limit(1).maybeSingle(),
       ]);
 
+      // LAB is only complete if diagnostic_responses has answers.lab key
+      const diagAnswers = diagRes.data?.answers as Record<string, any> | null;
+      const labDone = !!(diagAnswers?.lab && typeof diagAnswers.lab === 'object' && Object.keys(diagAnswers.lab).length > 0);
+
       setCompleted({
         rfv: !!rfvRes.data,
         nbo: !!rfvRes.data,
         cx: !!cxRes.data,
-        diagnostic: !!diagRes.data,
+        diagnostic: labDone,
       });
       if (rfvRes.data?.client_data) setRfvData(rfvRes.data.client_data as unknown as ClientData[]);
       if (cxRes.data?.ticket_data) setCxData(cxRes.data.ticket_data as unknown as CXTicket[]);
@@ -152,20 +156,28 @@ const PlanoFinal = () => {
               {steps.map((step, i) => {
                 const done = completed[step.dataKey];
                 const Icon = step.icon;
+                // Gating: each step requires the previous one
+                const isEnabled = i === 0 
+                  || (i === 1 && completed.rfv)
+                  || (i === 2 && completed.rfv)
+                  || (i === 3 && completed.rfv && completed.cx);
                 return (
                   <button
                     key={i}
-                    onClick={() => navigate(step.route)}
+                    onClick={() => isEnabled && navigate(step.route)}
+                    disabled={!isEnabled}
                     className={cn(
-                      'text-left rounded-lg border p-3 transition-all hover:shadow-sm hover:scale-[1.01]',
-                      done
-                        ? 'border-emerald-300 bg-card dark:border-emerald-800'
-                        : 'border-border bg-card hover:border-primary/30'
+                      'text-left rounded-lg border p-3 transition-all',
+                      !isEnabled
+                        ? 'border-border bg-muted/30 opacity-50 cursor-not-allowed'
+                        : done
+                          ? 'border-emerald-300 bg-card dark:border-emerald-800 hover:shadow-sm hover:scale-[1.01]'
+                          : 'border-border bg-card hover:border-primary/30 hover:shadow-sm hover:scale-[1.01]'
                     )}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <Icon className={cn('h-4 w-4', done ? 'text-emerald-600' : 'text-muted-foreground')} />
-                      {done ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Circle className="h-4 w-4 text-muted-foreground/30" />}
+                      {!isEnabled ? <Lock className="h-4 w-4 text-muted-foreground/40" /> : done ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Circle className="h-4 w-4 text-muted-foreground/30" />}
                     </div>
                     <p className="text-xs font-semibold text-foreground mb-0.5">Passo {i + 1}</p>
                     <p className="text-[11px] font-medium text-foreground leading-tight">{step.label}</p>
