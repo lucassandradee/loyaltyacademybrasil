@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2 } from 'lucide-react';
+import { Loader2, Download, RefreshCw, FileText, Shield, Target, Lightbulb, Award, Calendar, ListChecks, DollarSign, Megaphone, Settings, Users, ChevronLeft, ChevronRight, LayoutGrid, BookOpen, Filter, CheckCircle2, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateRFVSummary, scoreClients, defaultPercentileParams } from '@/lib/rfv-logic';
@@ -283,11 +283,12 @@ function SectionContent({ section }: { section: PlanSection }) {
 
   const blockConfig: Record<string, { border: string; icon: any; label: string }> = {
     'contexto teorico': { border: 'border-l-red-400', icon: BookOpen, label: 'Contexto Teórico' },
+    'resumo dos dados': { border: 'border-l-amber-400', icon: BarChart3, label: 'Resumo dos Dados' },
     'nossa recomendacao': { border: 'border-l-emerald-400', icon: Target, label: 'Nossa Recomendação' },
   };
 
-  // Split by marker headers (with or without emoji, accent-insensitive) — no more "Resumo dos Dados"
-  const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
+  // Split by any of the 3 marker headers (with or without emoji, accent-insensitive)
+  const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:📊\s*)?Resumo dos Dados|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
 
   const content = section.content;
   const markers: { index: number; key: string; fullMatch: string }[] = [];
@@ -297,6 +298,7 @@ function SectionContent({ section }: { section: PlanSection }) {
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     let key = '';
     if (lower.includes('contexto')) key = 'contexto teorico';
+    else if (lower.includes('resumo')) key = 'resumo dos dados';
     else if (lower.includes('recomenda')) key = 'nossa recomendacao';
     if (key) markers.push({ index: m.index, key, fullMatch: m[0] });
   }
@@ -504,83 +506,25 @@ const Resultado = () => {
       const renderTextBlock = (text: string, startY: number): number => {
         let y = startY;
         const clean = stripEmojis(text)
+          .replace(/^#{1,4}\s*/gm, '')
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\*(.+?)\*/g, '$1')
           .replace(/^\|.*\|$/gm, '')
           .replace(/^[-:| ]+$/gm, '')
           .replace(/<!--.*?-->/g, '')
+          .replace(/^- /gm, '• ')
+          .replace(/^\d+\. /gm, '→ ')
           .replace(/\n{3,}/g, '\n\n')
           .trim();
         if (!clean) return y;
-
-        const pdfLines = clean.split('\n');
-        for (const rawLine of pdfLines) {
-          const trimmed = rawLine.trim();
-          if (!trimmed) { y += 2; continue; }
-
-          // Sub-headers (## or ###)
-          if (/^#{2,4}\s+/.test(trimmed)) {
-            const headerText = trimmed.replace(/^#{2,4}\s+/, '').replace(/\*\*/g, '');
-            y = checkBreak(y, 8);
-            y += 3;
-            doc.setTextColor(...DARK_GRAY);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(stripEmojis(headerText), 14, y);
-            y += 6;
-            continue;
-          }
-
-          // Numbered list items: 1. **Title** — description
-          const numberedMatch = trimmed.match(/^(\d+)\.\s+\*\*(.+?)\*\*\s*[—–-]?\s*(.*)/);
-          if (numberedMatch) {
-            y = checkBreak(y, 8);
-            doc.setTextColor(...DARK_GRAY);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${numberedMatch[1]}. ${numberedMatch[2]}`, 16, y);
-            y += 4.2;
-            if (numberedMatch[3]) {
-              doc.setFont('helvetica', 'normal');
-              doc.setTextColor(80, 80, 80);
-              const descLines = doc.splitTextToSize(numberedMatch[3], maxW - 6);
-              for (const dl of descLines) { y = checkBreak(y, 5); doc.text(dl, 20, y); y += 4.2; }
-            }
-            continue;
-          }
-
-          // Bullet items
-          if (/^[-•]\s+/.test(trimmed)) {
-            y = checkBreak(y, 5);
-            const bulletText = trimmed.replace(/^[-•]\s+/, '');
-            const boldMatch = bulletText.match(/^\*\*(.+?)\*\*\s*(.*)/);
-            if (boldMatch) {
-              doc.setTextColor(...DARK_GRAY);
-              doc.setFontSize(9);
-              doc.setFont('helvetica', 'bold');
-              doc.text(`• ${boldMatch[1]}`, 16, y);
-              y += 4.2;
-              if (boldMatch[2]) {
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(80, 80, 80);
-                const subLines = doc.splitTextToSize(boldMatch[2], maxW - 6);
-                for (const sl of subLines) { y = checkBreak(y, 5); doc.text(sl, 20, y); y += 4.2; }
-              }
-            } else {
-              doc.setTextColor(80, 80, 80);
-              doc.setFontSize(9);
-              doc.setFont('helvetica', 'normal');
-              const bLines = doc.splitTextToSize(`• ${bulletText}`, maxW - 2);
-              for (const bl of bLines) { y = checkBreak(y, 5); doc.text(bl, 16, y); y += 4.2; }
-            }
-            continue;
-          }
-
-          // Regular paragraph
-          const plainLine = trimmed.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1');
-          doc.setTextColor(80, 80, 80);
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'normal');
-          const wrappedLines = doc.splitTextToSize(plainLine, maxW);
-          for (const wl of wrappedLines) { y = checkBreak(y, 5); doc.text(wl, 14, y); y += 4.2; }
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(clean, maxW);
+        for (const line of lines) {
+          y = checkBreak(y, 5);
+          doc.text(line, 14, y);
+          y += 4.2;
         }
         return y;
       };
@@ -723,7 +667,7 @@ const Resultado = () => {
         // Find all diagrams
         const diagramRegex2 = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
         // Find all markers
-        const markerRegex2 = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
+        const markerRegex2 = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:📊\s*)?Resumo dos Dados|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
 
         interface ContentSlice { start: number; end: number; type: 'table' | 'diagram' | 'marker'; raw: string; dType?: string; items?: string[]; label?: string }
         const slices: ContentSlice[] = [];
@@ -740,6 +684,7 @@ const Resultado = () => {
           const lower = tm[0].replace(/## (?:📚|📊|🎯)?\s*/i, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           let lbl = '';
           if (lower.includes('contexto')) lbl = 'Contexto Teorico';
+          else if (lower.includes('resumo')) lbl = 'Resumo dos Dados';
           else if (lower.includes('recomenda')) lbl = 'Nossa Recomendacao';
           // Find end: next line break then next ## or end
           const afterH = tm.index + tm[0].length;
@@ -776,6 +721,7 @@ const Resultado = () => {
         // Render chunks sequentially
         const MARKER_COLORS: Record<string, [number, number, number]> = {
           'Contexto Teorico': [220, 38, 38],
+          'Resumo dos Dados': [217, 119, 6],
           'Nossa Recomendacao': [5, 150, 105],
         };
 
