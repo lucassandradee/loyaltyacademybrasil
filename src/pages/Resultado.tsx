@@ -470,16 +470,71 @@ const Resultado = () => {
         return yy;
       };
 
+      const cleanEmoji = (t: string) => t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+
+      const renderTextBlock = (text: string, startY: number): number => {
+        let y = startY;
+        const plain = text
+          .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+          .replace(/^\|.*\|$/gm, '').replace(/^[-:]+$/gm, '').replace(/^- /gm, '- ').replace(/^\d+\. /gm, '  ');
+        const cleaned = cleanEmoji(plain).trim();
+        if (!cleaned) return y;
+        doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(cleaned, maxW);
+        for (const line of lines) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
+        return y + 2;
+      };
+
+      const renderTable = (tableStr: string, startY: number): number => {
+        let y = startY;
+        const rows = tableStr.trim().split('\n').filter(r => r.trim().startsWith('|'));
+        const isSepar = (r: string) => /^\|[\s-:]+\|$/.test(r.trim().replace(/\|/g, '|'));
+        const dRows = rows.filter(r => !isSepar(r));
+        if (dRows.length < 2) return y;
+        const parse = (r: string) => r.split('|').slice(1, -1).map(c => cleanEmoji(c.trim()));
+        y = checkBreak(y, 20);
+        autoTable(doc, {
+          startY: y,
+          head: [parse(dRows[0])],
+          body: dRows.slice(1).map(r => parse(r)),
+          margin: { left: 14, right: 14 },
+          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
+          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+        });
+        return (doc as any).lastAutoTable.finalY + 6;
+      };
+
+      const renderDiagram = (type: string, items: string[], startY: number): number => {
+        let y = startY;
+        const typeLabel = type === 'pyramid' ? 'Nivel' : type === 'funnel' ? 'Etapa' : type === 'flow' ? 'Processo' : type === 'gauge' ? 'Medicao' : 'Item';
+        y = checkBreak(y, 20);
+        autoTable(doc, {
+          startY: y,
+          head: [[typeLabel, 'Descricao']],
+          body: items.map(item => {
+            const parts = item.includes(':') ? [cleanEmoji(item.split(':')[0].trim()), cleanEmoji(item.split(':').slice(1).join(':').trim())] : [cleanEmoji(item), ''];
+            return parts;
+          }),
+          margin: { left: 14, right: 14 },
+          headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
+          bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
+          alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+          columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
+        });
+        return (doc as any).lastAutoTable.finalY + 6;
+      };
+
       // Cover
       doc.setFillColor(...BRAND_BLUE);
       doc.rect(0, 0, w, 50, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Plano Estratégico de Loyalty', 14, 28);
+      doc.text('Plano Estrategico de Loyalty', 14, 28);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text('Relatório personalizado — Framework LAB', 14, 38);
+      doc.text('Relatorio personalizado - Framework LAB', 14, 38);
       doc.text(new Date().toLocaleDateString('pt-BR'), 14, 45);
       let y = 60;
 
@@ -491,18 +546,18 @@ const Resultado = () => {
         doc.setTextColor(...DARK_GRAY);
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        const titleLines = doc.splitTextToSize(section.title, maxW - 10);
+        const titleLines = doc.splitTextToSize(cleanEmoji(section.title), maxW - 10);
         titleLines.forEach((line: string) => { doc.text(line, 20, y + 6); y += 6; });
         y += 8;
 
-        // 5W2H as autoTable
+        // 5W2H
         if (section.id === 'plano5w2h') {
           const actions = parse5W2H(section.content);
           if (actions.length > 0) {
             autoTable(doc, {
               startY: y,
-              head: [['Área', 'O Quê', 'Por Quê', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto']],
-              body: actions.map(a => [a.area, a.oQue, a.porQue, a.onde, a.quando, a.quem, a.como, a.quanto]),
+              head: [['Area', 'O Que', 'Por Que', 'Onde', 'Quando', 'Quem', 'Como', 'Quanto']],
+              body: actions.map(a => [a.area, a.oQue, a.porQue, a.onde, a.quando, a.quem, a.como, a.quanto].map(cleanEmoji)),
               margin: { left: 14, right: 14 },
               headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 7, cellPadding: 2 },
               bodyStyles: { fontSize: 7, textColor: [...DARK_GRAY] as [number, number, number], cellPadding: 2 },
@@ -515,20 +570,20 @@ const Resultado = () => {
           }
         }
 
-        // Cronograma as autoTable
+        // Cronograma
         if (section.id === 'cronograma') {
           const phases = parseTimeline(section.content);
           if (phases.length > 0) {
             const rows: string[][] = [];
             phases.forEach(p => {
               p.milestones.forEach((m, mi) => {
-                rows.push([mi === 0 ? p.name : '', mi === 0 ? p.period : '', m]);
+                rows.push([mi === 0 ? cleanEmoji(p.name) : '', mi === 0 ? p.period : '', cleanEmoji(m)]);
               });
-              if (p.milestones.length === 0) rows.push([p.name, p.period, '—']);
+              if (p.milestones.length === 0) rows.push([cleanEmoji(p.name), p.period, '-']);
             });
             autoTable(doc, {
               startY: y,
-              head: [['Fase', 'Período', 'Marco']],
+              head: [['Fase', 'Periodo', 'Marco']],
               body: rows,
               margin: { left: 14, right: 14 },
               headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
@@ -541,96 +596,50 @@ const Resultado = () => {
           }
         }
 
-        // Detect markdown tables and render with autoTable
-        const tableMatch = section.content.match(/(\|.+\|(?:\r?\n)?){3,}/g);
-        if (tableMatch) {
-          // text before table
-          const beforeTable = section.content.split(tableMatch[0])[0];
-          if (beforeTable.trim()) {
-            const pt = beforeTable.replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/^- /gm, '• ');
-            doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-            const tl = doc.splitTextToSize(pt, maxW);
-            for (const line of tl) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
-            y += 4;
-          }
-
-          // render each table
-          for (const tb of tableMatch) {
-            const tRows = tb.trim().split('\n').filter(r => r.trim().startsWith('|'));
-            const isSepar = (r: string) => /^\|[\s-:]+\|$/.test(r.trim().replace(/\|/g, '|'));
-            const dRows = tRows.filter(r => !isSepar(r));
-            if (dRows.length >= 2) {
-              const parse = (r: string) => r.split('|').slice(1, -1).map(c => c.trim());
-              const head = [parse(dRows[0])];
-              const body = dRows.slice(1).map(r => parse(r));
-              y = checkBreak(y, 20);
-              autoTable(doc, {
-                startY: y,
-                head, body,
-                margin: { left: 14, right: 14 },
-                headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-                bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-                alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-              });
-              y = (doc as any).lastAutoTable.finalY + 6;
-            }
-          }
-
-          // text after last table
-          const afterTable = section.content.split(tableMatch[tableMatch.length - 1])[1];
-          if (afterTable?.trim()) {
-            const pt = afterTable.replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/^- /gm, '• ');
-            doc.setTextColor(80, 80, 80); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-            const tl = doc.splitTextToSize(pt, maxW);
-            for (const line of tl) { y = checkBreak(y, 5); doc.text(line, 14, y); y += 4.2; }
-          }
-          y += 10;
-          continue;
-        }
-
-        // Strip diagram markers and render as table in PDF
+        // Sequential processing: split content into text/table/diagram segments
+        const content = section.content;
+        const tableRegex = /(\|.+\|(?:\r?\n)?){3,}/g;
         const diagramRegex = /<!--\s*DIAGRAM:\s*(pyramid|funnel|flow|comparison|gauge)\s*\|(.+?)-->/g;
-        let contentForPdf = section.content;
-        let diagramMatch;
-        while ((diagramMatch = diagramRegex.exec(section.content)) !== null) {
-          const dType = diagramMatch[1];
-          const dItems = diagramMatch[2].split('|').map(s => s.trim()).filter(Boolean);
-          // Remove the diagram marker from text
-          contentForPdf = contentForPdf.replace(diagramMatch[0], '');
-          // Render diagram as autoTable
-          y = checkBreak(y, 20);
-          const typeLabel = dType === 'pyramid' ? 'Nível' : dType === 'funnel' ? 'Etapa' : dType === 'flow' ? 'Processo' : dType === 'gauge' ? 'Medição' : 'Item';
-          autoTable(doc, {
-            startY: y,
-            head: [[typeLabel, 'Descrição']],
-            body: dItems.map(item => {
-              const parts = item.includes(':') ? [item.split(':')[0].trim(), item.split(':').slice(1).join(':').trim()] : [item, ''];
-              return parts;
-            }),
-            margin: { left: 14, right: 14 },
-            headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
-            bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
-            alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
-            columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
-          });
-          y = (doc as any).lastAutoTable.finalY + 6;
+
+        // Find all tables and diagrams with their positions
+        interface Segment { type: 'table' | 'diagram'; start: number; end: number; data: any; }
+        const segments: Segment[] = [];
+
+        let match;
+        while ((match = tableRegex.exec(content)) !== null) {
+          segments.push({ type: 'table', start: match.index, end: match.index + match[0].length, data: match[0] });
+        }
+        while ((match = diagramRegex.exec(content)) !== null) {
+          const dType = match[1];
+          const dItems = match[2].split('|').map(s => s.trim()).filter(Boolean);
+          segments.push({ type: 'diagram', start: match.index, end: match.index + match[0].length, data: { type: dType, items: dItems } });
         }
 
-        // Plain text (without diagram markers)
-        const plainText = contentForPdf
-          .replace(/#{1,4}\s*/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-          .replace(/^\|.*\|$/gm, '').replace(/^[-:]+$/gm, '').replace(/^- /gm, '• ').replace(/^\d+\. /gm, '→ ');
+        // Sort by position
+        segments.sort((a, b) => a.start - b.start);
 
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        const lines = doc.splitTextToSize(plainText, maxW);
-        for (const line of lines) {
-          y = checkBreak(y, 5);
-          doc.text(line, 14, y);
-          y += 4.2;
+        // Process sequentially
+        let cursor = 0;
+        for (const seg of segments) {
+          // Text before this segment
+          if (seg.start > cursor) {
+            const textBefore = content.slice(cursor, seg.start);
+            if (textBefore.trim()) y = renderTextBlock(textBefore, y);
+          }
+          // Render the segment
+          if (seg.type === 'table') {
+            y = renderTable(seg.data, y);
+          } else {
+            y = renderDiagram(seg.data.type, seg.data.items, y);
+          }
+          cursor = seg.end;
         }
-        y += 10;
+        // Text after last segment
+        if (cursor < content.length) {
+          const remaining = content.slice(cursor);
+          if (remaining.trim()) y = renderTextBlock(remaining, y);
+        }
+        y += 6;
       }
 
       // Headers & footers
@@ -643,7 +652,7 @@ const Resultado = () => {
           doc.setTextColor(255, 255, 255);
           doc.setFontSize(8);
           doc.setFont('helvetica', 'bold');
-          doc.text('Loyalty Academy Brasil — Plano Estratégico', 14, 9);
+          doc.text('Loyalty Academy Brasil - Plano Estrategico', 14, 9);
           doc.text(`${i}/${totalPages}`, w - 14, 9, { align: 'right' });
         }
         const h = doc.internal.pageSize.getHeight();
@@ -656,7 +665,7 @@ const Resultado = () => {
       }
 
       doc.save('Plano_Estrategico_Loyalty_LAB.pdf');
-      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} páginas exportadas.` });
+      toast({ title: 'PDF gerado com sucesso!', description: `${totalPages} paginas exportadas.` });
     } catch (err) {
       console.error('PDF error:', err);
       toast({ title: 'Erro ao gerar PDF', variant: 'destructive' });
