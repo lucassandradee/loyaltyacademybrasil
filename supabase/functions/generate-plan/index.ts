@@ -9,9 +9,9 @@ const corsHeaders = {
 const BLOCO1_PERSONA = `Você é um consultor sênior especialista em programas de fidelidade (loyalty) com mais de 20 anos de experiência em empresas como Livelo, Smiles, Dotz e grandes varejistas. Sua missão é criar um Plano Estratégico de Loyalty EXTREMAMENTE DETALHADO, equivalente a um relatório de consultoria de 12 a 15 páginas. Este não é um resumo genérico. É um plano acionável, profundo, que deve utilizar OBRIGATORIAMENTE os dados fornecidos pelo cliente (Formulário LAB, Dados da Empresa, Diagnóstico RFV, Diagnóstico NBO e Diagnóstico CX).`;
 
 // ─── Bloco 2: Estrutura JSON ───
-const BLOCO2_JSON = "Você deve responder ÚNICA E EXCLUSIVAMENTE com um objeto JSON válido, sem NENHUM texto antes ou depois, sem formatação markdown envolvendo o JSON (sem code fences). O JSON deve seguir estritamente a estrutura abaixo, contendo exatamente 12 seções:\n\n{\"sections\":[{\"id\":\"sumario\",\"title\":\"1. Sumário Executivo\",\"content\":\"...\"},{\"id\":\"maturidade\",\"title\":\"2. Diagnóstico de Maturidade\",\"content\":\"...\"},{\"id\":\"objetivos\",\"title\":\"3. Objetivos do Programa\",\"content\":\"...\"},{\"id\":\"estrutura\",\"title\":\"4. Estrutura do Programa\",\"content\":\"...\"},{\"id\":\"estrategia\",\"title\":\"5. Estratégia\",\"content\":\"...\"},{\"id\":\"beneficios\",\"title\":\"6. Benefícios Tangíveis e Intangíveis\",\"content\":\"...\"},{\"id\":\"segmentacao\",\"title\":\"7. Segmentação e Tierização\",\"content\":\"...\"},{\"id\":\"canais\",\"title\":\"8. Cadastro e Canais de Comunicação\",\"content\":\"...\"},{\"id\":\"operacoes\",\"title\":\"9. Operações\",\"content\":\"...\"},{\"id\":\"custos\",\"title\":\"10. Custo do Programa\",\"content\":\"...\"},{\"id\":\"cronograma\",\"title\":\"11. Cronograma de Implementação\",\"content\":\"...\"},{\"id\":\"plano5w2h\",\"title\":\"12. Plano de Ação 5W2H\",\"content\":\"...\"}]}";
+const BLOCO2_JSON = `Você deve responder ÚNICA E EXCLUSIVAMENTE com um objeto JSON válido, sem NENHUM texto antes ou depois, sem formatação markdown envolvendo o JSON (sem \`\`\`json). O JSON deve seguir estritamente a estrutura abaixo, contendo exatamente 12 seções:
 
-
+{"sections":[{"id":"sumario","title":"1. Sumário Executivo","content":"..."},{"id":"maturidade","title":"2. Diagnóstico de Maturidade","content":"..."},{"id":"objetivos","title":"3. Objetivos do Programa","content":"..."},{"id":"estrutura","title":"4. Estrutura do Programa","content":"..."},{"id":"estrategia","title":"5. Estratégia","content":"..."},{"id":"beneficios","title":"6. Benefícios Tangíveis e Intangíveis","content":"..."},{"id":"segmentacao","title":"7. Segmentação e Tierização","content":"..."},{"id":"canais","title":"8. Cadastro e Canais de Comunicação","content":"..."},{"id":"operacoes","title":"9. Operações","content":"..."},{"id":"custos","title":"10. Custo do Programa","content":"..."},{"id":"cronograma","title":"11. Cronograma de Implementação","content":"..."},{"id":"plano5w2h","title":"12. Plano de Ação 5W2H","content":"..."}]}`;
 
 // ─── Bloco 3: Regras de Conteúdo e Profundidade ───
 const BLOCO3_CONTEUDO = `Para o campo "content" de CADA UMA das 12 seções, você deve gerar um texto longo e rico em Markdown, seguindo estas regras de profundidade:
@@ -64,7 +64,7 @@ const BLOCO4_VISUAL = `Cada seção DEVE conter EXATAMENTE 2 marcadores visuais 
 
 REGRA CRÍTICA: Cada marcador visual deve ter EXATAMENTE 1 parágrafo curto de 2-3 frases. NUNCA coloque conteúdo de desenvolvimento dentro deles.
 
-Os ÚNICOS 2 marcadores permitidos são:
+Ordem obrigatória dentro de cada seção:
 
 1. PRIMEIRO marcador (no início da seção):
 ## Contexto Teorico
@@ -78,7 +78,7 @@ Os ÚNICOS 2 marcadores permitidos são:
 
 PROIBIDO: Colocar tabelas, listas, sub-headers ou parágrafos adicionais dentro dos marcadores visuais. Eles são APENAS 1 parágrafo cada.
 IMPORTANTE: Use exatamente esses headers sem emoji e sem acento: "## Contexto Teorico", "## Nossa Recomendacao".
-Qualquer outro marcador ## com emoji ou que não seja esses dois é PROIBIDO.`;
+NÃO USE o marcador "## Resumo dos Dados" — ele foi removido.`;
 
 // ─── Bloco 5: Regras Específicas por Seção ───
 const BLOCO5_EXCECOES = `Siga estas regras estritas para seções específicas:
@@ -190,10 +190,12 @@ ${nboSummary || 'Dados NBO não disponíveis.'}
 ${cxSummary || 'Dados CX não disponíveis.'}
 (Nota para a IA: Use estes dados principalmente nas seções de Canais, Operações e Maturidade)
 
-LEMBRETE FINAL:
+LEMBRETE FINAL: 
 - Responda APENAS com o JSON válido, sem nenhum texto adicional.
-- Os ÚNICOS marcadores visuais permitidos são "## Contexto Teorico" (início) e "## Nossa Recomendacao" (final). Nenhum outro marcador ## especial é permitido.
-- ORDEM OBRIGATÓRIA dentro do desenvolvimento de cada seção: sub-headers ## com parágrafos analíticos → diagrama(s) de apoio → lista numerada com pontos-chave → tabela comparativa/métricas → Nossa Recomendação.
+- Os 3 marcadores visuais (Contexto Teorico, Resumo dos Dados, Nossa Recomendacao) são CURTOS (1 parágrafo, 2-3 frases). O conteúdo rico vem ENTRE eles.
+- Use sub-headers ## descritivos para organizar o desenvolvimento.
+- Estruture informações complexas com listas numeradas onde cada item tem título em negrito + explicação.
+- Inclua tabelas markdown sempre que houver dados comparativos.
 - Use múltiplos diagramas quando a seção tiver múltiplos conceitos visuais.`;
 }
 
@@ -211,7 +213,7 @@ serve(async (req) => {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + LOVABLE_API_KEY,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -251,8 +253,7 @@ serve(async (req) => {
       planData = JSON.parse(content.trim());
     } catch {
       try {
-        const codeFence = String.fromCharCode(96).repeat(3);
-        const jsonMatch = content.match(new RegExp(codeFence + "(?:json)?\\s*([\\s\\S]*?)" + codeFence));
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
           planData = JSON.parse(jsonMatch[1].trim());
         } else {

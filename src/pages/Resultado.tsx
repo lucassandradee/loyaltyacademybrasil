@@ -289,8 +289,7 @@ function SectionContent({ section }: { section: PlanSection }) {
   // Split by marker headers (with or without emoji, accent-insensitive) — no more "Resumo dos Dados"
   const markerRegex = /^## (?:📚\s*)?Contexto Te[oó]rico|^## (?:🎯\s*)?Nossa Recomenda[cç][aã]o/gmi;
 
-  // Strip any "Resumo dos Dados" headers the AI might still generate
-  const content = section.content.replace(/^## (?:📊\s*)?Resumo dos Dados[^\n]*/gmi, '');
+  const content = section.content;
   const markers: { index: number; key: string; fullMatch: string }[] = [];
   let m;
   while ((m = markerRegex.exec(content)) !== null) {
@@ -625,128 +624,11 @@ const Resultado = () => {
       };
 
       const renderDiagram = (type: string, items: string[], startY: number): number => {
-        let y = checkBreak(startY, 35);
-        const ACCENT: [number, number, number] = [59, 130, 246]; // blue-500
-        const ACCENT_LIGHT: [number, number, number] = [239, 246, 255]; // blue-50
-
-        if (type === 'comparison') {
-          const cardW = Math.min((maxW - (items.length - 1) * 4) / items.length, 55);
-          const startX = 14;
-          for (let i = 0; i < items.length; i++) {
-            const x = startX + i * (cardW + 4);
-            const parts = items[i].includes(':') ? [items[i].split(':')[0].trim(), items[i].split(':').slice(1).join(':').trim()] : [items[i], ''];
-            y = checkBreak(y, 30);
-            // Card bg
-            doc.setFillColor(...ACCENT_LIGHT);
-            doc.setDrawColor(...ACCENT);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(x, y, cardW, 26, 2, 2, 'FD');
-            // Title
-            doc.setTextColor(...BRAND_BLUE);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            const titleLines = doc.splitTextToSize(parts[0], cardW - 4);
-            doc.text(titleLines, x + 2, y + 5);
-            // Description
-            if (parts[1]) {
-              doc.setTextColor(100, 100, 100);
-              doc.setFontSize(7);
-              doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(parts[1], cardW - 4);
-              doc.text(descLines.slice(0, 3), x + 2, y + 12);
-            }
-          }
-          return y + 32;
-        }
-
-        if (type === 'flow') {
-          const stepW = 32;
-          const arrowW = 6;
-          const totalW = items.length * stepW + (items.length - 1) * arrowW;
-          const startX = 14 + Math.max(0, (maxW - totalW) / 2);
-          for (let i = 0; i < items.length; i++) {
-            const x = startX + i * (stepW + arrowW);
-            y = checkBreak(y, 22);
-            doc.setFillColor(...ACCENT_LIGHT);
-            doc.setDrawColor(...ACCENT);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(x, y, stepW, 16, 2, 2, 'FD');
-            doc.setTextColor(...BRAND_BLUE);
-            doc.setFontSize(7);
-            doc.setFont('helvetica', 'bold');
-            const label = items[i].includes(':') ? items[i].split(':')[0].trim() : items[i];
-            const tLines = doc.splitTextToSize(label, stepW - 4);
-            doc.text(tLines.slice(0, 2), x + 2, y + 6);
-            // Arrow
-            if (i < items.length - 1) {
-              const ax = x + stepW + 1;
-              const ay = y + 8;
-              doc.setDrawColor(...BRAND_BLUE);
-              doc.setLineWidth(0.5);
-              doc.line(ax, ay, ax + arrowW - 2, ay);
-              doc.line(ax + arrowW - 4, ay - 2, ax + arrowW - 2, ay);
-              doc.line(ax + arrowW - 4, ay + 2, ax + arrowW - 2, ay);
-            }
-          }
-          return y + 22;
-        }
-
-        if (type === 'pyramid' || type === 'funnel') {
-          const centerX = 14 + maxW / 2;
-          const blockH = 10;
-          const isPyramid = type === 'pyramid';
-          for (let i = 0; i < items.length; i++) {
-            y = checkBreak(y, blockH + 3);
-            const ratio = isPyramid
-              ? 0.4 + (i / Math.max(items.length - 1, 1)) * 0.6
-              : 0.4 + ((items.length - 1 - i) / Math.max(items.length - 1, 1)) * 0.6;
-            const bw = maxW * ratio;
-            const bx = centerX - bw / 2;
-            const opacity = 1 - i * 0.15;
-            doc.setFillColor(Math.round(30 + (1 - opacity) * 120), Math.round(64 + (1 - opacity) * 120), Math.round(175 + (1 - opacity) * 40));
-            doc.roundedRect(bx, y, bw, blockH, 1, 1, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            const label = items[i].includes(':') ? items[i].split(':')[0].trim() : items[i];
-            doc.text(label, centerX, y + blockH / 2 + 1, { align: 'center' });
-            y += blockH + 2;
-          }
-          return y + 4;
-        }
-
-        if (type === 'gauge') {
-          const level = parseInt(items[0]) || 5;
-          const label = items[1] || 'Nivel';
-          y = checkBreak(y, 20);
-          // Background bar
-          const barW = 80;
-          const barH = 8;
-          const barX = 14;
-          doc.setFillColor(220, 220, 220);
-          doc.roundedRect(barX, y, barW, barH, 2, 2, 'F');
-          // Filled portion
-          const fillW = (level / 10) * barW;
-          const gColor: [number, number, number] = level <= 3 ? [220, 38, 38] : level <= 6 ? [245, 158, 11] : [5, 150, 105];
-          doc.setFillColor(...gColor);
-          doc.roundedRect(barX, y, fillW, barH, 2, 2, 'F');
-          // Level text
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          if (fillW > 10) doc.text(`${level}/10`, barX + fillW / 2, y + barH / 2 + 1, { align: 'center' });
-          // Label
-          doc.setTextColor(...DARK_GRAY);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.text(label, barX + barW + 4, y + barH / 2 + 1);
-          return y + barH + 8;
-        }
-
-        // Fallback: simple table
+        let y = checkBreak(startY, 20);
+        const typeLabel = type === 'pyramid' ? 'Hierarquia' : type === 'funnel' ? 'Funil' : type === 'flow' ? 'Fluxo' : type === 'gauge' ? 'Indicador' : 'Comparativo';
         autoTable(doc, {
           startY: y,
-          head: [['Item', 'Detalhe']],
+          head: [[typeLabel, 'Detalhe']],
           body: items.map(item => {
             const parts = item.includes(':') ? [item.split(':')[0].trim(), item.split(':').slice(1).join(':').trim()] : [item, ''];
             return parts;
@@ -755,6 +637,7 @@ const Resultado = () => {
           headStyles: { fillColor: [...BRAND_BLUE] as [number, number, number], fontSize: 8 },
           bodyStyles: { fontSize: 8, textColor: [...DARK_GRAY] as [number, number, number] },
           alternateRowStyles: { fillColor: [...LIGHT_GRAY] as [number, number, number] },
+          columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } },
         });
         return (doc as any).lastAutoTable.finalY + 6;
       };
