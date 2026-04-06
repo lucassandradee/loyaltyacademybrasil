@@ -245,7 +245,7 @@ function parseSectionBlocks(content: string): SectionBlocks {
 
 function TimelineView({ content }: { content: string }) {
   const phases = parseTimeline(content);
-  if (phases.length === 0) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
+  if (phases.length === 0) return <div data-pdf-block className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }} />;
 
   return (
     <div className="relative pl-8">
@@ -253,7 +253,7 @@ function TimelineView({ content }: { content: string }) {
       {phases.map((phase, i) => {
         const color = timelineColors[i % timelineColors.length];
         return (
-          <div key={i} className="relative mb-6 last:mb-0">
+          <div key={i} data-pdf-block className="relative mb-6 last:mb-0">
             <div className={cn('absolute -left-[18px] top-1 w-4 h-4 rounded-full border-2 border-background', color.bg)} />
             <div className={cn('ml-4 rounded-lg border p-4', color.light)}>
               <div className="flex items-center justify-between mb-2">
