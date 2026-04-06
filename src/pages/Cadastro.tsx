@@ -68,6 +68,10 @@ const Cadastro = () => {
 
       if (authError) throw authError;
 
+      // Clear LAB draft from any previous session
+      localStorage.removeItem(LAB_DRAFT_KEY);
+      localStorage.removeItem(LAB_STEP_KEY);
+
       if (authData.user) {
         const { error: saveError } = await supabase
           .from('diagnostic_responses')
