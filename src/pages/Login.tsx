@@ -34,7 +34,7 @@ const Login = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/resultado', { replace: true });
+        navigate('/plano-final', { replace: true });
       } else {
         setCheckingSession(false);
       }
@@ -73,9 +73,9 @@ const Login = () => {
             localStorage.removeItem(DRAFT_STEP_KEY);
           }
         }
-        navigate('/resultado', { state: { answers } });
+        navigate('/plano-final');
       } else {
-        navigate('/resultado');
+        navigate('/plano-final');
       }
     } catch (err: any) {
       toast({ title: 'Erro ao entrar', description: err.message, variant: 'destructive' });
