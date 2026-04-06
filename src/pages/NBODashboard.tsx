@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle, Download } from 'lucide-react';
+import { Users, DollarSign, Clock, ShoppingCart, Search, X, Info, HelpCircle, Download, ArrowRight } from 'lucide-react';
 import { classifyNBO, allFaixaNames, faixaColors, faixaActions, generateOfferExplanation, generateNBOSummary } from '@/lib/nbo-logic';
 import { FileText } from 'lucide-react';
 import { clusterColors, allClusterNames } from '@/lib/rfv-logic';
