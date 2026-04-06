@@ -981,7 +981,6 @@ const Resultado = () => {
           </div>
           </>
         );
-        );
       })()}
 
       {/* Detail Mode */}
