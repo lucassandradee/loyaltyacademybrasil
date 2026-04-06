@@ -576,14 +576,15 @@ const Resultado = () => {
         const titleCanvas = await renderCanvas(titleBar);
 
         const blockCanvases: HTMLCanvasElement[] = [];
-        const childElements = Array.from(mount.children) as HTMLElement[];
+        const blockElements = Array.from(mount.querySelectorAll('[data-pdf-block]')) as HTMLElement[];
 
-        if (childElements.length === 0) {
+        if (blockElements.length === 0) {
+          // Fallback: capture entire mount
           blockCanvases.push(await renderCanvas(mount));
         } else {
-          for (const child of childElements) {
-            if (child.offsetHeight === 0) continue;
-            blockCanvases.push(await renderCanvas(child, child.offsetWidth || 794));
+          for (const block of blockElements) {
+            if (block.offsetHeight === 0) continue;
+            blockCanvases.push(await renderCanvas(block, block.offsetWidth || 794));
           }
         }
 
