@@ -530,23 +530,30 @@ const Resultado = () => {
       const { default: html2canvas } = await import('html2canvas');
       const { default: jsPDF } = await import('jspdf');
 
-      // Temporarily render ALL sections in a hidden container on-screen
-      // so React renders them with real styles, then clone for capture
+      // Create a hidden host that will contain real React-rendered sections
       const hiddenHost = document.createElement('div');
       hiddenHost.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;z-index:-1;';
       document.body.appendChild(hiddenHost);
 
-      // We need to render each section using the same SectionContent component
-      // The simplest approach: clone the detail view for each section
-      // First, save current state
-      const savedSection = activeSection;
-      const savedMode = viewMode;
+      // Copy all stylesheets so Tailwind classes work in the offscreen container
+      const styleEl = document.createElement('style');
+      let cssText = '';
+      for (const sheet of Array.from(document.styleSheets)) {
+        try {
+          for (const rule of Array.from(sheet.cssRules)) {
+            cssText += rule.cssText + '\n';
+          }
+        } catch (e) { /* cross-origin */ }
+      }
+      styleEl.textContent = cssText;
+      hiddenHost.appendChild(styleEl);
 
-      // Create offscreen container
+      // Create container
       const container = document.createElement('div');
-      container.style.cssText = 'width:794px;background:white;font-family:Inter,system-ui,-apple-system,sans-serif;';
+      container.style.cssText = 'width:794px;background:white;font-family:Inter,system-ui,-apple-system,sans-serif;color:#333;';
+      container.className = 'bg-background text-foreground';
 
-      // Cover
+      // Cover page
       const cover = document.createElement('div');
       cover.style.cssText = 'background:#1e40af;padding:40px 28px;color:white;margin-bottom:16px;';
       cover.innerHTML = `
@@ -556,142 +563,39 @@ const Resultado = () => {
       `;
       container.appendChild(cover);
 
-      // For each section, find the rendered content on-page or render it
-      // We'll use a simpler approach: set viewMode to detail, render each section,
-      // clone the CardContent, then restore. But since React is async, we'll 
-      // just rebuild using the same HTML that SectionContent would produce.
-      
-      // Actually the best approach: find the detail card if visible, or 
-      // build a temporary React render. Since we can't easily do React render 
-      // in vanilla JS, let's clone the actual DOM by briefly switching sections.
-      
-      // BEST APPROACH: render all sections into the hidden host using innerHTML
-      // from the same markdownToHtml + parseSectionBlocks, but also include 
-      // the diagram SVGs by inlining them.
-
+      // For each section, render the REAL React SectionContent component
       for (const section of sections) {
-        const sectionEl = document.createElement('div');
-        sectionEl.style.cssText = 'padding:16px 28px 8px 28px;';
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.style.cssText = 'padding:16px 28px 8px 28px;';
 
-        // Section title
-        const titleEl = document.createElement('div');
-        titleEl.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
-        titleEl.innerHTML = `
+        // Section title bar
+        const titleBar = document.createElement('div');
+        titleBar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;';
+        titleBar.innerHTML = `
           <div style="width:3px;height:20px;background:#1e40af;border-radius:2px;"></div>
           <h2 style="font-size:14px;font-weight:700;color:#333;margin:0;">${section.title}</h2>
         `;
-        sectionEl.appendChild(titleEl);
+        sectionWrapper.appendChild(titleBar);
 
-        const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'font-size:12px;line-height:1.5;color:#555;';
+        // Mount real React component into a div
+        const contentMount = document.createElement('div');
+        sectionWrapper.appendChild(contentMount);
 
-        if (section.id === 'cronograma') {
-          const phases = parseTimeline(section.content);
-          if (phases.length > 0) {
-            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px;">';
-            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Fase</th><th style="padding:6px 8px;text-align:left;font-size:11px;">Período</th><th style="padding:6px 8px;text-align:left;font-size:11px;">Marcos</th></tr></thead><tbody>';
-            phases.forEach((p, pi) => {
-              const bg = pi % 2 === 0 ? '#fff' : '#f5f5f5';
-              tableHtml += `<tr style="background:${bg};"><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:11px;">${p.name}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:11px;">${p.period}</td><td style="padding:5px 8px;border-bottom:1px solid #e5e7eb;font-size:11px;">${p.milestones.map(m => '• ' + m).join('<br/>')}</td></tr>`;
-            });
-            tableHtml += '</tbody></table>';
-            contentWrapper.innerHTML = tableHtml;
-          }
-        } else if (section.id === 'plano5w2h') {
-          const actions = parse5W2H(section.content);
-          if (actions.length > 0) {
-            let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:6px;">';
-            tableHtml += '<thead><tr style="background:#1e40af;color:white;"><th style="padding:5px 6px;text-align:left;font-size:10px;">Área</th><th style="padding:5px 6px;text-align:left;font-size:10px;">O Quê</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Por Quê</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Onde</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quando</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quem</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Como</th><th style="padding:5px 6px;text-align:left;font-size:10px;">Quanto</th></tr></thead><tbody>';
-            actions.forEach((a, ai) => {
-              const bg = ai % 2 === 0 ? '#fff' : '#f5f5f5';
-              tableHtml += `<tr style="background:${bg};"><td style="padding:4px 6px;font-weight:600;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.area}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.oQue}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.porQue}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.onde}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quando}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quem}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.como}</td><td style="padding:4px 6px;border-bottom:1px solid #e5e7eb;font-size:10px;">${a.quanto}</td></tr>`;
-            });
-            tableHtml += '</tbody></table>';
-            contentWrapper.innerHTML = tableHtml;
-          }
-        } else {
-          const blocks = parseSectionBlocks(section.content);
-          const devParts = parseDiagrams(blocks.desenvolvimento);
-          let html = '';
+        const root = createRoot(contentMount);
+        root.render(createElement(SectionContent, { section }));
 
-          // Block 1: Contexto Teórico
-          if (blocks.contexto) {
-            html += `<div style="border-left:4px solid #f87171;background:rgba(254,242,242,0.3);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px;">Contexto Teórico</div>
-              <p style="font-size:11px;color:#666;margin:0;line-height:1.5;">${blocks.contexto}</p>
-            </div>`;
-          }
+        container.appendChild(sectionWrapper);
 
-          // Block 2: Desenvolvimento (with diagrams as formatted tables)
-          for (const part of devParts) {
-            if (typeof part === 'string') {
-              const devHtml = markdownToHtml(part);
-              html += `<div style="font-size:11px;line-height:1.5;color:#555;margin-bottom:8px;">${devHtml}</div>`;
-            } else {
-              // Render diagram as a formatted table for PDF
-              html += renderDiagramAsTable(part);
-            }
-          }
-
-          // Block 3: Principais Pontos
-          if (blocks.principaisPontos && blocks.principaisPontos.length > 0) {
-            html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:10px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:6px;">Principais Pontos</div>
-              <ol style="margin:0;padding:0;list-style:none;">
-                ${blocks.principaisPontos.map((pt, i) => `
-                  <li style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;">
-                    <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1e40af;color:white;font-size:9px;font-weight:700;flex-shrink:0;">${i + 1}</span>
-                    <span style="font-size:11px;color:#555;line-height:1.4;">${pt}</span>
-                  </li>
-                `).join('')}
-              </ol>
-            </div>`;
-          }
-
-          // Block 4: Tabela de Resultados
-          if (blocks.tabela) {
-            const tabelaHtml = markdownToHtml(blocks.tabela);
-            html += `<div style="margin-bottom:10px;">${tabelaHtml}</div>`;
-          }
-
-          // Block 5: Conclusão
-          if (blocks.conclusao) {
-            html += `<div style="border-left:4px solid #34d399;background:rgba(240,253,244,0.3);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px;">Conclusão</div>
-              <p style="font-size:11px;color:#666;margin:0;line-height:1.5;">${blocks.conclusao}</p>
-            </div>`;
-          }
-
-          contentWrapper.innerHTML = html;
-        }
-
-        sectionEl.appendChild(contentWrapper);
-
-        // Separator
+        // Separator between sections
         const sep = document.createElement('div');
         sep.style.cssText = 'height:1px;background:#e5e7eb;margin:12px 28px 0 28px;';
-        sectionEl.appendChild(sep);
-
-        container.appendChild(sectionEl);
+        container.appendChild(sep);
       }
 
       hiddenHost.appendChild(container);
 
-      // Copy computed styles for Tailwind classes
-      const allStyleSheets = Array.from(document.styleSheets);
-      const styleEl = document.createElement('style');
-      let cssText = '';
-      for (const sheet of allStyleSheets) {
-        try {
-          for (const rule of Array.from(sheet.cssRules)) {
-            cssText += rule.cssText + '\n';
-          }
-        } catch (e) { /* cross-origin */ }
-      }
-      styleEl.textContent = cssText;
-      hiddenHost.insertBefore(styleEl, container);
-
-      await new Promise(r => setTimeout(r, 300));
+      // Wait for React to render + SVGs to paint
+      await new Promise(r => setTimeout(r, 600));
 
       const canvas = await html2canvas(container, {
         scale: 2,
@@ -704,7 +608,7 @@ const Resultado = () => {
 
       document.body.removeChild(hiddenHost);
 
-      // Create PDF from canvas slices
+      // Slice canvas into A4 pages
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidthMm = doc.internal.pageSize.getWidth();
       const pageHeightMm = doc.internal.pageSize.getHeight();
