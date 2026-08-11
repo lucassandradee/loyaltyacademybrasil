@@ -8,13 +8,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, ArrowRight, Search, Settings2, X, Download } from 'lucide-react';
-import { ClientData, RFVParams, RFVPercentileParams, RFVAbsoluteParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, RFVPercentileParams, RFVAbsoluteParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary, computeScoreDistribution } from '@/lib/rfv-logic';
 import { downloadCSV } from '@/lib/export-utils';
 import { FileText } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 
+const formatCutoff = (key: 'recencia' | 'frequencia' | 'valor', v: number) => {
+  if (key === 'recencia') return `${Math.round(v)} dias`;
+  if (key === 'frequencia') return `${Math.round(v)}x`;
+  return `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
+};
+
+const scoreColorHex = (score: number, total: number) => {
+  if (score === total) return '#c9a227';
+  if (score === 1) return '#9ca3af';
+  return '#e08d2c';
+};
+
 const RFVDashboard = () => {
+
   const location = useLocation();
   const navigate = useNavigate();
   const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams | RFVAbsoluteParams } | null;
@@ -113,6 +126,27 @@ const RFVDashboard = () => {
 
   const rfvSummary = useMemo(() => generateRFVSummary(scored), [scored]);
 
+  const scoreDistribution = useMemo(() => {
+    if (!clientData?.length) return [];
+    return computeScoreDistribution(clientData, params);
+  }, [clientData, params]);
+
+  const exportDistribution = () => {
+    const rows = scoreDistribution.flatMap(dim =>
+      dim.rows.map(r => ({
+        Critério: dim.label,
+        Score: r.label,
+        Posição: r.position ?? '',
+        '% da Base': r.pct != null ? `${r.pct}%` : '',
+        'Cliente-régua': r.clientName ?? '',
+        Valor: formatCutoff(dim.key, r.cutoff),
+        Clientes: r.count,
+      }))
+    );
+    downloadCSV(rows, 'rfv-distribuicao-scores.csv');
+  };
+
+
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
@@ -177,6 +211,64 @@ const RFVDashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Distribuição de Scores */}
+      {scoreDistribution.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">Distribuição de Scores</CardTitle>
+                <p className="text-xs text-muted-foreground">Cortes usados nesta análise, com os parâmetros atuais</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">Base total: {totalClients.toLocaleString('pt-BR')}</Badge>
+                <Button variant="outline" size="sm" className="gap-1" onClick={exportDistribution}>
+                  <Download className="h-4 w-4" /> Exportar
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-3">
+            {scoreDistribution.map(dim => (
+              <div key={dim.key}>
+                <p className="mb-2 text-sm font-semibold text-foreground">{dim.label}</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="h-8 px-2 text-xs">Score</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Posição</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">% da Base</TableHead>
+                      <TableHead className="h-8 px-2 text-xs">Cliente-régua</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Valor</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Clientes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dim.rows.map(row => (
+                      <TableRow key={row.score}>
+                        <TableCell className="px-2 py-1.5 text-xs font-medium">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: scoreColorHex(row.score, dim.rows.length) }} />
+                            {row.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.position ?? '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.pct != null ? `${row.pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-muted-foreground max-w-[140px] truncate" title={row.clientName ?? ''}>{row.clientName ?? '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right font-medium">{formatCutoff(dim.key, row.cutoff)}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.count.toLocaleString('pt-BR')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {/* Diagnóstico RFV */}
       <Card className="mb-8 border-primary/20 bg-primary/5">

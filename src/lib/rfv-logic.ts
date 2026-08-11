@@ -130,13 +130,38 @@ export function computeRealCutoffs(values: number[], percentiles: number[]): num
   return percentiles.map(p => valueAtPercentile(sorted, p));
 }
 
+/** Posição (1-based) na base ordenada que corresponde a um percentual */
+export function positionForPercent(total: number, pct: number): number {
+  return Math.max(1, Math.min(total, Math.round((pct / 100) * total)));
+}
+
+/**
+ * Cortes reais por posição (regra "cliente-régua"): o valor do cliente que ocupa
+ * a posição correspondente ao percentual vira o corte.
+ * Recência ordena do menor para o maior; frequência/valor do maior para o menor.
+ * Retorna sempre em ordem crescente de valor.
+ */
+export function positionalCutoffs(values: number[], percentiles: number[], inverted: boolean): number[] {
+  const n = values.length;
+  if (!n) return percentiles.map(() => 0);
+  const asc = [...values].sort((a, b) => a - b);
+  return percentiles.map(p => {
+    if (inverted) {
+      return asc[positionForPercent(n, p) - 1];
+    }
+    const topPct = 100 - p;
+    const descPos = positionForPercent(n, topPct);
+    return asc[n - descPos];
+  });
+}
+
 /**
  * Assign score based on percentile cutoff values.
  * cutoffValues are the real values at each percentile boundary, sorted ascending.
  * For "ascending" metrics (frequency, value): higher value = higher score.
  * For "inverted" metrics (recency): lower value = higher score.
  */
-function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverted: boolean): number {
+function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverted: boolean, inclusive = false): number {
   if (inverted) {
     // Lower value = higher score. cutoffValues are ascending.
     // e.g. cutoffs [30, 90] for 3 scores:
@@ -150,11 +175,126 @@ function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverte
     // e.g. cutoffs [1850, 5200] for 3 scores:
     // value > 5200 → score 3, value > 1850 → score 2, else → score 1
     for (let i = cutoffValues.length - 1; i >= 0; i--) {
-      if (value > cutoffValues[i]) return cutoffValues.length - i + 1;
+      if (inclusive ? value >= cutoffValues[i] : value > cutoffValues[i]) return i + 2;
     }
     return 1;
   }
 }
+
+
+// --- Score distribution (visualização dos cortes usados na análise) ---
+
+export interface ScoreDistributionRow {
+  score: number;
+  label: string;
+  /** % acumulado da base coberto até esta nota (null no modo valores fixos) */
+  pct: number | null;
+  /** posição na base ordenada que define o corte (null no modo valores fixos) */
+  position: number | null;
+  /** nome do cliente-régua (null no modo valores fixos) */
+  clientName: string | null;
+  cutoff: number;
+  count: number;
+}
+
+export interface ScoreDistributionDimension {
+  key: 'recencia' | 'frequencia' | 'valor';
+  label: string;
+  rows: ScoreDistributionRow[];
+}
+
+function scoreLabel(score: number, numScores: number): string {
+  if (score === numScores) return `Top (${score})`;
+  if (score === 1) return `Entry (${score})`;
+  return `Middle (${score})`;
+}
+
+/**
+ * Deriva, para cada dimensão e cada nota, o corte realmente usado na análise,
+ * a posição/percentual correspondente, o cliente-régua e a contagem de clientes.
+ * Usa exatamente os mesmos parâmetros vigentes — nada é fixo.
+ */
+export function computeScoreDistribution(
+  clients: ClientData[],
+  params: RFVParams | RFVPercentileParams | RFVAbsoluteParams
+): ScoreDistributionDimension[] {
+  if (!clients.length) return [];
+
+  const scored = scoreClients(clients, params);
+  const n = clients.length;
+
+  const isAbsolute = 'mode' in params && (params as RFVAbsoluteParams).mode === 'absolute';
+  const isPercentile = !isAbsolute && 'numScores' in params;
+  const numScores = isAbsolute || isPercentile ? (params as RFVPercentileParams).numScores : 3;
+
+  const dims: { key: 'recencia' | 'frequencia' | 'valor'; label: string; inverted: boolean; scoreOf: (c: ScoredClient) => number }[] = [
+    { key: 'recencia', label: 'Recência', inverted: true, scoreOf: c => c.r_score },
+    { key: 'frequencia', label: 'Frequência', inverted: false, scoreOf: c => c.f_score },
+    { key: 'valor', label: 'Valor', inverted: false, scoreOf: c => c.v_score },
+  ];
+
+  return dims.map(dim => {
+    const sorted = [...clients].sort((a, b) =>
+      dim.inverted ? a[dim.key] - b[dim.key] : b[dim.key] - a[dim.key]
+    );
+
+    let cutoffs: number[];
+    let percentiles: number[] | null = null;
+
+    if (isPercentile) {
+      percentiles = (params as RFVPercentileParams)[dim.key];
+      cutoffs = positionalCutoffs(clients.map(c => c[dim.key]), percentiles, dim.inverted);
+    } else if (isAbsolute) {
+
+      cutoffs = (params as RFVAbsoluteParams)[dim.key];
+    } else {
+      const legacy = params as RFVParams;
+      cutoffs = dim.key === 'recencia'
+        ? [legacy.recencia.top, legacy.recencia.mid_max]
+        : dim.key === 'frequencia'
+          ? [legacy.frequencia.mid_min - 1, legacy.frequencia.top - 1]
+          : [legacy.valor.mid_min - 1, legacy.valor.top - 1];
+    }
+
+    const rows: ScoreDistributionRow[] = [];
+    for (let score = numScores; score >= 1; score--) {
+      const count = scored.filter(c => dim.scoreOf(c) === score).length;
+
+      if (score === 1) {
+        const last = sorted[n - 1];
+        rows.push({
+          score,
+          label: scoreLabel(score, numScores),
+          pct: 100,
+          position: n,
+          clientName: percentiles ? last.nome : null,
+          cutoff: last[dim.key],
+          count,
+        });
+        continue;
+      }
+
+      const idx = dim.inverted ? numScores - score : score - 2;
+      const cutoff = cutoffs[idx] ?? 0;
+
+      let pct: number | null = null;
+      let position: number | null = null;
+      let clientName: string | null = null;
+
+      if (percentiles) {
+        const rawPct = percentiles[idx];
+        pct = dim.inverted ? rawPct : 100 - rawPct;
+        position = Math.max(1, Math.min(n, Math.round((pct / 100) * n)));
+        clientName = sorted[position - 1]?.nome ?? null;
+      }
+
+      rows.push({ score, label: scoreLabel(score, numScores), pct, position, clientName, cutoff, count });
+    }
+
+    return { key: dim.key, label: dim.label, rows };
+  });
+}
+
 
 /** Map a dynamic score (1..N) to a normalized 1-3 score for cluster mapping */
 function normalizeScore(score: number, numScores: number): number {
@@ -171,14 +311,15 @@ export function scoreClientsPercentile(clients: ClientData[], params: RFVPercent
   const freqValues = clients.map(c => c.frequencia);
   const valValues = clients.map(c => c.valor);
 
-  const recCutoffs = computeRealCutoffs(recValues, params.recencia);
-  const freqCutoffs = computeRealCutoffs(freqValues, params.frequencia);
-  const valCutoffs = computeRealCutoffs(valValues, params.valor);
+  const recCutoffs = positionalCutoffs(recValues, params.recencia, true);
+  const freqCutoffs = positionalCutoffs(freqValues, params.frequencia, false);
+  const valCutoffs = positionalCutoffs(valValues, params.valor, false);
 
   return clients.map(c => {
     const r_raw = scoreByPercentileCutoffs(c.recencia, recCutoffs, true);
-    const f_raw = scoreByPercentileCutoffs(c.frequencia, freqCutoffs, false);
-    const v_raw = scoreByPercentileCutoffs(c.valor, valCutoffs, false);
+    const f_raw = scoreByPercentileCutoffs(c.frequencia, freqCutoffs, false, true);
+    const v_raw = scoreByPercentileCutoffs(c.valor, valCutoffs, false, true);
+
 
     const r = normalizeScore(r_raw, params.numScores);
     const f = normalizeScore(f_raw, params.numScores);
