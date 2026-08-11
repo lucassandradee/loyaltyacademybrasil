@@ -243,29 +243,28 @@ const RFVDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="h-8 px-2 text-xs">Score</TableHead>
-                      <TableHead className="h-8 px-2 text-xs text-right">Posição</TableHead>
-                      <TableHead className="h-8 px-2 text-xs text-right">% da Base</TableHead>
-                      <TableHead className="h-8 px-2 text-xs">Cliente-régua</TableHead>
-                      <TableHead className="h-8 px-2 text-xs text-right">Valor</TableHead>
+                      <TableHead className="h-8 px-2 text-xs">Corte</TableHead>
                       <TableHead className="h-8 px-2 text-xs text-right">Clientes</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">% da base</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dim.rows.map(row => (
                       <TableRow key={row.score}>
-                        <TableCell className="px-2 py-1.5 text-xs font-medium">
+                        <TableCell className="px-2 py-2 text-xs font-medium whitespace-nowrap">
                           <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: scoreColorHex(row.score, dim.rows.length) }} />
+                            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: scoreColorHex(row.score, dim.rows.length) }} />
                             {row.label}
                           </span>
                         </TableCell>
-                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.position ?? '—'}</TableCell>
-                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.pct != null ? `${row.pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}</TableCell>
-                        <TableCell className="px-2 py-1.5 text-xs text-muted-foreground max-w-[140px] truncate" title={row.clientName ?? ''}>{row.clientName ?? '—'}</TableCell>
-                        <TableCell className="px-2 py-1.5 text-xs text-right font-medium">{formatCutoff(dim.key, row.cutoff)}</TableCell>
-                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.count.toLocaleString('pt-BR')}</TableCell>
+                        <TableCell className="px-2 py-2 text-xs whitespace-nowrap">
+                          {row.score === 1 ? 'demais clientes' : formatCutoffLabel(dim.key, row.cutoff, row.score, dim.rows.length)}
+                        </TableCell>
+                        <TableCell className="px-2 py-2 text-xs text-right font-semibold">{row.count.toLocaleString('pt-BR')}</TableCell>
+                        <TableCell className="px-2 py-2 text-xs text-right text-muted-foreground">{row.pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</TableCell>
                       </TableRow>
                     ))}
+
                   </TableBody>
                 </Table>
               </div>
