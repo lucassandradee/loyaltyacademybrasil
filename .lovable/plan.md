@@ -43,7 +43,7 @@ Ponto importante: o número de clientes por nota **não bate exatamente** com o 
 Um bloco novo **"Distribuição de Scores"** na aba de análise do RFV (dashboard), acima ou ao lado do gráfico de clusters, mostrando para cada critério (Recência, Frequência, Valor):
 
 - Quantidade e % de clientes em cada nota (3, 2, 1)
-- O valor de corte real usado para cada nota (ex.: "Nota 3 = até 3 dias")
+- O valor de corte real usado para cada nota (ex.: "Nota 3 = até 3 dias") e o nome do cliente-régua que definiu aquele corte
 - Barra horizontal proporcional colorida por nota
 - Nota de rodapé explicando o efeito dos empates quando o % efetivo diverge mais de 10 pontos do % pedido
 
