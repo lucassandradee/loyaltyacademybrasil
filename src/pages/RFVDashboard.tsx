@@ -136,15 +136,14 @@ const RFVDashboard = () => {
       dim.rows.map(r => ({
         Critério: dim.label,
         Score: r.label,
-        Posição: r.position ?? '',
-        '% da Base': r.pct != null ? `${r.pct}%` : '',
-        'Cliente-régua': r.clientName ?? '',
-        Valor: formatCutoff(dim.key, r.cutoff),
+        Corte: formatCutoffLabel(dim.key, r.cutoff, r.score, dim.rows.length),
         Clientes: r.count,
+        '% da base': `${r.pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`,
       }))
     );
     downloadCSV(rows, 'rfv-distribuicao-scores.csv');
   };
+
 
 
   const pageCount = Math.ceil(filtered.length / perPage);
