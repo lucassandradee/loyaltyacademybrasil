@@ -51,7 +51,7 @@ const Header = () => {
           <span className="h-8 w-px bg-border" aria-hidden="true" />
           <img src={tsiLogo.url} alt="TSI — Tudo Sobre Incentivos" className="h-10 w-auto object-contain" />
           <div className="hidden sm:block">
-            <span className="text-sm font-semibold text-foreground">Certificação em Loyalty Management 4.0</span>
+            <span className="text-sm font-semibold text-foreground whitespace-pre">{"\n\n"}</span>
           </div>
         </Link>
         <div>
