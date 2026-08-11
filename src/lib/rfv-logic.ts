@@ -19,6 +19,14 @@ export interface RFVPercentileParams {
   valor: number[];
 }
 
+export interface RFVAbsoluteParams {
+  mode: 'absolute';
+  numScores: number;
+  recencia: number[];   // real ascending cutoff values
+  frequencia: number[];
+  valor: number[];
+}
+
 export interface ScoredClient extends ClientData {
   r_score: number;
   f_score: number;
