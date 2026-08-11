@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ArrowRight, Clock, ShoppingCart, DollarSign, Plus, Minus, Info } from 'lucide-react';
-import { ClientData, RFVPercentileParams, defaultPercentileParams, computeRealCutoffs } from '@/lib/rfv-logic';
+import { ClientData, RFVPercentileParams, RFVAbsoluteParams, defaultPercentileParams, defaultAbsoluteParams, computeRealCutoffs } from '@/lib/rfv-logic';
 import { supabase } from '@/integrations/supabase/client';
 import * as SliderPrimitive from '@radix-ui/react-slider';
 
