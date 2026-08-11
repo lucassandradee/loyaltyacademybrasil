@@ -257,15 +257,14 @@ export function computeScoreDistribution(
     const rows: ScoreDistributionRow[] = [];
     for (let score = numScores; score >= 1; score--) {
       const count = scored.filter(c => dim.scoreOf(c) === score).length;
+      const pct = n > 0 ? Math.round((count / n) * 1000) / 10 : 0;
 
       if (score === 1) {
         const last = sorted[n - 1];
         rows.push({
           score,
           label: scoreLabel(score, numScores),
-          pct: 100,
-          position: n,
-          clientName: percentiles ? last.nome : null,
+          pct,
           cutoff: last[dim.key],
           count,
         });
@@ -275,19 +274,9 @@ export function computeScoreDistribution(
       const idx = dim.inverted ? numScores - score : score - 2;
       const cutoff = cutoffs[idx] ?? 0;
 
-      let pct: number | null = null;
-      let position: number | null = null;
-      let clientName: string | null = null;
-
-      if (percentiles) {
-        const rawPct = percentiles[idx];
-        pct = dim.inverted ? rawPct : 100 - rawPct;
-        position = Math.max(1, Math.min(n, Math.round((pct / 100) * n)));
-        clientName = sorted[position - 1]?.nome ?? null;
-      }
-
-      rows.push({ score, label: scoreLabel(score, numScores), pct, position, clientName, cutoff, count });
+      rows.push({ score, label: scoreLabel(score, numScores), pct, cutoff, count });
     }
+
 
     return { key: dim.key, label: dim.label, rows };
   });
