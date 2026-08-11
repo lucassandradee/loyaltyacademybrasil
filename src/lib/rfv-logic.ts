@@ -130,13 +130,38 @@ export function computeRealCutoffs(values: number[], percentiles: number[]): num
   return percentiles.map(p => valueAtPercentile(sorted, p));
 }
 
+/** Posição (1-based) na base ordenada que corresponde a um percentual */
+export function positionForPercent(total: number, pct: number): number {
+  return Math.max(1, Math.min(total, Math.round((pct / 100) * total)));
+}
+
+/**
+ * Cortes reais por posição (regra "cliente-régua"): o valor do cliente que ocupa
+ * a posição correspondente ao percentual vira o corte.
+ * Recência ordena do menor para o maior; frequência/valor do maior para o menor.
+ * Retorna sempre em ordem crescente de valor.
+ */
+export function positionalCutoffs(values: number[], percentiles: number[], inverted: boolean): number[] {
+  const n = values.length;
+  if (!n) return percentiles.map(() => 0);
+  const asc = [...values].sort((a, b) => a - b);
+  return percentiles.map(p => {
+    if (inverted) {
+      return asc[positionForPercent(n, p) - 1];
+    }
+    const topPct = 100 - p;
+    const descPos = positionForPercent(n, topPct);
+    return asc[n - descPos];
+  });
+}
+
 /**
  * Assign score based on percentile cutoff values.
  * cutoffValues are the real values at each percentile boundary, sorted ascending.
  * For "ascending" metrics (frequency, value): higher value = higher score.
  * For "inverted" metrics (recency): lower value = higher score.
  */
-function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverted: boolean): number {
+function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverted: boolean, inclusive = false): number {
   if (inverted) {
     // Lower value = higher score. cutoffValues are ascending.
     // e.g. cutoffs [30, 90] for 3 scores:
@@ -150,11 +175,12 @@ function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverte
     // e.g. cutoffs [1850, 5200] for 3 scores:
     // value > 5200 → score 3, value > 1850 → score 2, else → score 1
     for (let i = cutoffValues.length - 1; i >= 0; i--) {
-      if (value > cutoffValues[i]) return i + 2;
+      if (inclusive ? value >= cutoffValues[i] : value > cutoffValues[i]) return i + 2;
     }
     return 1;
   }
 }
+
 
 // --- Score distribution (visualização dos cortes usados na análise) ---
 
