@@ -243,8 +243,9 @@ export function computeScoreDistribution(
 
     if (isPercentile) {
       percentiles = (params as RFVPercentileParams)[dim.key];
-      cutoffs = computeRealCutoffs(clients.map(c => c[dim.key]), percentiles);
+      cutoffs = positionalCutoffs(clients.map(c => c[dim.key]), percentiles, dim.inverted);
     } else if (isAbsolute) {
+
       cutoffs = (params as RFVAbsoluteParams)[dim.key];
     } else {
       const legacy = params as RFVParams;
