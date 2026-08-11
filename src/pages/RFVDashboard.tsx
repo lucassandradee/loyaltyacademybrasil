@@ -236,10 +236,11 @@ const RFVDashboard = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-6 lg:grid-cols-3">
+          <CardContent className="grid gap-4 lg:grid-cols-3">
             {scoreDistribution.map(dim => (
-              <div key={dim.key}>
-                <p className="mb-2 text-sm font-semibold text-foreground">{dim.label}</p>
+              <div key={dim.key} className="rounded-lg border border-border bg-muted/20 p-3">
+                <p className="mb-2 border-b border-border pb-2 text-sm font-semibold uppercase tracking-wide text-foreground">{dim.label}</p>
+
                 <Table>
                   <TableHeader>
                     <TableRow>
