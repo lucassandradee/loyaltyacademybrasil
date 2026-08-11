@@ -17,6 +17,17 @@ Frequência  corte nota 3: acima de 4      corte nota 2: acima de 2
 Valor       corte nota 3: acima de 3.000  corte nota 2: acima de 1.000
 ```
 
+**Sobre os nomes que aparecem na planilha**: sim, agora faz sentido. O nome ali não tem nada de especial no cliente — ele é apenas o "cliente-régua", quem ocupa exatamente aquela posição da lista ordenada. O valor dele é que vira a nota de corte. Rodando a base anexa com 10% / 50%:
+
+```text
+Recência    10% -> Antonio Balbino (3 dias)          50% -> Aelton Rosa da Silva (87 dias)
+Frequência  10% -> Claiton Rosa de Andrade (4)       50% -> Carlos Roberto Lopes Pereira (2)
+Valor       10% -> Vinicius Carvalho (R$ 3.000)      50% -> Marcione dos Santos Araujo (R$ 1.000)
+```
+
+Se esses forem os mesmos nomes da planilha deles, está confirmado que é exatamente essa a regra.
+
+
 Resultado real:
 
 ```text
@@ -32,7 +43,7 @@ Ponto importante: o número de clientes por nota **não bate exatamente** com o 
 Um bloco novo **"Distribuição de Scores"** na aba de análise do RFV (dashboard), acima ou ao lado do gráfico de clusters, mostrando para cada critério (Recência, Frequência, Valor):
 
 - Quantidade e % de clientes em cada nota (3, 2, 1)
-- O valor de corte real usado para cada nota (ex.: "Nota 3 = até 3 dias")
+- O valor de corte real usado para cada nota (ex.: "Nota 3 = até 3 dias") e o nome do cliente-régua que definiu aquele corte
 - Barra horizontal proporcional colorida por nota
 - Nota de rodapé explicando o efeito dos empates quando o % efetivo diverge mais de 10 pontos do % pedido
 
