@@ -21,10 +21,11 @@ const formatCutoff = (key: 'recencia' | 'frequencia' | 'valor', v: number) => {
 };
 
 const formatCutoffLabel = (key: 'recencia' | 'frequencia' | 'valor', v: number, score: number, numScores: number) => {
+  if (score === 1) return 'demais clientes';
   const val = formatCutoff(key, v);
-  if (score === 1) return key === 'recencia' ? `acima de ${val}` : `abaixo de ${val}`;
   return key === 'recencia' ? `até ${val}` : `${val} ou mais`;
 };
+
 
 
 const scoreColorHex = (score: number, total: number) => {
