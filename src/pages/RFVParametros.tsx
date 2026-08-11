@@ -361,6 +361,8 @@ const RFVParametros = () => {
   const stateData = (location.state as { clientData: ClientData[] })?.clientData;
   const [clientData, setClientData] = useState<ClientData[] | null>(stateData || null);
   const [params, setParams] = useState<RFVPercentileParams>(defaultPercentileParams(3));
+  const [mode, setMode] = useState<'percentile' | 'absolute'>('percentile');
+  const [absParams, setAbsParams] = useState<RFVAbsoluteParams | null>(null);
   const [loading, setLoading] = useState(!stateData);
 
   useEffect(() => {
@@ -385,17 +387,37 @@ const RFVParametros = () => {
     fetchFromDB();
   }, [stateData, navigate]);
 
+  // Initialize / resync absolute cutoffs when data loads or score count changes
+  useEffect(() => {
+    if (!clientData) return;
+    setAbsParams(prev => {
+      if (prev && prev.numScores === params.numScores) return prev;
+      return defaultAbsoluteParams(clientData, params.numScores);
+    });
+  }, [clientData, params.numScores]);
+
   const changeNumScores = (delta: number) => {
     const next = Math.max(2, Math.min(10, params.numScores + delta));
     setParams(defaultPercentileParams(next));
+    if (clientData) setAbsParams(defaultAbsoluteParams(clientData, next));
   };
 
   const handlePercentilesChange = (dimKey: 'recencia' | 'frequencia' | 'valor', values: number[]) => {
     setParams(prev => ({ ...prev, [dimKey]: values }));
   };
 
+  const handleCutoffsChange = (dimKey: 'recencia' | 'frequencia' | 'valor', values: number[]) => {
+    setAbsParams(prev => (prev ? { ...prev, [dimKey]: values } : prev));
+  };
+
+  const absValid = !!absParams && (['recencia', 'frequencia', 'valor'] as const).every(k => {
+    const arr = absParams[k];
+    return arr.every(v => Number.isFinite(v)) && arr.every((v, i) => i === 0 || v > arr[i - 1]);
+  });
+
   const handleSubmit = () => {
-    navigate('/rfv/dashboard', { state: { clientData, params } });
+    const chosen = mode === 'absolute' && absParams ? absParams : params;
+    navigate('/rfv/dashboard', { state: { clientData, params: chosen } });
   };
 
   if (loading) {
@@ -413,12 +435,28 @@ const RFVParametros = () => {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-foreground">Parametrização RFV por Percentil</h1>
+        <h1 className="text-3xl font-bold text-foreground">Parametrização RFV</h1>
         <p className="mt-2 text-muted-foreground">
-          Defina quantos níveis de score e ajuste os percentis arrastando os pontos de corte.
+          {mode === 'percentile'
+            ? 'Defina quantos níveis de score e ajuste os percentis arrastando os pontos de corte.'
+            : 'Defina quantos níveis de score e informe os valores de corte fixos para cada dimensão.'}
           <br />
-          <span className="text-xs">O sistema distribui os clientes automaticamente com base nos dados reais da sua base.</span>
+          <span className="text-xs">
+            {mode === 'percentile'
+              ? 'O sistema distribui os clientes automaticamente com base nos dados reais da sua base.'
+              : 'Os clientes são pontuados exatamente pelos limites que você definir.'}
+          </span>
         </p>
+      </div>
+
+      {/* Mode selector */}
+      <div className="mb-6 flex justify-center">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as 'percentile' | 'absolute')}>
+          <TabsList>
+            <TabsTrigger value="percentile">Por percentil</TabsTrigger>
+            <TabsTrigger value="absolute">Valores fixos</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Score count selector */}
@@ -438,19 +476,35 @@ const RFVParametros = () => {
       {/* Dimension cards — vertical */}
       <div className="space-y-6">
         {dimensions.map(dim => (
-          <DimensionSliderCard
-            key={dim.key}
-            label={dim.label}
-            icon={dim.icon}
-            dimKey={dim.key}
-            inverted={dim.inverted}
-            prefix={dim.prefix}
-            unit={dim.unit}
-            percentiles={params[dim.key]}
-            numScores={params.numScores}
-            clientData={clientData}
-            onPercentilesChange={handlePercentilesChange}
-          />
+          mode === 'percentile' ? (
+            <DimensionSliderCard
+              key={dim.key}
+              label={dim.label}
+              icon={dim.icon}
+              dimKey={dim.key}
+              inverted={dim.inverted}
+              prefix={dim.prefix}
+              unit={dim.unit}
+              percentiles={params[dim.key]}
+              numScores={params.numScores}
+              clientData={clientData}
+              onPercentilesChange={handlePercentilesChange}
+            />
+          ) : absParams ? (
+            <DimensionThresholdCard
+              key={dim.key}
+              label={dim.label}
+              icon={dim.icon}
+              dimKey={dim.key}
+              inverted={dim.inverted}
+              prefix={dim.prefix}
+              unit={dim.unit}
+              cutoffs={absParams[dim.key]}
+              numScores={absParams.numScores}
+              clientData={clientData}
+              onCutoffsChange={handleCutoffsChange}
+            />
+          ) : null
         ))}
       </div>
 
@@ -458,11 +512,12 @@ const RFVParametros = () => {
         <Button variant="ghost" onClick={() => navigate('/rfv')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
-        <Button size="lg" onClick={handleSubmit}>
+        <Button size="lg" onClick={handleSubmit} disabled={mode === 'absolute' && !absValid}>
           Gerar Análise Completa
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
+
     </div>
   );
 };
