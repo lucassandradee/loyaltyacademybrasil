@@ -19,6 +19,14 @@ export interface RFVPercentileParams {
   valor: number[];
 }
 
+export interface RFVAbsoluteParams {
+  mode: 'absolute';
+  numScores: number;
+  recencia: number[];   // real ascending cutoff values
+  frequencia: number[];
+  valor: number[];
+}
+
 export interface ScoredClient extends ClientData {
   r_score: number;
   f_score: number;
@@ -207,9 +215,43 @@ export function scoreValor(val: number, params: RFVParams): number {
   return 1;
 }
 
-export function scoreClients(clients: ClientData[], params: RFVParams | RFVPercentileParams): ScoredClient[] {
+/** Suggest absolute cutoffs from the data, using the default percentile distribution */
+export function defaultAbsoluteParams(clients: ClientData[], numScores: number = 3): RFVAbsoluteParams {
+  const pct = defaultPercentileParams(numScores);
+  const round = (v: number) => Math.round(v * 100) / 100;
+  return {
+    mode: 'absolute',
+    numScores,
+    recencia: computeRealCutoffs(clients.map(c => c.recencia), pct.recencia).map(v => Math.round(v)),
+    frequencia: computeRealCutoffs(clients.map(c => c.frequencia), pct.frequencia).map(v => Math.round(v)),
+    valor: computeRealCutoffs(clients.map(c => c.valor), pct.valor).map(round),
+  };
+}
+
+export function scoreClientsAbsolute(clients: ClientData[], params: RFVAbsoluteParams): ScoredClient[] {
+  return clients.map(c => {
+    const r_raw = scoreByPercentileCutoffs(c.recencia, params.recencia, true);
+    const f_raw = scoreByPercentileCutoffs(c.frequencia, params.frequencia, false);
+    const v_raw = scoreByPercentileCutoffs(c.valor, params.valor, false);
+
+    const code = `${normalizeScore(r_raw, params.numScores)}${normalizeScore(f_raw, params.numScores)}${normalizeScore(v_raw, params.numScores)}`;
+    return {
+      ...c,
+      r_score: r_raw,
+      f_score: f_raw,
+      v_score: v_raw,
+      rfv_code: code,
+      cluster: clusterMap[code] || 'Não classificado',
+    };
+  });
+}
+
+export function scoreClients(clients: ClientData[], params: RFVParams | RFVPercentileParams | RFVAbsoluteParams): ScoredClient[] {
+  if ('mode' in params && params.mode === 'absolute') {
+    return scoreClientsAbsolute(clients, params);
+  }
   if ('numScores' in params) {
-    return scoreClientsPercentile(clients, params);
+    return scoreClientsPercentile(clients, params as RFVPercentileParams);
   }
   return clients.map(c => {
     const r = scoreRecencia(c.recencia, params);
