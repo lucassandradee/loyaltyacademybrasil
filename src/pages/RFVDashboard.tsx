@@ -178,6 +178,64 @@ const RFVDashboard = () => {
         ))}
       </div>
 
+      {/* Distribuição de Scores */}
+      {scoreDistribution.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">Distribuição de Scores</CardTitle>
+                <p className="text-xs text-muted-foreground">Cortes usados nesta análise, com os parâmetros atuais</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">Base total: {totalClients.toLocaleString('pt-BR')}</Badge>
+                <Button variant="outline" size="sm" className="gap-1" onClick={exportDistribution}>
+                  <Download className="h-4 w-4" /> Exportar
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-3">
+            {scoreDistribution.map(dim => (
+              <div key={dim.key}>
+                <p className="mb-2 text-sm font-semibold text-foreground">{dim.label}</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="h-8 px-2 text-xs">Score</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Posição</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">% da Base</TableHead>
+                      <TableHead className="h-8 px-2 text-xs">Cliente-régua</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Valor</TableHead>
+                      <TableHead className="h-8 px-2 text-xs text-right">Clientes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dim.rows.map(row => (
+                      <TableRow key={row.score}>
+                        <TableCell className="px-2 py-1.5 text-xs font-medium">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: scoreColorHex(row.score, dim.rows.length) }} />
+                            {row.label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.position ?? '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.pct != null ? `${row.pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-muted-foreground max-w-[140px] truncate" title={row.clientName ?? ''}>{row.clientName ?? '—'}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right font-medium">{formatCutoff(dim.key, row.cutoff)}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-xs text-right">{row.count.toLocaleString('pt-BR')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+
+
       {/* Diagnóstico RFV */}
       <Card className="mb-8 border-primary/20 bg-primary/5">
         <CardHeader>
