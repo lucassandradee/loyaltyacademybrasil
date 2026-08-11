@@ -49,9 +49,7 @@ const Header = () => {
         <Link to="/" className="flex items-center gap-3">
           <img src={labLogo} alt="Loyalty Academy Brasil" className="h-10 w-auto object-contain" />
           <span className="h-8 w-px bg-border" aria-hidden="true" />
-          <span className="flex items-center rounded-md bg-foreground px-2 py-1">
-            <img src={tsiLogo.url} alt="TSI — Tudo Sobre Incentivos" className="h-6 w-auto object-contain" />
-          </span>
+          <img src={tsiLogo.url} alt="TSI — Tudo Sobre Incentivos" className="h-10 w-auto object-contain" />
           <div className="hidden sm:block">
             <span className="text-sm font-semibold text-foreground">Certificação em Loyalty Management 4.0</span>
           </div>
