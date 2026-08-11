@@ -14,7 +14,20 @@ import { FileText } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 
+const formatCutoff = (key: 'recencia' | 'frequencia' | 'valor', v: number) => {
+  if (key === 'recencia') return `${Math.round(v)} dias`;
+  if (key === 'frequencia') return `${Math.round(v)}x`;
+  return `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
+};
+
+const scoreColorHex = (score: number, total: number) => {
+  if (score === total) return '#c9a227';
+  if (score === 1) return '#9ca3af';
+  return '#e08d2c';
+};
+
 const RFVDashboard = () => {
+
   const location = useLocation();
   const navigate = useNavigate();
   const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams | RFVAbsoluteParams } | null;
