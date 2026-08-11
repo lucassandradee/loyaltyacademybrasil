@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Users, DollarSign, ShoppingCart, Clock, ArrowLeft, ArrowRight, Search, Settings2, X, Download } from 'lucide-react';
-import { ClientData, RFVParams, RFVPercentileParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary } from '@/lib/rfv-logic';
+import { ClientData, RFVParams, RFVPercentileParams, RFVAbsoluteParams, defaultPercentileParams, scoreClients, allClusterNames, clusterColors, clusterActions, clusterMap, generateRFVSummary } from '@/lib/rfv-logic';
 import { downloadCSV } from '@/lib/export-utils';
 import { FileText } from 'lucide-react';
 
@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 const RFVDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams } | null;
+  const locState = location.state as { clientData: ClientData[]; params: RFVParams | RFVPercentileParams | RFVAbsoluteParams } | null;
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
