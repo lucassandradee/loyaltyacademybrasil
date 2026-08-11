@@ -310,14 +310,15 @@ export function scoreClientsPercentile(clients: ClientData[], params: RFVPercent
   const freqValues = clients.map(c => c.frequencia);
   const valValues = clients.map(c => c.valor);
 
-  const recCutoffs = computeRealCutoffs(recValues, params.recencia);
-  const freqCutoffs = computeRealCutoffs(freqValues, params.frequencia);
-  const valCutoffs = computeRealCutoffs(valValues, params.valor);
+  const recCutoffs = positionalCutoffs(recValues, params.recencia, true);
+  const freqCutoffs = positionalCutoffs(freqValues, params.frequencia, false);
+  const valCutoffs = positionalCutoffs(valValues, params.valor, false);
 
   return clients.map(c => {
     const r_raw = scoreByPercentileCutoffs(c.recencia, recCutoffs, true);
-    const f_raw = scoreByPercentileCutoffs(c.frequencia, freqCutoffs, false);
-    const v_raw = scoreByPercentileCutoffs(c.valor, valCutoffs, false);
+    const f_raw = scoreByPercentileCutoffs(c.frequencia, freqCutoffs, false, true);
+    const v_raw = scoreByPercentileCutoffs(c.valor, valCutoffs, false, true);
+
 
     const r = normalizeScore(r_raw, params.numScores);
     const f = normalizeScore(f_raw, params.numScores);
