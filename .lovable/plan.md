@@ -38,6 +38,18 @@ Um bloco novo **"Distribuição de Scores"** na aba de análise do RFV (dashboar
 
 Também incluo essas contagens na exportação CSV da análise.
 
+## Para a masterclass: o que dá pra comparar lado a lado com o Excel
+
+Depois dessa mudança, o dashboard mostra os mesmos números que a planilha produz:
+
+- **Valores de corte de cada nota** por critério (o "valor do cliente que cai no limiar") — é o número central da análise deles.
+- **Quantidade de clientes com nota 3, 2 e 1** em Recência, Frequência e Valor.
+- **Quantidade e % por cluster** (Campeão, Fidelizado, etc.) — já existe hoje no gráfico e na tabela.
+- **Tabela cliente a cliente** com R/F/V e código RFV, já existente, para conferência pontual.
+
+Para a demo bater 100% com o Excel, os percentuais de corte na tela de parametrização precisam ser os mesmos que eles usaram na planilha (hoje o padrão do app é 10% para nota 3 e 50% para nota 2). Se me disser quais percentuais eles usaram, ajusto o padrão para a masterclass.
+
+
 ## Detalhes técnicos
 
 - `src/lib/rfv-logic.ts`: nova função `computeScoreDistribution(scored, params)` retornando, por dimensão, `{ score, count, pct, cutoffLabel }`, reutilizando `computeRealCutoffs` e respeitando os dois modos (percentil e absoluto) e o `numScores` configurado.
