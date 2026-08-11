@@ -187,15 +187,13 @@ function scoreByPercentileCutoffs(value: number, cutoffValues: number[], inverte
 export interface ScoreDistributionRow {
   score: number;
   label: string;
-  /** % acumulado da base coberto até esta nota (null no modo valores fixos) */
-  pct: number | null;
-  /** posição na base ordenada que define o corte (null no modo valores fixos) */
-  position: number | null;
-  /** nome do cliente-régua (null no modo valores fixos) */
-  clientName: string | null;
+  /** % real da base com esta nota */
+  pct: number;
+  /** valor de corte usado nesta nota */
   cutoff: number;
   count: number;
 }
+
 
 export interface ScoreDistributionDimension {
   key: 'recencia' | 'frequencia' | 'valor';
