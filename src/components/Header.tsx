@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import labLogo from '@/assets/lab-logo.webp';
+import tsiLogo from '@/assets/tsi-logo.png.asset.json';
 
 const Header = () => {
   const navigate = useNavigate();
