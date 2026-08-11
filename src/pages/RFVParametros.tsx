@@ -212,6 +212,149 @@ const DimensionSliderCard = ({
   );
 };
 
+interface ThresholdCardProps {
+  label: string;
+  icon: React.ElementType;
+  dimKey: 'recencia' | 'frequencia' | 'valor';
+  inverted: boolean;
+  prefix?: string;
+  unit: string;
+  cutoffs: number[];
+  numScores: number;
+  clientData: ClientData[];
+  onCutoffsChange: (dimKey: 'recencia' | 'frequencia' | 'valor', values: number[]) => void;
+}
+
+const DimensionThresholdCard = ({
+  label, icon: Icon, dimKey, inverted, prefix, unit,
+  cutoffs, numScores, clientData, onCutoffsChange,
+}: ThresholdCardProps) => {
+  const values = useMemo(() => clientData.map(c => c[dimKey]), [clientData, dimKey]);
+
+  const formatValue = (val: number) => {
+    if (prefix === 'R$') return `R$ ${val.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
+    return `${val.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ''}`;
+  };
+
+  const isAscending = cutoffs.every((c, i) => i === 0 || c > cutoffs[i - 1]);
+
+  const handleChange = (index: number, raw: string) => {
+    const next = [...cutoffs];
+    next[index] = raw === '' ? NaN : Number(raw.replace(',', '.'));
+    onCutoffsChange(dimKey, next);
+  };
+
+  // Segments listed from Score 1 (base) to Score N (top)
+  const segments = Array.from({ length: numScores }, (_, index) => {
+    const scoreNum = index + 1;
+    let rangeText: string;
+    let count: number;
+
+    if (inverted) {
+      // Score N = lowest values. cutoffs ascending: value <= cutoffs[0] -> score N
+      const dataIdx = numScores - scoreNum; // 0 for top score
+      const upper = dataIdx < cutoffs.length ? cutoffs[dataIdx] : Infinity;
+      const lower = dataIdx > 0 ? cutoffs[dataIdx - 1] : -Infinity;
+      rangeText = upper === Infinity
+        ? `Acima de ${formatValue(lower)}`
+        : lower === -Infinity
+          ? `Até ${formatValue(upper)}`
+          : `${formatValue(lower)} — ${formatValue(upper)}`;
+      count = values.filter(v => v > lower && v <= upper).length;
+    } else {
+      const lower = index > 0 ? cutoffs[index - 1] : -Infinity;
+      const upper = index < cutoffs.length ? cutoffs[index] : Infinity;
+      rangeText = upper === Infinity
+        ? `Acima de ${formatValue(lower)}`
+        : lower === -Infinity
+          ? `Até ${formatValue(upper)}`
+          : `${formatValue(lower)} — ${formatValue(upper)}`;
+      count = values.filter(v => v > lower && v <= upper).length;
+    }
+
+    return { scoreNum, rangeText, count };
+  }).reverse(); // show top score first
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="h-5 w-5 text-primary" />
+          {label}
+          {inverted && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">↓ Menor = melhor score</span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Defina os valores de corte (em ordem crescente):
+            </p>
+            {cutoffs.map((cut, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <span className="w-24 shrink-0 text-xs text-muted-foreground">Corte {index + 1}</span>
+                <div className="relative flex-1">
+                  {prefix && (
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      {prefix}
+                    </span>
+                  )}
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={Number.isNaN(cut) ? '' : cut}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    className={prefix ? 'pl-9' : undefined}
+                  />
+                </div>
+                {unit && <span className="w-12 shrink-0 text-xs text-muted-foreground">{unit}</span>}
+              </div>
+            ))}
+            {!isAscending && (
+              <p className="text-xs font-medium text-destructive">
+                Os cortes precisam ser números em ordem crescente.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="mb-3 flex items-center gap-1">
+              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Faixas resultantes na sua base:</span>
+            </div>
+            {segments.map((seg) => (
+              <div key={seg.scoreNum} className="flex items-center gap-3 rounded-md border p-2.5">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white"
+                  style={{ backgroundColor: getScoreColor(seg.scoreNum - 1, numScores) }}
+                >
+                  {seg.scoreNum}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">
+                      Score {seg.scoreNum}
+                      {seg.scoreNum === numScores && <span className="ml-1 text-xs text-muted-foreground">(Top)</span>}
+                      {seg.scoreNum === 1 && <span className="ml-1 text-xs text-muted-foreground">(Base)</span>}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {seg.rangeText}
+                    <span className="ml-2">• {seg.count} clientes</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+
 const RFVParametros = () => {
   const location = useLocation();
   const navigate = useNavigate();
