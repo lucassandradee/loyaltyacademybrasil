@@ -20,6 +20,13 @@ const formatCutoff = (key: 'recencia' | 'frequencia' | 'valor', v: number) => {
   return `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
 };
 
+const formatCutoffLabel = (key: 'recencia' | 'frequencia' | 'valor', v: number, score: number, numScores: number) => {
+  const val = formatCutoff(key, v);
+  if (score === 1) return key === 'recencia' ? `acima de ${val}` : `abaixo de ${val}`;
+  return key === 'recencia' ? `até ${val}` : `${val} ou mais`;
+};
+
+
 const scoreColorHex = (score: number, total: number) => {
   if (score === total) return '#c9a227';
   if (score === 1) return '#9ca3af';
