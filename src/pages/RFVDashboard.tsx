@@ -113,6 +113,27 @@ const RFVDashboard = () => {
 
   const rfvSummary = useMemo(() => generateRFVSummary(scored), [scored]);
 
+  const scoreDistribution = useMemo(() => {
+    if (!clientData?.length) return [];
+    return computeScoreDistribution(clientData, params);
+  }, [clientData, params]);
+
+  const exportDistribution = () => {
+    const rows = scoreDistribution.flatMap(dim =>
+      dim.rows.map(r => ({
+        Critério: dim.label,
+        Score: r.label,
+        Posição: r.position ?? '',
+        '% da Base': r.pct != null ? `${r.pct}%` : '',
+        'Cliente-régua': r.clientName ?? '',
+        Valor: formatCutoff(dim.key, r.cutoff),
+        Clientes: r.count,
+      }))
+    );
+    downloadCSV(rows, 'rfv-distribuicao-scores.csv');
+  };
+
+
   const pageCount = Math.ceil(filtered.length / perPage);
   const pageData = filtered.slice(page * perPage, (page + 1) * perPage);
 
